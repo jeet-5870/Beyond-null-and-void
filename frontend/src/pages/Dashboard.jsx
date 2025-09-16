@@ -12,7 +12,7 @@ function Dashboard() {
 
   const fetchResults = async () => {
     try {
-      const res = await API.get('/');
+      const res = await API.get('/api/samples');
       console.log('Fetched result', res.data); // debug
       setResults(res.data);
     } catch (err) {
@@ -33,7 +33,7 @@ function Dashboard() {
   // In Dashboard.jsx
 const handleDownloadReport = async () => {
   try {
-    const res = await API.get('https://beyond-null-and-void.onrender.com/api/report', { responseType: 'blob' }); // responseType is crucial for file downloads
+    const res = await API.get('/api/report', { responseType: 'blob' }); // responseType is crucial for file downloads
     const url = window.URL.createObjectURL(new Blob([res.data]));
     const link = document.createElement('a');
     link.href = url;
