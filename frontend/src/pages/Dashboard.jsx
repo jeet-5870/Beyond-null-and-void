@@ -12,7 +12,30 @@ import {
   MapPin,
   TrendingUp
 } from 'lucide-react';
-import * as Chart from 'chart.js';
+
+// Import Chart.js components
+import {
+  Chart,
+  CategoryScale, 
+  LinearScale, 
+  BarElement, 
+  Title, 
+  Tooltip, 
+  Legend,
+  BarController
+} from 'chart.js';
+
+// Register the components
+ChartJS.register(
+  CategoryScale, 
+  LinearScale, 
+  BarElement, 
+  Title, 
+  Tooltip, 
+  Legend,
+  BarController
+);
+
 
 // Register chart components
 Chart.BarController.register(
