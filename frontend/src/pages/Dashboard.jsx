@@ -328,7 +328,7 @@ const PollutionChart = ({ data }) => {
 
     const ctx = canvasRef.current.getContext('2d');
     
-    chartRef.current = new Chart.Chart(ctx, {
+    chartRef.current = new ChartJS.Chart(ctx, {
       type: 'bar',
       data: {
         labels: data.map((d) => d.location),
