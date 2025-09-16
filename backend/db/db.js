@@ -1,4 +1,6 @@
 import pg from 'pg';
+import 'dotenv/config'; // or use require('dotenv').config();
+
 
 let db;
 
@@ -14,6 +16,7 @@ if (process.env.DATABASE_URL) {
   db = pool;
   console.log('✅ Connected to PostgreSQL database');
 } else {
+  console.log('Database_URL not found.')
   // Fallback to SQLite for local development
   // Use a dynamic import() here
   (async () => {
