@@ -15,7 +15,7 @@ app.use('/api/samples', resultRoutes);
 app.use('/api/report', reportRoutes);
 
 app.get('/', (req, res)=>{
-  res.send("Hello");
+  res.send("Hello Welcome to the server of Beyond Null and Void.\n This is not a place for you.");
 });
 
 const PORT = process.env.PORT||3000;
