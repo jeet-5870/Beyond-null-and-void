@@ -1,0 +1,7 @@
+location,lat,lng,metal_name,concentration,standard
+Etawah,26.777,78.997,Pb,0.12,0.01
+Etawah,26.777,78.997,Cd,0.03,0.003
+Etawah,26.777,78.997,As,0.05,0.01
+Kanpur,26.4499,80.3319,Pb,0.08,0.01
+Kanpur,26.4499,80.3319,Cd,0.02,0.003
+Kanpur,26.4499,80.3319,As,0.04,0.01
