@@ -1,13 +1,3 @@
-// import sqlite3 from 'sqlite3';
-
-// const db = new sqlite3.Database('./db.sqlite', (err) => {
-//   if (err) console.error('❌ Failed to connect to database:', err.message);
-//   else console.log('✅ Connected to SQLite database');
-// });
-
-// export default db;
-
-
 import pg from 'pg';
 
 let db;
@@ -25,11 +15,18 @@ if (process.env.DATABASE_URL) {
   console.log('✅ Connected to PostgreSQL database');
 } else {
   // Fallback to SQLite for local development
-  import sqlite3 from 'sqlite3';
-  db = new sqlite3.Database('./db.sqlite', (err) => {
-    if (err) console.error('❌ Failed to connect to local database:', err.message);
-    else console.log('✅ Connected to SQLite database');
-  });
+  // Use a dynamic import() here
+  (async () => {
+    try {
+      const sqlite3 = await import('sqlite3');
+      db = new sqlite3.Database('./db.sqlite', (err) => {
+        if (err) console.error('❌ Failed to connect to local database:', err.message);
+        else console.log('✅ Connected to SQLite database');
+      });
+    } catch (err) {
+      console.error('Failed to load sqlite3:', err);
+    }
+  })();
 }
 
 export default db;
