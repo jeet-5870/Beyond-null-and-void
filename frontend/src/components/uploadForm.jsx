@@ -21,7 +21,7 @@ function UploadForm({onUploadComplete}) {
     formData.append('file', file);
 
     try {
-      const res = await API.post('http://localhost:3000/upload', formData);
+      const res = await API.post('/upload', formData);
       setMessage(res.data.message);
       setFile(null);
       fileInputRef.current.value = null;
