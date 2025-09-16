@@ -15,7 +15,7 @@ import {
 
 // Import Chart.js components
 import {
-  Chart,
+  Chart as ChartJS,
   CategoryScale, 
   LinearScale, 
   BarElement, 
@@ -37,16 +37,6 @@ ChartJS.register(
 );
 
 
-// Register chart components
-Chart.register(
-  CategoryScale, 
-  LinearScale, 
-  BarElement, 
-  Title, 
-  Tooltip, 
-  Legend, 
-  BarController
-);
 
 // Mock API for demo purposes
 const mockAPI = {
