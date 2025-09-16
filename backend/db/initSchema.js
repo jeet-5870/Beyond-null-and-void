@@ -1,6 +1,6 @@
 import db from './db.js';
 
-db.exec(`
+await db.query(`
 CREATE TABLE IF NOT EXISTS locations (
   location_id INTEGER PRIMARY KEY AUTOINCREMENT,
   name TEXT,
