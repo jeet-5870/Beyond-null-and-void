@@ -12,7 +12,7 @@ import {
   MapPin,
   TrendingUp
 } from 'lucide-react';
-import * as Chart from '../components/pollutionChart.js';
+import * as Chart from 'chart.js';
 
 // Register chart components
 Chart.Chart.register(
