@@ -15,7 +15,7 @@ import {
 import * as Chart from 'chart.js';
 
 // Register chart components
-Chart.Chart.register(
+Chart.BarController.register(
   Chart.CategoryScale, 
   Chart.LinearScale, 
   Chart.BarElement, 
