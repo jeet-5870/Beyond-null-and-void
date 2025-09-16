@@ -4,7 +4,7 @@ import uploadRoutes from "./routes/uploadRoutes.js";
 import mapRoutes from "./routes/mapRoutes.js";
 import resultRoutes from "./routes/resultRoutes.js";
 import reportRoutes from "./routes/reportRoutes.js";
-import './initSchema.js'; // Auto-initialize DB schema
+import './db/initSchema.js'; // Auto-initialize DB schema
 
 const app = express();
 app.use(cors());
