@@ -38,13 +38,14 @@ ChartJS.register(
 
 
 // Register chart components
-Chart.BarController.register(
-  Chart.CategoryScale, 
-  Chart.LinearScale, 
-  Chart.BarElement, 
-  Chart.Title, 
-  Chart.Tooltip, 
-  Chart.Legend
+Chart.register(
+  CategoryScale, 
+  LinearScale, 
+  BarElement, 
+  Title, 
+  Tooltip, 
+  Legend, 
+  BarController
 );
 
 // Mock API for demo purposes
