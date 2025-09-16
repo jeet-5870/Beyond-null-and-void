@@ -12,7 +12,7 @@ function Dashboard() {
 
   const fetchResults = async () => {
     try {
-      const res = await API.get('/api/samples');
+      const res = await API.get('https://beyond-null-and-void-1.onrender.com/');
       console.log('Fetched result', res.data); // debug
       setResults(res.data);
     } catch (err) {
