@@ -3,7 +3,7 @@ import db from '../db/db.js';
 
 const router = express.Router();
 
-router.get('/', (req, res) => {
+router.get('/', (req, res, next) => {
   const query = `
     SELECT
       l.name AS location,
@@ -23,8 +23,7 @@ router.get('/', (req, res) => {
       res.json(result.rows);
     })
     .catch(err => {
-      console.error('❌ DB query failed:', err.message);
-      res.status(500).json({ error: 'Failed to fetch data' });
+      next(err);
     });
 });
 

@@ -18,11 +18,9 @@ router.post('/', upload.single('file'), async (req, res, next) => {
   try {
     const csvStream = fs.createReadStream(req.file.path).pipe(csv());
     
-    // Use a promise to handle the stream events
     await new Promise((resolve, reject) => {
       let headersValid = false;
       
-      // The 'headers' event is guaranteed to fire before 'data' events
       csvStream.on('headers', (headers) => {
         const missingHeaders = requiredHeaders.filter(header => !headers.includes(header));
         if (missingHeaders.length > 0) {
@@ -33,7 +31,6 @@ router.post('/', upload.single('file'), async (req, res, next) => {
       });
       
       csvStream.on('data', (row) => {
-        // Only process data if the headers were valid
         if (headersValid) {
           standards.push({
             metal_name: row.metal_name,

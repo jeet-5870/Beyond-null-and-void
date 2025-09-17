@@ -3,7 +3,7 @@ import csv from 'csv-parser';
 import db from '../db/db.js';
 import { calculateHPI, calculateHEI, calculatePLI, calculateMPI, calculateCF } from '../utils/formulaEngine.js';
 
-export default async function handleUpload(req, res) {
+export default async function handleUpload(req, res, next) {
   const filePath = req.file?.path;
   if (!filePath) return res.status(400).json({ error: 'No file uploaded' });
 
@@ -114,6 +114,6 @@ export default async function handleUpload(req, res) {
     if (filePath && fs.existsSync(filePath)) {
       fs.unlinkSync(filePath);
     }
-    res.status(500).json({ error: 'Upload failed', details: err.message });
+    next(err);
   }
 }
