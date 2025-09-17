@@ -1,5 +1,5 @@
 import React, { useState, useEffect, useRef } from 'react';
-import API from './api.js'; // 📥 Import your Axios instance
+import API from '../api.js'; // 📥 Import your Axios instance
 import {
   Upload,
   FileText,
