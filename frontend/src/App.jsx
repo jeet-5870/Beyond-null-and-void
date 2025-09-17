@@ -6,7 +6,6 @@ function App() {
   return (
     <div>
       <h1>Groundwater Pollution Analyzer</h1>
-      <UploadForm />
       <Dashboard />
     </div>
   );
