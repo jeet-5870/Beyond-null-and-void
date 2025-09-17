@@ -5,21 +5,7 @@ import ResultTable from '../components/resultTable.jsx';
 import PollutionChart from '../components/pollutionChart.jsx';
 import SafetyBadge from '../components/safetyBadge.jsx';
 import { Download, Droplets, Activity, MapPin, TrendingUp, FileText, CheckCircle, AlertCircle } from 'lucide-react';
-
-// Card Components (these should be in a separate reusable file)
-const Card = ({ children, className = '', ...props }) => (
-  <div className={`bg-white rounded-xl shadow-lg border border-gray-200 overflow-hidden ${className}`} {...props}>
-    {children}
-  </div>
-);
-
-const CardHeader = ({ children, className = '' }) => (
-  <div className={`px-6 py-4 border-b border-gray-200 bg-gray-50 ${className}`}>{children}</div>
-);
-
-const CardContent = ({ children, className = '' }) => (
-  <div className={`p-6 ${className}`}>{children}</div>
-);
+import { Card, CardContent, CardHeader } from '../components/card.jsx';
 
 // Header Component
 const Header = () => (

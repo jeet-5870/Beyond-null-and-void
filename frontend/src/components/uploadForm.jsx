@@ -51,6 +51,9 @@ function UploadForm({ onUploadComplete }) {
       setIsUploading(false);
     }
   };
+  
+  // Correctly define messageColor before the return statement
+  const messageColor = message.includes('failed') ? 'text-red-500' : 'text-green-500';
 
   return (
     <div className="flex flex-col items-center justify-center p-6 bg-white rounded-xl shadow-lg border border-gray-200 mb-8">
@@ -91,7 +94,7 @@ function UploadForm({ onUploadComplete }) {
         </button>
       </form>
       {message && (
-        <p className={`mt-4 text-sm font-medium ${message.includes('failed') ? 'text-red-500' : 'text-green-500'}`}>
+        <p className={`mt-4 text-sm font-medium ${messageColor}`}>
           {message}
         </p>
       )}

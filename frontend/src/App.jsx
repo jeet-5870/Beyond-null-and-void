@@ -1,6 +1,5 @@
 import React from 'react';
 import Dashboard from './pages/Dashboard';
-import UploadForm from './components/uploadForm.jsx';
 
 function App() {
   return (
