@@ -1,11 +1,18 @@
 import React, { useState, useEffect } from 'react';
-import API from '../api.js'; 
+import API from '../api.js';
 import UploadForm from '../components/uploadForm.jsx';
 import ResultTable from '../components/resultTable.jsx';
 import PollutionChart from '../components/pollutionChart.jsx';
 import SafetyBadge from '../components/safetyBadge.jsx';
 import { Download, Droplets, Activity, MapPin, TrendingUp, FileText, CheckCircle, AlertCircle } from 'lucide-react';
 import { Card, CardContent, CardHeader } from '../components/card.jsx';
+
+// Utility function to determine pollution classification based on HEI
+const getClassification = (heiValue) => {
+  if (heiValue >= 20) return 'Highly Polluted';
+  if (heiValue >= 10) return 'Polluted';
+  return 'Safe';
+};
 
 // Header Component
 const Header = () => (
@@ -34,7 +41,12 @@ const Dashboard = () => {
     setError(null);
     try {
       const res = await API.get('/api/samples');
-      setResults(res.data);
+      // Augment data with classification
+      const classifiedResults = res.data.map(item => ({
+        ...item,
+        classification: getClassification(item.hei),
+      }));
+      setResults(classifiedResults);
     } catch (err) {
       console.error('Error fetching results:', err);
       setError('Failed to load data. Please check the backend connection.');

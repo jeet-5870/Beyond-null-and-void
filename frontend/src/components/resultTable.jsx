@@ -1,12 +1,11 @@
 import React from 'react';
-import { Activity, MapPin } from 'lucide-react';
+import { MapPin } from 'lucide-react';
 import { Card, CardHeader, CardContent } from './card.jsx';
 
 function ResultTable({ data }) {
   const getClassificationBadge = (classification) => {
     const colors = {
       'Safe': 'bg-green-100 text-green-800',
-      'Moderate': 'bg-yellow-100 text-yellow-800',
       'Polluted': 'bg-orange-100 text-orange-800',
       'Highly Polluted': 'bg-red-100 text-red-800',
     };
@@ -23,7 +22,6 @@ function ResultTable({ data }) {
       <CardHeader>
         <div className="flex items-center justify-between">
           <div className="flex items-center space-x-2">
-            <Activity className="h-5 w-5 text-blue-600" />
             <h3 className="text-lg font-semibold text-gray-900">Detailed Results</h3>
           </div>
           <span className="text-sm text-gray-500">{data.length} locations analyzed</span>

@@ -7,8 +7,6 @@ function SafetyBadge({ data }) {
     switch (classification) {
       case 'Safe':
         return 'bg-green-100 text-green-800 border-green-200';
-      case 'Moderate':
-        return 'bg-yellow-100 text-yellow-800 border-yellow-200';
       case 'Polluted':
         return 'bg-orange-100 text-orange-800 border-orange-200';
       case 'Highly Polluted':
@@ -22,7 +20,6 @@ function SafetyBadge({ data }) {
     switch (classification) {
       case 'Safe':
         return <CheckCircle className="h-5 w-5" />;
-      case 'Moderate':
       case 'Polluted':
       case 'Highly Polluted':
         return <AlertCircle className="h-5 w-5" />;
