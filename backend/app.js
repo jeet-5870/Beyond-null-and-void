@@ -33,6 +33,11 @@ app.get('/health', (req, res) => {
 
 // Start server
 const PORT = process.env.PORT || 3000;
-app.listen(PORT, () => {
+app.listen(PORT, async() => {
   console.log(`🚀 Server is live on port ${PORT}`);
+  try{
+    seedDatabase();
+  }catch(err){
+    console.log("Failed to seed database on startup: ", err);
+  }
 });

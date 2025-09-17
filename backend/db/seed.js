@@ -1,7 +1,7 @@
 // db/seed.js
 import db from './db.js';
 
-const seedDatabase = async () => {
+export const seedDatabase = async () => {
   try {
     // Check if standards table is empty before seeding
     const res = await db.query('SELECT COUNT(*) FROM metal_standards');
