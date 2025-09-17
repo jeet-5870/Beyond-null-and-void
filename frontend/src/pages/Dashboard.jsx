@@ -39,33 +39,33 @@ ChartJS.register(
 
 
 // Mock API for demo purposes
-const mockAPI = {
-  get: (endpoint) => {
-    return new Promise((resolve) => {
-      setTimeout(() => {
-        if (endpoint === '/api/samples') {
-          resolve({
-            data: [
-              { location: 'Site A', hpi: 25.4, pli: 1.2, mpi: 2.1, hei: 18.7, classification: 'Safe' },
-              { location: 'Site B', hpi: 67.8, pli: 2.8, mpi: 4.2, hei: 45.3, classification: 'Moderate' },
-              { location: 'Site C', hpi: 89.2, pli: 3.9, mpi: 6.1, hei: 78.4, classification: 'Polluted' },
-              { location: 'Site D', hpi: 34.1, pli: 1.6, mpi: 2.8, hei: 23.9, classification: 'Safe' },
-              { location: 'Site E', hpi: 156.7, pli: 5.2, mpi: 8.9, hei: 134.2, classification: 'Highly Polluted' }
-            ]
-          });
-        }
-        resolve({ data: 'Report downloaded successfully' });
-      }, 1000);
-    });
-  },
-  post: (endpoint, data) => {
-    return new Promise((resolve) => {
-      setTimeout(() => {
-        resolve({ data: { message: 'File uploaded successfully' } });
-      }, 2000);
-    });
-  }
-};
+// const mockAPI = {
+//   get: (endpoint) => {
+//     return new Promise((resolve) => {
+//       setTimeout(() => {
+//         if (endpoint === '/api/samples') {
+//           resolve({
+//             data: [
+//               { location: 'Site A', hpi: 25.4, pli: 1.2, mpi: 2.1, hei: 18.7, classification: 'Safe' },
+//               { location: 'Site B', hpi: 67.8, pli: 2.8, mpi: 4.2, hei: 45.3, classification: 'Moderate' },
+//               { location: 'Site C', hpi: 89.2, pli: 3.9, mpi: 6.1, hei: 78.4, classification: 'Polluted' },
+//               { location: 'Site D', hpi: 34.1, pli: 1.6, mpi: 2.8, hei: 23.9, classification: 'Safe' },
+//               { location: 'Site E', hpi: 156.7, pli: 5.2, mpi: 8.9, hei: 134.2, classification: 'Highly Polluted' }
+//             ]
+//           });
+//         }
+//         resolve({ data: 'Report downloaded successfully' });
+//       }, 1000);
+//     });
+//   },
+//   post: (endpoint, data) => {
+//     return new Promise((resolve) => {
+//       setTimeout(() => {
+//         resolve({ data: { message: 'File uploaded successfully' } });
+//       }, 2000);
+//     });
+//   }
+// };
 
 // Header Component
 const Header = () => (
