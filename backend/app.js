@@ -7,6 +7,7 @@ import reportRoutes from "./routes/reportRoutes.js";
 import standardRoutes from "./routes/standardRoutes.js";
 import './db/initSchema.js'; // Auto-initialize DB schema
 import errorHandler from "./middleware/errorHandler.js";
+import { seedDatabase } from "./db/seed.js";
 
 const app = express();
 app.use(cors());
