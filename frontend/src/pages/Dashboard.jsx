@@ -1,71 +1,42 @@
 import React, { useState, useEffect, useRef } from 'react';
-import { 
-  Upload, 
-  FileText, 
-  BarChart3, 
-  Shield, 
-  AlertCircle, 
-  CheckCircle, 
+import API from './api.js'; // 📥 Import your Axios instance
+import {
+  Upload,
+  FileText,
+  BarChart3,
+  Shield,
+  AlertCircle,
+  CheckCircle,
   Download,
   Droplets,
   Activity,
   MapPin,
-  TrendingUp
+  TrendingUp,
 } from 'lucide-react';
 
 // Import Chart.js components
 import {
   Chart as ChartJS,
-  CategoryScale, 
-  LinearScale, 
-  BarElement, 
-  Title, 
-  Tooltip, 
+  CategoryScale,
+  LinearScale,
+  BarElement,
+  Title,
+  Tooltip,
   Legend,
-  BarController
+  BarController,
 } from 'chart.js';
+import { Bar } from 'react-chartjs-2'; // 📊 Use the react-chartjs-2 wrapper
 
 // Register the components
 ChartJS.register(
-  CategoryScale, 
-  LinearScale, 
-  BarElement, 
-  Title, 
-  Tooltip, 
+  CategoryScale,
+  LinearScale,
+  BarElement,
+  Title,
+  Tooltip,
   Legend,
   BarController
 );
-
-
-
-// Mock API for demo purposes
-// const mockAPI = {
-//   get: (endpoint) => {
-//     return new Promise((resolve) => {
-//       setTimeout(() => {
-//         if (endpoint === '/api/samples') {
-//           resolve({
-//             data: [
-//               { location: 'Site A', hpi: 25.4, pli: 1.2, mpi: 2.1, hei: 18.7, classification: 'Safe' },
-//               { location: 'Site B', hpi: 67.8, pli: 2.8, mpi: 4.2, hei: 45.3, classification: 'Moderate' },
-//               { location: 'Site C', hpi: 89.2, pli: 3.9, mpi: 6.1, hei: 78.4, classification: 'Polluted' },
-//               { location: 'Site D', hpi: 34.1, pli: 1.6, mpi: 2.8, hei: 23.9, classification: 'Safe' },
-//               { location: 'Site E', hpi: 156.7, pli: 5.2, mpi: 8.9, hei: 134.2, classification: 'Highly Polluted' }
-//             ]
-//           });
-//         }
-//         resolve({ data: 'Report downloaded successfully' });
-//       }, 1000);
-//     });
-//   },
-//   post: (endpoint, data) => {
-//     return new Promise((resolve) => {
-//       setTimeout(() => {
-//         resolve({ data: { message: 'File uploaded successfully' } });
-//       }, 2000);
-//     });
-//   }
-// };
 
 // Header Component
 const Header = () => (
@@ -83,8 +54,8 @@ const Header = () => (
 );
 
 // Card Component
-const Card = ({ children, className = "", ...props }) => (
-  <div 
+const Card = ({ children, className = '', ...props }) => (
+  <div
     className={`bg-white rounded-xl shadow-lg border border-gray-200 overflow-hidden ${className}`}
     {...props}
   >
@@ -92,164 +63,20 @@ const Card = ({ children, className = "", ...props }) => (
   </div>
 );
 
-const CardHeader = ({ children, className = "" }) => (
+const CardHeader = ({ children, className = '' }) => (
   <div className={`px-6 py-4 border-b border-gray-200 bg-gray-50 ${className}`}>
     {children}
   </div>
 );
 
-const CardContent = ({ children, className = "" }) => (
+const CardContent = ({ children, className = '' }) => (
   <div className={`p-6 ${className}`}>
     {children}
   </div>
 );
 
-// Upload Form Component
-const UploadForm = ({ onUploadComplete }) => {
-  const [file, setFile] = useState(null);
-  const [message, setMessage] = useState('');
-  const [isUploading, setIsUploading] = useState(false);
-  const [isDragOver, setIsDragOver] = useState(false);
-  const fileInputRef = useRef();
-
-  useEffect(() => {
-    if (message) {
-      const timer = setTimeout(() => setMessage(''), 5000);
-      return () => clearTimeout(timer);
-    }
-  }, [message]);
-
-  const handleSubmit = async (e) => {
-    e.preventDefault();
-    if (!file) {
-      setMessage('Please select a file');
-      return;
-    }
-
-    if (!file.name.endsWith('.csv')) {
-      setMessage('Only CSV files are allowed');
-      return;
-    }
-
-    const formData = new FormData();
-    formData.append('file', file);
-
-    setIsUploading(true);
-    try {
-      const res = await mockAPI.post('/upload', formData);
-      setMessage(res.data.message || 'Upload successful');
-      setFile(null);
-      fileInputRef.current.value = null;
-      if (onUploadComplete) onUploadComplete();
-    } catch (err) {
-      setMessage('Upload failed');
-    } finally {
-      setIsUploading(false);
-    }
-  };
-
-  const handleDragOver = (e) => {
-    e.preventDefault();
-    setIsDragOver(true);
-  };
-
-  const handleDragLeave = (e) => {
-    e.preventDefault();
-    setIsDragOver(false);
-  };
-
-  const handleDrop = (e) => {
-    e.preventDefault();
-    setIsDragOver(false);
-    const droppedFile = e.dataTransfer.files[0];
-    if (droppedFile) {
-      setFile(droppedFile);
-    }
-  };
-
-  return (
-    <Card className="mb-8">
-      <CardHeader>
-        <div className="flex items-center space-x-2">
-          <Upload className="h-5 w-5 text-blue-600" />
-          <h3 className="text-lg font-semibold text-gray-900">Upload Groundwater Data</h3>
-        </div>
-      </CardHeader>
-      <CardContent>
-        <div className="space-y-4">
-          <div
-            className={`relative border-2 border-dashed rounded-lg p-8 text-center transition-colors ${
-              isDragOver 
-                ? 'border-blue-400 bg-blue-50' 
-                : 'border-gray-300 hover:border-gray-400'
-            }`}
-            onDragOver={handleDragOver}
-            onDragLeave={handleDragLeave}
-            onDrop={handleDrop}
-          >
-            <input
-              type="file"
-              accept=".csv"
-              ref={fileInputRef}
-              onChange={(e) => setFile(e.target.files[0])}
-              className="absolute inset-0 w-full h-full opacity-0 cursor-pointer"
-            />
-            <div className="space-y-2">
-              <FileText className="h-12 w-12 text-gray-400 mx-auto" />
-              <div>
-                <p className="text-lg font-medium text-gray-700">
-                  {file ? file.name : 'Drop your CSV file here'}
-                </p>
-                <p className="text-sm text-gray-500">
-                  or click to browse files
-                </p>
-              </div>
-            </div>
-          </div>
-          
-          <div className="flex justify-center">
-            <button
-              type="submit"
-              disabled={isUploading || !file}
-              className={`px-6 py-3 rounded-lg font-medium flex items-center space-x-2 transition-colors ${
-                isUploading || !file
-                  ? 'bg-gray-300 text-gray-500 cursor-not-allowed'
-                  : 'bg-blue-600 text-white hover:bg-blue-700 shadow-lg hover:shadow-xl'
-              }`}
-            >
-              {isUploading ? (
-                <>
-                  <div className="animate-spin rounded-full h-4 w-4 border-2 border-white border-t-transparent"></div>
-                  <span>Uploading...</span>
-                </>
-              ) : (
-                <>
-                  <Upload className="h-4 w-4" />
-                  <span>Upload & Analyze</span>
-                </>
-              )}
-            </button>
-          </div>
-        </div>
-        
-        {message && (
-          <div className={`mt-4 p-4 rounded-lg flex items-center space-x-2 ${
-            message.includes('failed') || message.includes('Please') || message.includes('Only')
-              ? 'bg-red-50 text-red-700 border border-red-200'
-              : 'bg-green-50 text-green-700 border border-green-200'
-          }`}>
-            {message.includes('failed') || message.includes('Please') || message.includes('Only') ? (
-              <AlertCircle className="h-5 w-5" />
-            ) : (
-              <CheckCircle className="h-5 w-5" />
-            )}
-            <span>{message}</span>
-          </div>
-        )}
-      </CardContent>
-    </Card>
-  );
-};
+// Upload Form Component (This component is now imported from './components/uploadForm.jsx')
+// Do not duplicate it here.
 
 // Safety Badge Component
 const SafetyBadge = ({ data }) => {
@@ -315,93 +142,71 @@ const SafetyBadge = ({ data }) => {
 
 // Pollution Chart Component
 const PollutionChart = ({ data }) => {
-  const canvasRef = useRef(null);
-  const chartRef = useRef(null);
-
-  useEffect(() => {
-    if (!canvasRef.current) return;
-
-    // Destroy existing chart
-    if (chartRef.current) {
-      chartRef.current.destroy();
-    }
-
-    const ctx = canvasRef.current.getContext('2d');
-    
-    chartRef.current = new ChartJS(ctx, {
-      type: 'bar',
-      data: {
-        labels: data.map((d) => d.location),
-        datasets: [
-          {
-            label: 'Heavy Metal Pollution Index (HPI)',
-            data: data.map((d) => d.hpi),
-            backgroundColor: 'rgba(59, 130, 246, 0.8)',
-            borderColor: 'rgb(59, 130, 246)',
-            borderWidth: 2,
-          },
-          {
-            label: 'Heavy Metal Evaluation Index (HEI)',
-            data: data.map((d) => d.hei),
-            backgroundColor: 'rgba(239, 68, 68, 0.8)',
-            borderColor: 'rgb(239, 68, 68)',
-            borderWidth: 2,
-          },
-        ],
+  const chartData = {
+    labels: data.map((d) => d.location),
+    datasets: [
+      {
+        label: 'Heavy Metal Pollution Index (HPI)',
+        data: data.map((d) => d.hpi),
+        backgroundColor: 'rgba(59, 130, 246, 0.8)',
+        borderColor: 'rgb(59, 130, 246)',
+        borderWidth: 2,
       },
-      options: {
-        responsive: true,
-        maintainAspectRatio: false,
-        plugins: {
-          legend: { 
-            position: 'top',
-            labels: {
-              usePointStyle: true,
-              padding: 20
-            }
-          },
-          title: { 
-            display: true, 
-            text: 'Pollution Indices Comparison',
-            font: { size: 16, weight: 'bold' },
-            padding: 20
-          },
-          tooltip: {
-            backgroundColor: 'rgba(0, 0, 0, 0.8)',
-            titleColor: 'white',
-            bodyColor: 'white',
-            borderColor: 'rgba(255, 255, 255, 0.2)',
-            borderWidth: 1,
-          }
-        },
-        scales: {
-          y: {
-            beginAtZero: true,
-            grid: {
-              color: 'rgba(0, 0, 0, 0.1)',
-            },
-            ticks: {
-              font: { size: 12 }
-            }
-          },
-          x: {
-            grid: {
-              display: false,
-            },
-            ticks: {
-              font: { size: 12 }
-            }
-          }
-        },
-      }
-    });
+      {
+        label: 'Heavy Metal Evaluation Index (HEI)',
+        data: data.map((d) => d.hei),
+        backgroundColor: 'rgba(239, 68, 68, 0.8)',
+        borderColor: 'rgb(239, 68, 68)',
+        borderWidth: 2,
+      },
+    ],
+  };
 
-    return () => {
-      if (chartRef.current) {
-        chartRef.current.destroy();
-      }
-    };
-  }, [data]);
+  const options = {
+    responsive: true,
+    maintainAspectRatio: false,
+    plugins: {
+      legend: {
+        position: 'top',
+        labels: {
+          usePointStyle: true,
+          padding: 20,
+        },
+      },
+      title: {
+        display: true,
+        text: 'Pollution Indices Comparison',
+        font: { size: 16, weight: 'bold' },
+        padding: 20,
+      },
+      tooltip: {
+        backgroundColor: 'rgba(0, 0, 0, 0.8)',
+        titleColor: 'white',
+        bodyColor: 'white',
+        borderColor: 'rgba(255, 255, 255, 0.2)',
+        borderWidth: 1,
+      },
+    },
+    scales: {
+      y: {
+        beginAtZero: true,
+        grid: {
+          color: 'rgba(0, 0, 0, 0.1)',
+        },
+        ticks: {
+          font: { size: 12 },
+        },
+      },
+      x: {
+        grid: {
+          display: false,
+        },
+        ticks: {
+          font: { size: 12 },
+        },
+      },
+    },
+  };
 
   return (
     <Card className="mb-8">
@@ -413,7 +218,7 @@ const PollutionChart = ({ data }) => {
       </CardHeader>
       <CardContent>
         <div style={{ height: '400px', position: 'relative' }}>
-          <canvas ref={canvasRef} style={{ width: '100%', height: '100%' }}></canvas>
+          <Bar data={chartData} options={options} />
         </div>
       </CardContent>
     </Card>
@@ -429,7 +234,7 @@ const ResultTable = ({ data }) => {
       'Polluted': 'bg-orange-100 text-orange-800',
       'Highly Polluted': 'bg-red-100 text-red-800',
     };
-    
+
     return (
       <span className={`inline-flex px-3 py-1 rounded-full text-xs font-semibold ${colors[classification] || 'bg-gray-100 text-gray-800'}`}>
         {classification}
@@ -510,40 +315,55 @@ const ResultTable = ({ data }) => {
 // Main Dashboard Component
 const Dashboard = () => {
   const [results, setResults] = useState([]);
-  const [hasUploaded, setHasUploaded] = useState(false);
   const [isDownloading, setIsDownloading] = useState(false);
+  const [isLoading, setIsLoading] = useState(true);
 
+  // This function fetches the analysis results from your backend
   const fetchResults = async () => {
+    setIsLoading(true);
     try {
-      const res = await mockAPI.get('/api/samples');
+      // ➡️ Use your API instance to make the GET request
+      const res = await API.get('/api/samples');
       setResults(res.data);
     } catch (err) {
       console.error('Error fetching results:', err);
+    } finally {
+      setIsLoading(false);
     }
   };
 
+  // This useEffect now runs once on component mount and fetches initial results
   useEffect(() => {
     fetchResults();
-  }, [hasUploaded]);
+  }, []);
 
+  // Handler for when a new file has been successfully uploaded from the form
   const handleUploadComplete = () => {
-    setHasUploaded(prev => !prev);
+    // 🔄 Fetch the updated data after a new file has been processed
+    fetchResults();
   };
 
+  // Handler for downloading the report
   const handleDownloadReport = async () => {
     setIsDownloading(true);
     try {
-      await mockAPI.get('/api/report');
-      // Simulate download
-      setTimeout(() => {
-        const link = document.createElement('a');
-        link.href = '#';
-        link.download = 'groundwater_report.pdf';
-        link.click();
-        setIsDownloading(false);
-      }, 1000);
+      // ➡️ Use your API instance to fetch the report from the backend
+      const res = await API.get('/api/report', {
+        responseType: 'blob', // 📦 Important: Treat the response as a binary blob
+      });
+
+      const blob = res.data;
+      const url = window.URL.createObjectURL(blob);
+      const link = document.createElement('a');
+      link.href = url;
+      link.setAttribute('download', 'groundwater_report.pdf');
+      document.body.appendChild(link);
+      link.click();
+      link.parentNode.removeChild(link);
+      window.URL.revokeObjectURL(url);
     } catch (err) {
       console.error('Error downloading report:', err);
+    } finally {
       setIsDownloading(false);
     }
   };
@@ -553,36 +373,41 @@ const Dashboard = () => {
       title: 'Total Locations',
       value: results.length,
       icon: MapPin,
-      color: 'text-blue-600'
+      color: 'text-blue-600',
     },
     {
       title: 'Safe Sites',
-      value: results.filter(r => r.classification === 'Safe').length,
+      value: results.filter((r) => r.classification === 'Safe').length,
       icon: CheckCircle,
-      color: 'text-green-600'
+      color: 'text-green-600',
     },
     {
       title: 'Polluted Sites',
-      value: results.filter(r => r.classification === 'Polluted' || r.classification === 'Highly Polluted').length,
+      value: results.filter((r) => r.classification === 'Polluted' || r.classification === 'Highly Polluted').length,
       icon: AlertCircle,
-      color: 'text-red-600'
+      color: 'text-red-600',
     },
     {
       title: 'Average HPI',
       value: results.length ? (results.reduce((sum, r) => sum + r.hpi, 0) / results.length).toFixed(1) : '0.0',
       icon: TrendingUp,
-      color: 'text-purple-600'
-    }
+      color: 'text-purple-600',
+    },
   ];
 
   return (
     <div className="min-h-screen bg-gray-50">
       <Header />
-      
       <main className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 py-8">
+        {/* Pass the callback to the imported UploadForm component */}
         <UploadForm onUploadComplete={handleUploadComplete} />
-        
-        {results.length > 0 && (
+
+        {isLoading ? (
+          <div className="flex justify-center items-center py-20">
+            <div className="animate-spin rounded-full h-16 w-16 border-4 border-blue-500 border-t-transparent"></div>
+            <p className="ml-4 text-xl text-gray-600">Loading analysis results...</p>
+          </div>
+        ) : results.length > 0 ? (
           <>
             {/* Statistics Cards */}
             <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-4 gap-6 mb-8">
@@ -606,7 +431,7 @@ const Dashboard = () => {
             <SafetyBadge data={results} />
             <PollutionChart data={results} />
             <ResultTable data={results} />
-            
+
             {/* Download Report Button */}
             <div className="flex justify-center mt-8">
               <button
@@ -628,6 +453,12 @@ const Dashboard = () => {
               </button>
             </div>
           </>
+        ) : (
+          <div className="flex flex-col items-center justify-center py-20 text-center text-gray-500">
+            <FileText className="h-20 w-20 mb-4" />
+            <p className="text-xl font-medium">No data to display. Please upload a CSV file to get started.</p>
+            <p className="text-sm mt-2">The dashboard will populate with analysis results after a successful upload.</p>
+          </div>
         )}
       </main>
     </div>
