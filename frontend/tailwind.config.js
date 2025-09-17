@@ -1,11 +1,7 @@
 /** @type {import('tailwindcss').Config} */
 module.exports = {
   content: [
-    "../components/card.jsx",
-    "../components/pollutionChart.jsx",
-    "../components/resultTable.jsx",
-    "../components/safetyBadge.jsx",
-    "../components/uploadForm.jsx",
+    "./src/**/*.{js,jsx,ts,tsx}",
   ],
   theme: {
     extend: {},
