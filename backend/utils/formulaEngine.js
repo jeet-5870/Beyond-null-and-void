@@ -16,6 +16,34 @@ function calculatePLI(cfArray) {
 }
 
 /**
+ * Heavy Metal Evaluation Index (HEI)
+ * HEI = Σ(Hci / Maci)
+ */
+function calculateHEI(concentrations, standards) {
+  let hei = 0;
+
+  // The arrays must be of the same length
+  if (concentrations.length !== standards.length) {
+    throw new Error("Concentrations and standards arrays must have the same length.");
+  }
+
+  for (let i = 0; i < concentrations.length; i++) {
+    const Hci = concentrations[i];
+    const Maci = standards[i];
+
+    // Ensure division by zero is avoided
+    if (Maci === 0) {
+      console.warn(`Warning: Standard for metal at index ${i} is 0. Skipping this metal.`);
+      continue;
+    }
+
+    hei += Hci / Maci;
+  }
+
+  return +hei.toFixed(3);
+}
+
+/**
  * Heavy Metal Pollution Index (HPI)
  * HPI = Σ(Qi * Wi) / ΣWi
  * Qi = (Mi / Si) * 100
@@ -51,4 +79,5 @@ export {
   calculatePLI,
   calculateHPI,
   calculateMPI,
+  calculateHEI
 };

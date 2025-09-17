@@ -1,5 +1,6 @@
-import sqlite3 from "sqlite3";
-const db = new sqlite3.Database('./db.sqlite');
+// import sqlite3 from "sqlite3";
+// const db = new sqlite3.Database('./db.sqlite');
+import db from "../db/db.js"
 import { calculateCF, calculatePLI, calculateHPI, calculateMPI } from '../utils/formulaEngine.js';
 
 export function computeResults(req, res) {

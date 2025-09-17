@@ -1,10 +1,7 @@
-import sqlite3 from "sqlite3";
-const db = new sqlite3.Database('./db.sqlite');
+import db from '../db/db.js';
+import { getHPIClassification, getHEIClassification } from '../utils/classification.js';
 
-/**
- * Fetch geo-tagged groundwater data with classification and metal types
- */
-export default function getMapData (req, res) {
+export default function getMapData(req, res) {
   const query = `
     SELECT
       s.sample_id AS id,
@@ -19,38 +16,22 @@ export default function getMapData (req, res) {
     ORDER BY s.sample_id
   `;
 
-  db.all(query, [], (err, rows) => {
-    if (err) {
-      console.error('DB error in getMapData:', err.message);
-      return res.status(500).json({ error: 'Failed to fetch map data' });
-    }
-
-    const grouped = groupBySample(rows);
-    res.json(grouped);
-  });
-};
-
-/**
- * Groups metal names by sample ID
- * @param {Array} rows - Raw DB rows
- * @returns {Array} - Grouped data for frontend map
- */
-function groupBySample(rows) {
-  const map = new Map();
-
-  for (const row of rows) {
-    if (!map.has(row.id)) {
-      map.set(row.id, {
+  db.query(query)
+    .then(result => {
+      const grouped = result.rows.map(row => ({
         id: row.id,
         location: row.location,
         lat: row.lat,
         lng: row.lng,
-        classification: row.classification,
-        metals: [],
-      });
-    }
-    map.get(row.id).metals.push(row.metal_name);
-  }
-
-  return Array.from(map.values());
+        hpi: row.hpi,
+        hei: row.hei,
+        hpiClassification: getHPIClassification(row.hpi),
+        heiClassification: getHEIClassification(row.hei)
+      }));
+      res.json(grouped);
+    })
+    .catch(err => {
+      console.error('DB error in getMapData:', err.message);
+      res.status(500).json({ error: 'Failed to fetch map data' });
+    });
 }

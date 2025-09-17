@@ -4,7 +4,9 @@ import uploadRoutes from "./routes/uploadRoutes.js";
 import mapRoutes from "./routes/mapRoutes.js";
 import resultRoutes from "./routes/resultRoutes.js";
 import reportRoutes from "./routes/reportRoutes.js";
+import standardRoutes from "./routes/standardRoutes.js";
 import './db/initSchema.js'; // Auto-initialize DB schema
+import errorHandler from "./middleware/errorHandler.js";
 
 const app = express();
 app.use(cors());
@@ -15,6 +17,8 @@ app.use('/upload', uploadRoutes);
 app.use('/map-data', mapRoutes);
 app.use('/api/samples', resultRoutes);
 app.use('/api/report', reportRoutes);
+app.use('/api/standard', standardRoutes);
+app.use(errorHandler);
 
 // Root route
 app.get('/', (req, res) => {
