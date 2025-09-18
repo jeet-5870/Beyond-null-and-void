@@ -4,6 +4,7 @@ import db from '../db/db.js';
 import { calculateHPI, calculateHEI, calculatePLI, calculateMPI, calculateCF } from '../utils/formulaEngine.js';
 
 export default async function handleUpload(req, res, next) {
+  const { userId } = req.user; // 🔑 Get userId from the authenticated request
   const filePath = req.file?.path;
   if (!filePath) return res.status(400).json({ error: 'No file uploaded' });
 
@@ -22,7 +23,6 @@ export default async function handleUpload(req, res, next) {
         .on('error', reject);
     });
     
-    // Fetch standards before starting a transaction
     const { rows: standardsRows } = await db.query('SELECT metal_name, mac_ppm, standard_ppm FROM metal_standards');
     const metalStandards = {};
     standardsRows.forEach(row => {
@@ -33,12 +33,12 @@ export default async function handleUpload(req, res, next) {
       throw new Error("No metal standards found. Please upload standards first.");
     }
     
-    // Use a transaction for atomicity
     await db.query('BEGIN');
-    await db.query('DELETE FROM pollution_indices');
-    await db.query('DELETE FROM metal_concentrations');
-    await db.query('DELETE FROM samples');
-    await db.query('DELETE FROM locations');
+    
+    // 🗑️ Delete only the current user's data
+    await db.query('DELETE FROM pollution_indices WHERE sample_id IN (SELECT sample_id FROM samples WHERE user_id = $1)', [userId]);
+    await db.query('DELETE FROM metal_concentrations WHERE sample_id IN (SELECT sample_id FROM samples WHERE user_id = $1)', [userId]);
+    await db.query('DELETE FROM samples WHERE user_id = $1', [userId]);
 
     let insertedCount = 0;
     for (const [key, metals] of Object.entries(rowsByLocation)) {
@@ -61,9 +61,9 @@ export default async function handleUpload(req, res, next) {
       }
 
       const sampleRes = await db.query(
-        `INSERT INTO samples (location_id, sample_date, source_type, notes)
-         VALUES ($1, $2, $3, $4) RETURNING sample_id`,
-        [location_id, new Date().toISOString(), 'Groundwater', 'CSV import']
+        `INSERT INTO samples (location_id, sample_date, source_type, notes, user_id)
+         VALUES ($1, $2, $3, $4, $5) RETURNING sample_id`,
+        [location_id, new Date().toISOString(), 'Groundwater', 'CSV import', userId] // 🔑 Add user_id
       );
       const sample_id = sampleRes.rows[0].sample_id;
 

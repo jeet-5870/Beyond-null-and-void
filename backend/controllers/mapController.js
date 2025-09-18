@@ -2,6 +2,8 @@ import db from '../db/db.js';
 import { getHPIClassification, getHEIClassification } from '../utils/classification.js';
 
 export default function getMapData(req, res) {
+  const { userId } = req.user; // 🔑 Get userId from the authenticated request
+
   const query = `
     SELECT
       s.sample_id AS id,
@@ -13,10 +15,11 @@ export default function getMapData(req, res) {
     FROM samples s
     JOIN locations l ON s.location_id = l.location_id
     JOIN pollution_indices pi ON s.sample_id = pi.sample_id
+    WHERE s.user_id = $1  -- 🕵️ Filter by user ID
     ORDER BY s.sample_id
   `;
 
-  db.query(query)
+  db.query(query, [userId])
     .then(result => {
       const grouped = result.rows.map(row => ({
         id: row.id,

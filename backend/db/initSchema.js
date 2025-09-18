@@ -12,9 +12,16 @@ const initPostgresSchema = async () => {
         state TEXT
       );
 
+      CREATE TABLE IF NOT EXISTS users (  -- 🔐 New users table
+        user_id SERIAL PRIMARY KEY,
+        username TEXT UNIQUE NOT NULL,
+        password_hash TEXT NOT NULL
+      );
+
       CREATE TABLE IF NOT EXISTS samples (
         sample_id SERIAL PRIMARY KEY,
         location_id INTEGER REFERENCES locations(location_id),
+        user_id INTEGER REFERENCES users(user_id),  -- 🔑 Link samples to a user
         sample_date DATE,
         source_type TEXT,
         notes TEXT

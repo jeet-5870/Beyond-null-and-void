@@ -1,8 +1,24 @@
 // db/seed.js
 import db from './db.js';
+import bcrypt from 'bcrypt';
 
 export const seedDatabase = async () => {
   try {
+    // Check if users table is empty before seeding
+    const userCountRes = await db.query('SELECT COUNT(*) FROM users');
+    if (userCountRes.rows[0].count === '0') {
+      console.log('Seeding default user...');
+      const passwordHash = await bcrypt.hash('password', 10);
+      await db.query(
+        `INSERT INTO users (username, password_hash)
+         VALUES ('admin', $1)`,
+        [passwordHash]
+      );
+      console.log('✅ Default user seeded.');
+    } else {
+      console.log('Default user already exists. Skipping seeding.');
+    }
+
     // Check if standards table is empty before seeding
     const res = await db.query('SELECT COUNT(*) FROM metal_standards');
     if (res.rows[0].count === '0') {
@@ -20,14 +36,7 @@ export const seedDatabase = async () => {
     } else {
       console.log('Metal standards already exist. Skipping seeding.');
     }
-
-    // You can also seed the pollution_classifications table here
-    // ...
   } catch (err) {
     console.error('❌ Database seeding failed:', err.message);
   }
 };
-
-// This function can be called on application startup after schema is initialized
-// For example, in app.js after the initSchema import.
-// seedDatabase();

@@ -3,6 +3,7 @@ import PDFDocument from 'pdfkit';
 import { getHPIClassification, getHEIClassification } from '../utils/classification.js';
 
 export default function generateReport(req, res) {
+    const { userId } = req.user; // 🔑 Get userId from the authenticated request
     const doc = new PDFDocument();
     const filename = `groundwater_report_${new Date().toISOString()}.pdf`;
 
@@ -16,7 +17,8 @@ export default function generateReport(req, res) {
         FROM pollution_indices pi
         JOIN samples s ON pi.sample_id = s.sample_id
         JOIN locations l ON s.location_id = l.location_id
-    `)
+        WHERE s.user_id = $1  -- 🕵️ Filter by user ID
+    `, [userId])
     .then(result => {
         const rows = result.rows;
 
