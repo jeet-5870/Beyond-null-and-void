@@ -32,7 +32,7 @@ const LoginPage = ({ onLogin }) => {
   };
 
   return (
-    <div className="flex items-center justify-center min-h-screen bg-gray-100">
+    <div className="flex items-center justify-center min-h-screen bg-blue-500">
       <Card className="max-w-md w-full p-8 space-y-6">
         <div className="flex flex-col items-center">
           <Droplets className="h-12 w-12 text-blue-600 mb-2" />
