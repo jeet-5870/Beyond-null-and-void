@@ -136,10 +136,10 @@ const Dashboard = () => {
       <Header />
       <Navbar onRetrieve={handleRetrieveResults} showResults={showResults} />
       <main className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 py-8">
-        {/* New Standards Upload Form */}
+        {/* New Standards Upload Form
         <div className="mb-8">
           <UploadForm onUploadComplete={handleUploadComplete} uploadType="standards" />
-        </div>
+        </div> */}
 
         {/* Original Groundwater Data Upload Form */}
         <div className="mb-8">
