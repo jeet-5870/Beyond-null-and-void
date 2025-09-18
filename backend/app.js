@@ -8,7 +8,7 @@ import standardRoutes from "./routes/standardRoutes.js";
 import authRoutes from "./routes/authRoutes.js";
 import errorHandler from "./middleware/errorHandler.js";
 import authMiddleware from "./middleware/authMiddleware.js";
-import {initPostgresSchema } from './db/initSchema.js'; // 📥 Corrected import
+impor './db/initSchema.js'; // 📥 Corrected import
 import { seedDatabase } from "./db/seed.js";
 
 const app = express();
