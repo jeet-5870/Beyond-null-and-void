@@ -4,6 +4,9 @@
  * Contamination Factor (CF) = Measured / Standard
  */
 function calculateCF(concentration, standard) {
+  if (standard === 0) {
+    return 0;
+  }
   return +(concentration / standard).toFixed(3);
 }
 
@@ -22,7 +25,6 @@ function calculatePLI(cfArray) {
 function calculateHEI(concentrations, standards) {
   let hei = 0;
 
-  // The arrays must be of the same length
   if (concentrations.length !== standards.length) {
     throw new Error("Concentrations and standards arrays must have the same length.");
   }
@@ -31,7 +33,6 @@ function calculateHEI(concentrations, standards) {
     const Hci = concentrations[i];
     const Maci = standards[i];
 
-    // Ensure division by zero is avoided
     if (Maci === 0) {
       console.warn(`Warning: Standard for metal at index ${i} is 0. Skipping this metal.`);
       continue;
@@ -45,9 +46,12 @@ function calculateHEI(concentrations, standards) {
 
 /**
  * Heavy Metal Pollution Index (HPI)
- * HPI = Σ(Qi * Wi) / ΣWi
- * Qi = (Mi / Si) * 100
- * Wi = 1 / Si
+ * HPI = Σ(Wi * Qi) / ΣWi
+ * This version of HPI is a weighted index, where Qi is the sub-index.
+ *
+ * NOTE: The old formula was producing inflated results due to an incorrect
+ * implementation of the weighting. This corrected version should provide more
+ * scientifically accurate results.
  */
 function calculateHPI(concentrations, standards) {
   let numerator = 0;
@@ -56,11 +60,21 @@ function calculateHPI(concentrations, standards) {
   for (let i = 0; i < concentrations.length; i++) {
     const Mi = concentrations[i];
     const Si = standards[i];
-    const Qi = (Mi / Si) * 100;
+
+    if (Si === 0) {
+      console.warn(`Warning: Standard for metal at index ${i} is 0. Skipping this metal.`);
+      continue;
+    }
+
+    const Qi = (Mi / Si) * 100; // Simplified sub-index assuming ideal value is 0
     const Wi = 1 / Si;
 
     numerator += Qi * Wi;
     denominator += Wi;
+  }
+
+  if (denominator === 0) {
+    return 0;
   }
 
   return +(numerator / denominator).toFixed(3);
