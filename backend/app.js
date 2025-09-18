@@ -10,6 +10,9 @@ import errorHandler from "./middleware/errorHandler.js";
 import authMiddleware from "./middleware/authMiddleware.js";
 import { initPostgresSchema } from './db/initSchema.js'; // ✅ Corrected import
 import { seedDatabase } from "./db/seed.js";
+import dotenv from 'dotenv';
+dotenv.config();
+
 
 const app = express();
 app.use(cors());
