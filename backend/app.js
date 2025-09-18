@@ -18,7 +18,7 @@ app.use('/upload', uploadRoutes);
 app.use('/map-data', mapRoutes);
 app.use('/api/samples', resultRoutes);
 app.use('/api/report', reportRoutes);
-app.use('/api/standards', standardRoutes); // Corrected route path
+app.use('/api/standards', standardRoutes);
 app.use(errorHandler);
 
 // Root route

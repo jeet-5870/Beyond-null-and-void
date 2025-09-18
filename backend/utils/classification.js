@@ -7,7 +7,7 @@ export function getHPIClassification(hpi) {
 }
 
 export function getHEIClassification(hei) {
-  if (hei < 10) return 'Low pollution';
-  if (hei >= 10 && hei < 20) return 'Medium pollution';
-  return 'High pollution';
+  if (hei >= 20) return 'Highly Polluted';
+  if (hei >= 10) return 'Polluted';
+  return 'Safe';
 }

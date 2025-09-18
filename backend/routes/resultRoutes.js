@@ -1,5 +1,6 @@
 import express from 'express';
 import db from '../db/db.js';
+import { getHEIClassification } from '../utils/classification.js';
 
 const router = express.Router();
 
@@ -20,7 +21,12 @@ router.get('/', (req, res, next) => {
 
   db.query(query)
     .then(result => {
-      res.json(result.rows);
+      // Add classification before sending to frontend
+      const classifiedResults = result.rows.map(item => ({
+        ...item,
+        classification: getHEIClassification(item.hei),
+      }));
+      res.json(classifiedResults);
     })
     .catch(err => {
       next(err);
