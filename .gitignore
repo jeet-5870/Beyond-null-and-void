@@ -2,3 +2,5 @@
 node_modules
 package-lock.json
 db.sqlite
+resultController.js
+chartUtils.js
