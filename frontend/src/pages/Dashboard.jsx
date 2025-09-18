@@ -43,6 +43,28 @@ const Dashboard = () => {
     }
   };
 
+  // Navigation Component (New)
+const Navbar = ({ onRetrieve, showResults }) => (
+  <nav className="flex justify-end p-4 bg-gray-50 border-b border-gray-200">
+    <button
+      onClick={onRetrieve}
+      className="flex items-center space-x-2 px-4 py-2 text-sm font-semibold rounded-lg text-blue-600 border border-blue-600 hover:bg-blue-50 transition-colors"
+    >
+      {showResults ? (
+        <>
+          <EyeOff className="h-4 w-4" />
+          <span>Hide Results</span>
+        </>
+      ) : (
+        <>
+          <Eye className="h-4 w-4" />
+          <span>Retrieve Results</span>
+        </>
+      )}
+    </button>
+  </nav>
+);
+
   useEffect(() => {
     fetchResults();
   }, []);
@@ -102,6 +124,7 @@ const Dashboard = () => {
   return (
     <div className="min-h-screen bg-gray-50">
       <Header />
+      <Navbar onRetrieve={handleRetrieveResults} showResults={showResults} />
       <main className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 py-8">
         {/* <UploadForm onUploadComplete={handleUploadComplete} uploadType="standards" /> */}
         <UploadForm onUploadComplete={handleUploadComplete} uploadType="samples" />
