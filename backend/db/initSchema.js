@@ -1,6 +1,6 @@
 import db from './db.js';
 
-const initPostgresSchema = async () => {
+export const initPostgresSchema = async () => {
   try {
     await db.query(`
       CREATE TABLE IF NOT EXISTS locations (
@@ -12,7 +12,7 @@ const initPostgresSchema = async () => {
         state TEXT
       );
 
-      CREATE TABLE IF NOT EXISTS users (  -- 🔐 New users table
+      CREATE TABLE IF NOT EXISTS users (
         user_id SERIAL PRIMARY KEY,
         username TEXT UNIQUE NOT NULL,
         password_hash TEXT NOT NULL
@@ -21,7 +21,7 @@ const initPostgresSchema = async () => {
       CREATE TABLE IF NOT EXISTS samples (
         sample_id SERIAL PRIMARY KEY,
         location_id INTEGER REFERENCES locations(location_id),
-        user_id INTEGER REFERENCES users(user_id),  -- 🔑 Link samples to a user
+        user_id INTEGER REFERENCES users(user_id),
         sample_date DATE,
         source_type TEXT,
         notes TEXT
@@ -64,5 +64,3 @@ const initPostgresSchema = async () => {
     console.error('❌ PostgreSQL schema init failed:', err.message);
   }
 };
-
-initPostgresSchema();
