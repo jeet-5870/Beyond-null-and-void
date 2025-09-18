@@ -5,10 +5,10 @@ import mapRoutes from "./routes/mapRoutes.js";
 import resultRoutes from "./routes/resultRoutes.js";
 import reportRoutes from "./routes/reportRoutes.js";
 import standardRoutes from "./routes/standardRoutes.js";
-import authRoutes from "./routes/authRoutes.js"; // 📥 New Auth routes
+import authRoutes from "./routes/authRoutes.js";
 import errorHandler from "./middleware/errorHandler.js";
-import authMiddleware from "./middleware/authMiddleware.js"; // 📥 New Auth middleware
-import './db/initSchema.js';
+import authMiddleware from "./middleware/authMiddleware.js";
+import initPostgresSchema from './db/initSchema.js'; // 📥 Corrected import
 import { seedDatabase } from "./db/seed.js";
 
 const app = express();
@@ -40,8 +40,10 @@ const PORT = process.env.PORT || 3000;
 app.listen(PORT, async () => {
   console.log(`🚀 Server is live on port ${PORT}`);
   try {
+    // ✅ Ensure schema is initialized before seeding
+    await initPostgresSchema();
     await seedDatabase();
   } catch (err) {
-    console.error("❌ Failed to seed database on startup: ", err);
+    console.error("❌ Failed to set up database on startup: ", err);
   }
 });
