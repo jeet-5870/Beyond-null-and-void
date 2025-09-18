@@ -1,4 +1,4 @@
-import React, { useState } from 'react';
+import React, { useState, useEffect } from 'react';
 import API from '../api.js';
 import UploadForm from '../components/uploadForm.jsx';
 import ResultTable from '../components/resultTable.jsx';
@@ -10,6 +10,44 @@ import {
 } from 'lucide-react';
 import { Card, CardContent, CardHeader } from '../components/card.jsx';
 
+// Header Component
+const Header = () => (
+  <header className="bg-gradient-to-r from-blue-900 to-blue-700 text-white shadow-lg">
+    <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 py-6">
+      <div className="flex items-center space-x-3">
+        <Droplets className="h-10 w-10 text-blue-300" />
+        <div>
+          <h1 className="text-3xl font-bold">Groundwater Pollution Analyzer</h1>
+          <p className="text-blue-200 mt-1">Advanced Environmental Monitoring System</p>
+        </div>
+      </div>
+    </div>
+  </header>
+);
+
+// Navigation Component
+const Navbar = ({ onRetrieve, showResults }) => (
+  <nav className="flex justify-end p-4 bg-gray-50 border-b border-gray-200">
+    <button
+      onClick={onRetrieve}
+      className="flex items-center space-x-2 px-4 py-2 text-sm font-semibold rounded-lg text-blue-600 border border-blue-600 hover:bg-blue-50 transition-colors"
+    >
+      {showResults ? (
+        <>
+          <EyeOff className="h-4 w-4" />
+          <span>Hide Results</span>
+        </>
+      ) : (
+        <>
+          <Eye className="h-4 w-4" />
+          <span>Retrieve Results</span>
+        </>
+      )}
+    </button>
+  </nav>
+);
+
+// Main Dashboard Component
 const Dashboard = () => {
   const [results, setResults] = useState([]);
   const [isLoading, setIsLoading] = useState(false);
@@ -90,27 +128,14 @@ const Dashboard = () => {
   ];
 
   return (
-    <div className="flex items-center justify-center min-h-screen bg-blue-500">
-      <Card className="max-w-7xl w-full p-8 space-y-6">
-        <div className="flex flex-col items-center">
-          <Droplets className="h-12 w-12 text-blue-600 mb-2" />
-          <h2 className="text-3xl font-bold text-center text-gray-900">Dashboard</h2>
-          <p className="mt-2 text-center text-sm text-gray-600">Groundwater Pollution Analysis</p>
-        </div>
-
+    <div className="min-h-screen bg-blue-500">
+      <Header />
+      <Navbar onRetrieve={handleRetrieveResults} showResults={showResults} />
+      <main className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 py-8">
         <UploadForm onUploadComplete={handleUploadComplete} uploadType="samples" />
 
-        <div className="flex justify-end">
-          <button
-            onClick={handleRetrieveResults}
-            className="flex items-center space-x-2 px-4 py-2 text-sm font-semibold rounded-lg text-blue-600 border border-blue-600 hover:bg-blue-50 transition-colors"
-          >
-            {showResults ? <><EyeOff className="h-4 w-4" /><span>Hide Results</span></> : <><Eye className="h-4 w-4" /><span>Retrieve Results</span></>}
-          </button>
-        </div>
-
         {error && (
-          <div className="bg-red-100 text-red-800 p-4 rounded-md">
+          <div className="bg-red-100 text-red-800 p-4 rounded-md mb-8">
             <p className="font-medium text-center">{error}</p>
           </div>
         )}
@@ -123,7 +148,7 @@ const Dashboard = () => {
         ) : showResults ? (
           results.length > 0 ? (
             <>
-              <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-4 gap-6">
+              <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-4 gap-6 mb-8">
                 {stats.map((stat, index) => (
                   <Card key={index} className="hover:shadow-xl transition-shadow">
                     <CardContent className="p-6">
@@ -177,7 +202,7 @@ const Dashboard = () => {
             <p className="text-lg font-medium">Click "Retrieve Results" to view the latest analysis.</p>
           </div>
         )}
-      </Card>
+      </main>
     </div>
   );
 };
