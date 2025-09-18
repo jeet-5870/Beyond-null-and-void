@@ -2,7 +2,7 @@ import React, { useEffect, useState, useRef } from 'react';
 import API from '../api.js';
 import { Upload } from 'lucide-react';
 
-function UploadForm({ onUploadComplete }) {
+function UploadForm({ onUploadComplete, uploadType }) {
   const [file, setFile] = useState(null);
   const [message, setMessage] = useState('');
   const [isUploading, setIsUploading] = useState(false);
@@ -35,8 +35,11 @@ function UploadForm({ onUploadComplete }) {
     const formData = new FormData();
     formData.append('file', file);
     setIsUploading(true);
+
+    const endpoint = uploadType === 'standards' ? '/api/standards' : '/upload';
+
     try {
-      const res = await API.post('/upload', formData, {
+      const res = await API.post(endpoint, formData, {
         headers: { 'Content-Type': 'multipart/form-data' }
       });
       setMessage(res.data.message || 'Upload successful');
@@ -55,12 +58,14 @@ function UploadForm({ onUploadComplete }) {
   // Correctly define messageColor before the return statement
   const messageColor = message.includes('failed') ? 'text-red-500' : 'text-green-500';
 
+  const formTitle = uploadType === 'standards' ? 'Upload Metal Standards CSV' : 'Upload Groundwater Samples CSV';
+
   return (
     <div className="flex flex-col items-center justify-center p-6 bg-white rounded-xl shadow-lg border border-gray-200 mb-8">
-      <h3 className="text-2xl font-bold text-gray-900 mb-4">Upload Groundwater CSV</h3>
+      <h3 className="text-2xl font-bold text-gray-900 mb-4">{formTitle}</h3>
       <p className="text-gray-500 mb-6">Upload a CSV file to analyze pollution indices.</p>
       <form onSubmit={handleSubmit} className="flex flex-col items-center space-y-4 w-full max-w-sm">
-        <label htmlFor="file-upload" className="w-full">
+        <label htmlFor={`file-upload-${uploadType}`} className="w-full">
           <div className="flex flex-col items-center justify-center w-full px-6 py-8 border-2 border-dashed border-gray-300 rounded-lg cursor-pointer bg-gray-50 hover:bg-gray-100 transition-colors duration-200">
             <Upload className="h-12 w-12 text-gray-400 mb-2" />
             <p className="text-sm text-gray-500">
@@ -69,7 +74,7 @@ function UploadForm({ onUploadComplete }) {
             <p className="text-xs text-gray-400 mt-1">CSV file only</p>
           </div>
           <input
-            id="file-upload"
+            id={`file-upload-${uploadType}`}
             type="file"
             accept=".csv"
             ref={fileInputRef}
