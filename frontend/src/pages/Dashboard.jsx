@@ -4,7 +4,7 @@ import UploadForm from '../components/uploadForm.jsx';
 import ResultTable from '../components/resultTable.jsx';
 import PollutionChart from '../components/pollutionChart.jsx';
 import SafetyBadge from '../components/safetyBadge.jsx';
-import { Download, Droplets, MapPin, TrendingUp, FileText, CheckCircle, AlertCircle } from 'lucide-react';
+import { Download, Droplets, MapPin, TrendingUp, FileText, CheckCircle, AlertCircle, Eye, EyeOff } from 'lucide-react';
 import { Card, CardContent, CardHeader } from '../components/card.jsx';
 
 // Header Component
@@ -22,32 +22,64 @@ const Header = () => (
   </header>
 );
 
+// Navigation Component (New)
+const Navbar = ({ onRetrieve, showResults }) => (
+  <nav className="flex justify-end p-4 bg-gray-50 border-b border-gray-200">
+    <button
+      onClick={onRetrieve}
+      className="flex items-center space-x-2 px-4 py-2 text-sm font-semibold rounded-lg text-blue-600 border border-blue-600 hover:bg-blue-50 transition-colors"
+    >
+      {showResults ? (
+        <>
+          <EyeOff className="h-4 w-4" />
+          <span>Hide Results</span>
+        </>
+      ) : (
+        <>
+          <Eye className="h-4 w-4" />
+          <span>Retrieve Results</span>
+        </>
+      )}
+    </button>
+  </nav>
+);
+
 // Main Dashboard Component
 const Dashboard = () => {
   const [results, setResults] = useState([]);
   const [isLoading, setIsLoading] = useState(false);
   const [error, setError] = useState(null);
   const [isDownloading, setIsDownloading] = useState(false);
+  const [showResults, setShowResults] = useState(false);
 
+  // The fetchResults function now loads the data when called
   const fetchResults = async () => {
     setIsLoading(true);
     setError(null);
     try {
       const res = await API.get('/api/samples');
       setResults(res.data);
+      setShowResults(true); // Show results after successful fetch
     } catch (err) {
       console.error('Error fetching results:', err);
       setError('Failed to load data. Please check the backend connection.');
+      setShowResults(false); // Hide results if fetch fails
     } finally {
       setIsLoading(false);
     }
   };
 
-  useEffect(() => {
-    fetchResults();
-  }, []);
+  const handleRetrieveResults = () => {
+    // If results are currently showing, hide them. Otherwise, fetch them.
+    if (showResults) {
+      setShowResults(false);
+    } else {
+      fetchResults();
+    }
+  };
 
   const handleUploadComplete = () => {
+    // A successful upload will automatically fetch and display the new results.
     fetchResults();
   };
 
@@ -102,6 +134,7 @@ const Dashboard = () => {
   return (
     <div className="min-h-screen bg-gray-50">
       <Header />
+      <Navbar onRetrieve={handleRetrieveResults} showResults={showResults} />
       <main className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 py-8">
         <UploadForm onUploadComplete={handleUploadComplete} uploadType="samples" />
         
@@ -116,7 +149,7 @@ const Dashboard = () => {
             <div className="animate-spin rounded-full h-16 w-16 border-4 border-blue-500 border-t-transparent mb-4"></div>
             <p className="text-xl">Loading analysis results...</p>
           </div>
-        ) : (
+        ) : showResults ? (
           results.length > 0 ? (
             <>
               <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-4 gap-6 mb-8">
@@ -168,6 +201,10 @@ const Dashboard = () => {
               <p className="text-sm mt-2">The dashboard will populate with analysis results after a successful upload.</p>
             </div>
           )
+        ) : (
+          <div className="flex flex-col items-center justify-center py-20 text-center text-gray-500">
+            <p className="text-lg font-medium">Click "Retrieve Results" to view the latest analysis.</p>
+          </div>
         )}
       </main>
     </div>
