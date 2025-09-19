@@ -86,7 +86,7 @@ function UploadForm({ onUploadComplete, uploadType }) {
         <button
           type="submit"
           disabled={isUploading || !file}
-          className="w-full px-4 py-2 text-white bg-blue-600 rounded-lg font-semibold flex items-center justify-center space-x-2 transition-colors duration-200 hover:bg-teal-500 disabled:bg-gray-400 disabled:cursor-not-allowed"
+          className="w-full px-4 py-2 text-white bg-color rounded-lg font-semibold flex items-center justify-center space-x-2 transition-colors duration-200 hover:scale-105 disabled:bg-gray-400 disabled:cursor-not-allowed"
         >
           {isUploading ? (
             <>
