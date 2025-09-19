@@ -37,7 +37,7 @@ const WaterQualityMap = () => {
 
   return (
     <div>
-      <h2 className="text-xl font-bold mb-2">
+      <h2 className="text-xl font-bold mb-2 bg-white text-color">
         Groundwater Heavy Metal Pollution Map
       </h2>
       <div
