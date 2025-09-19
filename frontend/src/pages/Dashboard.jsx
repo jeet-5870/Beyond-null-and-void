@@ -128,7 +128,7 @@ const Dashboard = () => {
   ];
 
   return (
-    <div className="min-h-screen bg-blue-500">
+    <div className="min-h-screen from-bg-teal-800 to-bg-teal-50">
       <Header />
       <Navbar onRetrieve={handleRetrieveResults} showResults={showResults} />
       <main className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 py-8">
