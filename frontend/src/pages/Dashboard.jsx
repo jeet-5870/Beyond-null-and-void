@@ -9,6 +9,8 @@ import {
   FileText, CheckCircle, AlertCircle, Eye, EyeOff
 } from 'lucide-react';
 import { Card, CardContent, CardHeader } from '../components/card.jsx';
+import WaterQualityMap from '../components/waterQualityMap.jsx';
+
 
 // Header Component
 const Header = () => (
@@ -170,7 +172,8 @@ const Dashboard = () => {
                   </Card>
                 ))}
               </div>
-
+              
+              <WaterQualityMap/>
               <SafetyBadge data={results} />
               <PollutionChart data={results} key={JSON.stringify(results)} />
               <ResultTable data={results} />
@@ -179,7 +182,7 @@ const Dashboard = () => {
                 <button
                   onClick={handleDownloadReport}
                   disabled={isDownloading}
-                  className="bg-gradient-to-r bg-white text-color px-8 py-4 rounded-lg font-semibold flex items-center space-x-3 shadow-lg hover:shadow-xl transition-all hover:from-blue-700 hover:to-blue-800 disabled:opacity-50 disabled:cursor-not-allowed"
+                  className="bg-gradient-to-r bg-white text-color px-8 py-4 rounded-lg font-semibold flex items-center space-x-3 shadow-lg hover:shadow-xl transition-all hover:scale-105 disabled:opacity-50 disabled:cursor-not-allowed"
                 >
                   {isDownloading ? (
                     <>
