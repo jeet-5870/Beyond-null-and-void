@@ -12,7 +12,7 @@ import { Card, CardContent, CardHeader } from '../components/card.jsx';
 
 // Header Component
 const Header = () => (
-  <header className="bg-gradient-to-r from-blue-900 to-blue-700 text-white shadow-lg">
+  <header className="bg-gradient-to-r from-teal-700 to-teal-500 text-white shadow-lg">
     <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 py-6">
       <div className="flex items-center space-x-3">
         <Droplets className="h-10 w-10 text-blue-300" />
