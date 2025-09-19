@@ -13,7 +13,8 @@ import { Card, CardContent, CardHeader } from '../components/card.jsx';
 // Header Component
 const Header = () => (
   <header className="bg-gradient-to-r bg-color text-white shadow-lg">
-    <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 py-6">
+  <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 py-6">
+    <div className="flex items-center justify-between">
       <div className="flex items-center space-x-3">
         <Droplets className="h-10 w-10 text-white" />
         <div>
@@ -21,8 +22,12 @@ const Header = () => (
           <p className="text-secndary-text-color mt-1">Advanced Environmental Monitoring System</p>
         </div>
       </div>
+      <div>
+        <h3 className='text-secondary-text-color'>Beyond<br /> Null and Void</h3>
+      </div>
     </div>
-  </header>
+  </div>
+</header>
 );
 
 // Navigation Component
