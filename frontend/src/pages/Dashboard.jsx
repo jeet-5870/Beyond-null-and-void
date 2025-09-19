@@ -15,7 +15,7 @@ const Header = () => (
   <header className="bg-gradient-to-r bg-color text-white shadow-lg">
     <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 py-6">
       <div className="flex items-center space-x-3">
-        <Droplets className="h-10 w-10 text-blue-300" />
+        <Droplets className="h-10 w-10 text-white" />
         <div>
           <h1 className="text-3xl font-bold">Groundwater Pollution Analyzer</h1>
           <p className="text-secndary-text-color mt-1">Advanced Environmental Monitoring System</p>
@@ -128,7 +128,7 @@ const Dashboard = () => {
   ];
 
   return (
-    <div className="min-h-screen bg-teal-500">
+    <div className="min-h-screen bg-color">
       <Header />
       <Navbar onRetrieve={handleRetrieveResults} showResults={showResults} />
       <main className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 py-8">
