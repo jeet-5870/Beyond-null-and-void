@@ -12,13 +12,13 @@ import { Card, CardContent, CardHeader } from '../components/card.jsx';
 
 // Header Component
 const Header = () => (
-  <header className="bg-gradient-to-r from-teal-700 to-teal-500 text-white shadow-lg">
+  <header className="bg-gradient-to-r bg-color text-white shadow-lg">
     <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 py-6">
       <div className="flex items-center space-x-3">
         <Droplets className="h-10 w-10 text-blue-300" />
         <div>
           <h1 className="text-3xl font-bold">Groundwater Pollution Analyzer</h1>
-          <p className="text-blue-200 mt-1">Advanced Environmental Monitoring System</p>
+          <p className="text-secndary-text-color mt-1">Advanced Environmental Monitoring System</p>
         </div>
       </div>
     </div>
@@ -174,7 +174,7 @@ const Dashboard = () => {
                 <button
                   onClick={handleDownloadReport}
                   disabled={isDownloading}
-                  className="bg-gradient-to-r from-blue-600 to-blue-700 text-white px-8 py-4 rounded-lg font-semibold flex items-center space-x-3 shadow-lg hover:shadow-xl transition-all hover:from-blue-700 hover:to-blue-800 disabled:opacity-50 disabled:cursor-not-allowed"
+                  className="bg-gradient-to-r bg-white text-color px-8 py-4 rounded-lg font-semibold flex items-center space-x-3 shadow-lg hover:shadow-xl transition-all hover:from-blue-700 hover:to-blue-800 disabled:opacity-50 disabled:cursor-not-allowed"
                 >
                   {isDownloading ? (
                     <>
