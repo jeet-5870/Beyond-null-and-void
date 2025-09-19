@@ -1,6 +1,4 @@
 import React, { useEffect, useRef } from "react";
-import dotenv from "dotenv";
-dotenv.config();
 
 const WaterQualityMap = () => {
   const mapRef = useRef(null);
@@ -8,7 +6,9 @@ const WaterQualityMap = () => {
   useEffect(() => {
     // Load Google Maps script dynamically
     const script = document.createElement("script");
-    script.src = process.env.MAP_API_KEY;
+    const apiKey = process.env.REACT_APP_MAP_API_KEY;
+    script.src = `https://maps.googleapis.com/maps/api/js?key=${apiKey}`;
+
     script.async = true;
     script.defer = true;
     script.onload = () => {
