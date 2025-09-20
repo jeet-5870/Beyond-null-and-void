@@ -1,11 +1,11 @@
 import React, { useState, useEffect } from 'react';
 import { useNavigate } from 'react-router-dom';
-import { Droplets, LogIn, TrendingUp, Handshake, Mail, ArrowRight, BarChart3 } from 'lucide-react';
+import { Droplets, LogIn, TrendingUp, Handshake, Mail, ArrowRight } from 'lucide-react';
 import PollutionLeaderboard from './pollutionLeaderboard.jsx';
 import PartnersBoard from './partnersBoard.jsx';
 import BlogSection from './blogSection.jsx';
-import PollutionChart from '../components/pollutionChart.jsx';
 import API from '../api.js';
+import { Card, CardHeader, CardContent } from '../components/card.jsx';
 
 // Reusable Navbar Component
 const Navbar = () => {
@@ -57,60 +57,66 @@ const Navbar = () => {
 };
 
 const MainPage = () => {
-  const [safeCitiesData, setSafeCitiesData] = useState([]);
+  const [leaderboardData, setLeaderboardData] = useState([]);
   const [isLoading, setIsLoading] = useState(true);
   const [error, setError] = useState(null);
 
   useEffect(() => {
-    const fetchSafeCities = async () => {
+    const fetchLeaderboard = async () => {
       setIsLoading(true);
       setError(null);
       try {
-        const res = await API.get('/api/samples');
-        const safeCities = res.data
-          .filter(city => city.classification === 'Safe')
-          .sort((a, b) => a.hei - b.hei)
-          .slice(0, 10);
-        setSafeCitiesData(safeCities);
+        // Fetch data sorted by increasing pollution
+        const res = await API.get('/api/leaderboard?page=1&limit=10');
+        setLeaderboardData(res.data.cities);
       } catch (err) {
-        console.error('Error fetching data:', err);
-        setError('Failed to load data for the chart.');
+        console.error('Error fetching leaderboard data:', err);
+        setError('Failed to load leaderboard data.');
       } finally {
         setIsLoading(false);
       }
     };
-
-    fetchSafeCities();
+    fetchLeaderboard();
   }, []);
+
+  const reversedLeaderboardData = [...leaderboardData].reverse();
 
   return (
     <div className="min-h-screen bg-white">
       <Navbar />
       <main className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 py-20 pt-32">
         <h1 className="text-4xl font-extrabold text-gray-900 mb-12 text-center">Beyond Null and Void</h1>
-        <div className="grid grid-cols-1 lg:grid-cols-3 gap-8">
-          <div className="lg:col-span-2">
-            <PollutionLeaderboard />
-            {isLoading ? (
-              <div className="flex flex-col items-center justify-center py-20 text-center text-gray-500">
-                <div className="animate-spin rounded-full h-16 w-16 border-4 border-gray-300 border-t-blue-600 mb-4"></div>
-                <p className="text-xl">Loading chart data...</p>
-              </div>
-            ) : error ? (
-              <div className="bg-red-100 text-red-800 p-4 rounded-md mb-8">
-                <p className="font-medium text-center">{error}</p>
-              </div>
-            ) : (
-              safeCitiesData.length > 0 && (
-                <PollutionChart 
-                  data={safeCitiesData} 
-                  title="Top 10 Safest Cities by HEI" 
+        <div className="grid grid-cols-1 lg:grid-cols-2 gap-8">
+          {isLoading ? (
+            <div className="lg:col-span-2 flex items-center justify-center py-20">
+              <div className="animate-spin rounded-full h-16 w-16 border-4 border-gray-300 border-t-blue-600"></div>
+            </div>
+          ) : error ? (
+            <div className="lg:col-span-2 bg-red-100 text-red-800 p-4 rounded-md text-center">
+              <p>{error}</p>
+            </div>
+          ) : (
+            <>
+              <div className="lg:col-span-1">
+                <PollutionLeaderboard 
+                  data={leaderboardData} 
+                  title="Top 10 Least Polluted Cities (HPI)" 
                 />
-              )
-            )}
-          </div>
+              </div>
+              <div className="lg:col-span-1">
+                <PollutionLeaderboard 
+                  data={reversedLeaderboardData}
+                  title="Top 10 Most Polluted Cities (HPI)"
+                />
+              </div>
+            </>
+          )}
+        </div>
+        <div className="lg:grid lg:grid-cols-2 gap-8 mt-8">
           <div className="lg:col-span-1">
             <PartnersBoard />
+          </div>
+          <div className="lg:col-span-1">
             <BlogSection />
           </div>
         </div>

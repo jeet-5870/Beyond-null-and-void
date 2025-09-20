@@ -126,7 +126,7 @@ const PollutionLeaderboard = () => {
       <CardHeader>
         <div className="flex items-center space-x-2">
           <TrendingUp className="h-5 w-5 text-blue-600" />
-          <h3 className="text-lg font-semibold text-gray-900">Top 10 Polluted Cities (HPI)</h3>
+          <h3 className="text-lg font-semibold text-gray-900">{title}</h3>
         </div>
       </CardHeader>
       <CardContent>
