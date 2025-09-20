@@ -13,6 +13,7 @@ export const getLeaderboardData = async (req, res, next) => {
         FROM samples
         ORDER BY location_id, sample_date DESC
       )
+        
       SELECT
         l.name AS city,
         AVG(pi.hpi) AS pollutionIndex

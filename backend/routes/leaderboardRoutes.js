@@ -1,5 +1,6 @@
 import express from 'express';
-import { getLeaderboardData, getTimelineData } from '../controllers/leaderboardController.js';
+import { getLeaderboardData } from '../controllers/getleaderboarddataController.js';
+import { getTimelineData } from '../controllers/gettimelinedataController.js';
 
 const router = express.Router();
 
