@@ -1,10 +1,10 @@
 import React, { useEffect, useRef, useState } from "react";
 
-const WaterQualityMap = ({ onMapClick, data }) => {
+const WaterQualityMap = ({ onMapClick, data, selectedLocation }) => {
   const mapRef = useRef(null);
-  const markerRef = useRef(null);
-  const infoWindowRef = useRef(null);
+  const mapInstanceRef = useRef(null); // Use a ref to store the map instance
 
+  // Effect to initialize the Google Map
   useEffect(() => {
     const script = document.createElement("script");
     const apiKey = process.env.REACT_APP_MAP_API_KEY;
@@ -23,6 +23,7 @@ const WaterQualityMap = ({ onMapClick, data }) => {
         zoom: 6,
         center: center,
       });
+      mapInstanceRef.current = map; // Store the map instance
 
       if (data && data.length > 0) {
         data.forEach(location => {
@@ -32,7 +33,6 @@ const WaterQualityMap = ({ onMapClick, data }) => {
             title: location.location,
           });
 
-          // Create an InfoWindow for each marker
           const infoWindowContent = `
             <div class="p-2">
               <h1 class="text-lg font-semibold">${location.location}</h1>
@@ -51,6 +51,16 @@ const WaterQualityMap = ({ onMapClick, data }) => {
       }
     };
   }, [data]);
+
+  // Effect to pan and zoom the map when a location is selected
+  useEffect(() => {
+    if (selectedLocation && mapInstanceRef.current) {
+      const map = mapInstanceRef.current;
+      const newCenter = { lat: parseFloat(selectedLocation.lat), lng: parseFloat(selectedLocation.lng) };
+      map.panTo(newCenter);
+      map.setZoom(10); // Adjust zoom level as needed
+    }
+  }, [selectedLocation]);
 
   return (
     <div className="mb-8">
