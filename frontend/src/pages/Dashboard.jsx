@@ -23,6 +23,7 @@ const Dashboard = () => {
   const [username, setUsername] = useState('User');
   const [selectedLocation, setSelectedLocation] = useState(null);
   const navigate = useNavigate();
+  const mapRef = useRef(null);
 
   useEffect(() => {
     // 🔑 You would typically decode the JWT token here to get the username
@@ -94,10 +95,9 @@ const Dashboard = () => {
 
   const handleShowOnMap = (location) => {
     setSelectedLocation(location);
-    window.scrollTo({
-      top: 0,
-      behavior: 'smooth'
-    });
+    if (mapRef.current) {
+      mapRef.current.scrollIntoView({ behavior: 'smooth' });
+    }
   };
 
   const stats = [
@@ -315,7 +315,10 @@ const Dashboard = () => {
                   ))}
                 </div>
                 
-                <WaterQualityMap data={results} selectedLocation={selectedLocation} />
+                <div ref={mapRef}>
+                  <WaterQualityMap data={results} selectedLocation={selectedLocation} />
+                </div>
+
                 <SafetyBadge data={results} />
                 <PollutionChart data={results} key={JSON.stringify(results)} />
                 <ResultTable data={results} />
