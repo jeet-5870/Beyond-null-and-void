@@ -1,77 +1,62 @@
-import React, { useEffect, useRef, useState } from "react";
+import React, { useEffect, useRef } from "react";
+import { MapContainer, TileLayer, Marker, Popup, useMap } from 'react-leaflet';
+import 'leaflet/dist/leaflet.css';
+import L from 'leaflet';
 
-const WaterQualityMap = ({ onMapClick, data, selectedLocation }) => {
-  const mapRef = useRef(null);
-  const mapInstanceRef = useRef(null); // Use a ref to store the map instance
+// Fix for default marker icons
+delete L.Icon.Default.prototype._getIconUrl;
+L.Icon.Default.mergeOptions({
+  iconRetinaUrl: 'https://cdnjs.cloudflare.com/ajax/libs/leaflet/1.7.1/images/marker-icon-2x.png',
+  iconUrl: 'https://cdnjs.cloudflare.com/ajax/libs/leaflet/1.7.1/images/marker-icon.png',
+  shadowUrl: 'https://cdnjs.cloudflare.com/ajax/libs/leaflet/1.7.1/images/marker-shadow.png',
+});
 
-  // Effect to initialize the Google Map
+// A custom component to handle map pan/zoom
+function FlyToLocation({ selectedLocation }) {
+  const map = useMap();
+
   useEffect(() => {
-    const script = document.createElement("script");
-    const apiKey = process.env.REACT_APP_MAP_API_KEY;
-    script.src = `https://maps.googleapis.com/maps/api/js?key=${apiKey}`;
-
-    script.async = true;
-    script.defer = true;
-    script.onload = () => {
-      initMap();
-    };
-    document.body.appendChild(script);
-
-    const initMap = () => {
-      const center = { lat: 23.2599, lng: 77.4126 };
-      const map = new window.google.maps.Map(mapRef.current, {
-        zoom: 6,
-        center: center,
-      });
-      mapInstanceRef.current = map; // Store the map instance
-
-      if (data && data.length > 0) {
-        data.forEach(location => {
-          const marker = new window.google.maps.Marker({
-            position: { lat: parseFloat(location.lat), lng: parseFloat(location.lng) },
-            map: map,
-            title: location.location,
-          });
-
-          const infoWindowContent = `
-            <div class="p-2">
-              <h1 class="text-lg font-semibold">${location.location}</h1>
-              <p>HPI: ${location.hpi.toFixed(2)}</p>
-              <p>Classification: ${location.classification}</p>
-            </div>
-          `;
-          const infoWindow = new window.google.maps.InfoWindow({
-            content: infoWindowContent,
-          });
-
-          marker.addListener('click', () => {
-            infoWindow.open(map, marker);
-          });
-        });
-      }
-    };
-  }, [data]);
-
-  // Effect to pan and zoom the map when a location is selected
-  useEffect(() => {
-    if (selectedLocation && mapInstanceRef.current) {
-      const map = mapInstanceRef.current;
-      const newCenter = { lat: parseFloat(selectedLocation.lat), lng: parseFloat(selectedLocation.lng) };
-      map.panTo(newCenter);
-      map.setZoom(10); // Adjust zoom level as needed
+    if (selectedLocation) {
+      map.flyTo([parseFloat(selectedLocation.lat), parseFloat(selectedLocation.lng)], 10);
     }
-  }, [selectedLocation]);
+  }, [selectedLocation, map]);
+
+  return null;
+}
+
+const WaterQualityMap = ({ data, selectedLocation }) => {
+  const center = [23.2599, 77.4126];
 
   return (
     <div className="mb-8">
       <h2 className="text-xl font-bold mb-2 text-gray-900">
         Groundwater Heavy Metal Pollution Map
       </h2>
-      <div
-        ref={mapRef}
+      <MapContainer 
+        center={center} 
+        zoom={6} 
         style={{ height: "500px", width: "100%", borderRadius: "12px" }}
-        className="relative"
-      />
+      >
+        <TileLayer
+          attribution='&copy; <a href="https://www.openstreetmap.org/copyright">OpenStreetMap</a> contributors'
+          url="https://{s}.tile.openstreetmap.org/{z}/{x}/{y}.png"
+        />
+        {data.map(location => (
+          <Marker 
+            key={location.location} 
+            position={[parseFloat(location.lat), parseFloat(location.lng)]}
+          >
+            <Popup>
+              <div class="p-2">
+                <h1 class="text-lg font-semibold">{location.location}</h1>
+                <p>HPI: {location.hpi.toFixed(2)}</p>
+                <p>Classification: {location.classification}</p>
+              </div>
+            </Popup>
+          </Marker>
+        ))}
+        <FlyToLocation selectedLocation={selectedLocation} />
+      </MapContainer>
     </div>
   );
 };
