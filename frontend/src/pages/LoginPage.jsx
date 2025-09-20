@@ -30,6 +30,18 @@ const LoginPage = ({ onLogin }) => {
       setError(err.response?.data?.error || 'Login failed. Please check your credentials.');
     }
   };
+  
+  const handleForgotPassword = () => {
+    // This function will handle the "Forgot Password" logic
+    // For now, it will simply log a message.
+    console.log('Forgot password clicked');
+  };
+
+  const handleSignUp = () => {
+    // This function will handle the "Sign Up" logic
+    // For now, it will simply log a message.
+    console.log('Sign up clicked');
+  };
 
   return (
     <div className="flex items-center justify-center min-h-screen bg-color">
@@ -74,6 +86,20 @@ const LoginPage = ({ onLogin }) => {
             Sign in
           </button>
         </form>
+        <div className="flex justify-between items-center text-sm">
+          <button
+            onClick={handleForgotPassword}
+            className="text-blue-600 hover:underline"
+          >
+            Forgot Password?
+          </button>
+          <button
+            onClick={handleSignUp}
+            className="text-gray-600 hover:underline"
+          >
+            Sign Up
+          </button>
+        </div>
       </Card>
     </div>
   );
