@@ -145,7 +145,7 @@ const PollutionLeaderboard = () => {
                 <tr key={city.city} className="border-b border-gray-200 last:border-b-0">
                   <td className="py-2 px-4 text-gray-900 font-medium">{(page - 1) * citiesPerPage + index + 1}</td>
                   <td className="py-2 px-4 text-gray-900">{city.city}</td>
-                  <td className="py-2 px-4 text-gray-900 font-mono">{city.pollutionIndex.toFixed(1)}</td>
+                  <td className="py-2 px-4 text-gray-900 font-mono">{city.pollutionIndex ? city.pollutionIndex.toFixed(1) : 'N/A'}</td>
                   <td className="py-2 px-4">
                     <button
                       onClick={() => handleViewTimeline(city.city)}
