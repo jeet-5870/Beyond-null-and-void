@@ -86,7 +86,6 @@ const PollutionTimeline = ({ city, onBack }) => {
   );
 };
 
-// Now accepts `data` and `title` as props
 const PollutionLeaderboard = ({ data, title }) => {
   const [leaderboardData, setLeaderboardData] = useState([]);
   const [page, setPage] = useState(1);
@@ -96,7 +95,7 @@ const PollutionLeaderboard = ({ data, title }) => {
   const citiesPerPage = 10;
 
   useEffect(() => {
-    // If data is passed as a prop, use it directly
+    // This component will now receive data as a prop
     if (data) {
       setLeaderboardData(data);
       setTotalPages(Math.ceil(data.length / citiesPerPage));
