@@ -86,6 +86,7 @@ const PollutionTimeline = ({ city, onBack }) => {
   );
 };
 
+// Now accepts `data` and `title` as props
 const PollutionLeaderboard = ({ data, title }) => {
   const [leaderboardData, setLeaderboardData] = useState([]);
   const [page, setPage] = useState(1);
@@ -95,12 +96,12 @@ const PollutionLeaderboard = ({ data, title }) => {
   const citiesPerPage = 10;
 
   useEffect(() => {
-    // This component will now receive data as a prop
+    // If data is passed as a prop, use it directly
     if (data) {
       setLeaderboardData(data);
-      // Logic for pagination would be handled here if needed, but for now we display all 10
-      setTotalPages(1);
+      setTotalPages(Math.ceil(data.length / citiesPerPage));
     } else {
+      // Otherwise, fetch data from the API (for the main page)
       const fetchLeaderboard = async () => {
         try {
           const res = await API.get(`/api/leaderboard?page=${page}&limit=${citiesPerPage}`);
@@ -112,7 +113,7 @@ const PollutionLeaderboard = ({ data, title }) => {
       };
       fetchLeaderboard();
     }
-  }, [page, data]);
+  }, [page, data, citiesPerPage]); // Re-fetch or update when page or data changes
 
   const handleViewTimeline = (city) => {
     setSelectedCity(city);
@@ -127,6 +128,9 @@ const PollutionLeaderboard = ({ data, title }) => {
   if (showTimeline && selectedCity) {
     return <PollutionTimeline city={selectedCity} onBack={handleBackToLeaderboard} />;
   }
+
+  // Determine which data to render based on props
+  const displayedData = Array.isArray(data) && data.length > 0 ? data : leaderboardData;
 
   return (
     <Card className="mb-8">
@@ -148,7 +152,7 @@ const PollutionLeaderboard = ({ data, title }) => {
               </tr>
             </thead>
             <tbody>
-              {leaderboardData.map((city, index) => (
+              {displayedData.map((city, index) => (
                 <tr key={city.city} className="border-b border-gray-200 last:border-b-0">
                   <td className="py-2 px-4 text-gray-900 font-medium">{(page - 1) * citiesPerPage + index + 1}</td>
                   <td className="py-2 px-4 text-gray-900">{city.city}</td>
