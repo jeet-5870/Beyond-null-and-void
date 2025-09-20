@@ -222,6 +222,11 @@ const Dashboard = () => {
     );
   };
 
+  const safeCitiesData = results
+    .filter(city => city.classification === 'Safe')
+    .sort((a, b) => a.hei - b.hei)
+    .slice(0, 10);
+
   return (
     <div className="min-h-screen bg-gray-50">
       <header className="bg-white shadow-lg fixed w-full z-50">
@@ -321,6 +326,9 @@ const Dashboard = () => {
 
                 <SafetyBadge data={results} />
                 <PollutionChart data={results} key={JSON.stringify(results)} />
+                {safeCitiesData.length > 0 && (
+                  <PollutionChart data={safeCitiesData} key={JSON.stringify(safeCitiesData)} title="Top 10 Safest Cities by HEI" />
+                )}
                 <ResultTable data={results} />
 
                 <div className="flex justify-center mt-8">
