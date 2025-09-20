@@ -1,4 +1,9 @@
-const login = async (req, res, next) => {
+import db from "../db/db";
+import bcrypt from "bcrypt";
+import jwt from "jsonwebtoken";
+
+
+export const login = async (req, res, next) => {
   const { username, password } = req.body;
 
   try {

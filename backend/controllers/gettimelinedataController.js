@@ -1,4 +1,6 @@
-const getTimelineData = async (req, res, next) => {
+import db from "../db/db"
+
+export const getTimelineData = async (req, res, next) => {
   const { city } = req.params;
   const { timeframe } = req.query;
 
