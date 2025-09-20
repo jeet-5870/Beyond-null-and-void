@@ -1,6 +1,6 @@
-import React from 'react';
+import React, { useState, useEffect } from 'react';
 import { useNavigate } from 'react-router-dom';
-import { Droplets, LogIn } from 'lucide-react';
+import { Droplets, LogIn, TrendingUp, Handshake, Mail, ArrowRight } from 'lucide-react';
 import PollutionLeaderboard from './pollutionLeaderboard.jsx';
 import PartnersBoard from './partnersBoard.jsx';
 import BlogSection from './blogSection.jsx';
@@ -8,9 +8,21 @@ import BlogSection from './blogSection.jsx';
 // Reusable Navbar Component
 const Navbar = () => {
   const navigate = useNavigate();
+  const [isLoggedIn, setIsLoggedIn] = useState(false);
+
+  useEffect(() => {
+    const token = localStorage.getItem('token');
+    setIsLoggedIn(!!token);
+  }, []);
+
   const handleLoginClick = () => {
     navigate('/login');
   };
+
+  const handleDashboardClick = () => {
+    navigate('/dashboard');
+  };
+
   return (
     <nav className="fixed top-0 left-0 right-0 z-50 bg-white shadow-md">
       <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8">
@@ -19,13 +31,23 @@ const Navbar = () => {
             <Droplets className="h-8 w-8 text-blue-600" />
             <span className="text-xl font-bold text-gray-900">E-Cell</span>
           </div>
-          <button
-            onClick={handleLoginClick}
-            className="flex items-center space-x-2 px-4 py-2 text-sm font-semibold rounded-lg text-white bg-blue-600 hover:bg-blue-700 transition-colors"
-          >
-            <LogIn className="h-4 w-4" />
-            <span>Login</span>
-          </button>
+          {isLoggedIn ? (
+            <button
+              onClick={handleDashboardClick}
+              className="flex items-center space-x-2 px-4 py-2 text-sm font-semibold rounded-lg text-white bg-blue-600 hover:bg-blue-700 transition-colors"
+            >
+              <span>Go to Dashboard</span>
+              <ArrowRight className="h-4 w-4" />
+            </button>
+          ) : (
+            <button
+              onClick={handleLoginClick}
+              className="flex items-center space-x-2 px-4 py-2 text-sm font-semibold rounded-lg text-white bg-blue-600 hover:bg-blue-700 transition-colors"
+            >
+              <LogIn className="h-4 w-4" />
+              <span>Login</span>
+            </button>
+          )}
         </div>
       </div>
     </nav>
