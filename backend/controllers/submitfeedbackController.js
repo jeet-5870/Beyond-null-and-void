@@ -1,4 +1,6 @@
-const submitFeedback = async (req, res, next) => {
+import db from '../db/db.js';
+
+export const submitFeedback = async (req, res, next) => {
   const { feedback } = req.body;
   if (!feedback) {
     return res.status(400).json({ error: 'Feedback message cannot be empty.' });

@@ -50,6 +50,12 @@ export const initPostgresSchema = async () => {
         mac_ppm REAL,
         standard_ppm REAL
       );
+
+      CREATE TABLE IF NOT EXISTS feedback (
+        feedback_id SERIAL PRIMARY KEY,
+        message TEXT NOT NULL,
+        submitted_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP
+      );
       
       CREATE TABLE IF NOT EXISTS pollution_classifications (
         index_name TEXT,

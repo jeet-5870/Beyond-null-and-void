@@ -15,7 +15,6 @@ const LoginPage = ({ onLogin }) => {
     setError('');
 
     try {
-      // 🚀 Make a request to the backend auth endpoint
       const res = await API.post('/api/auth/login', { username, password });
       
       if (res.data?.token) {
@@ -37,10 +36,17 @@ const LoginPage = ({ onLogin }) => {
     console.log('Forgot password clicked');
   };
 
-  const handleSignUp = () => {
+  const handleSignUp = async () => {
     // This function will handle the "Sign Up" logic
     // For now, it will simply log a message.
-    console.log('Sign up clicked');
+    try {
+      // Assuming a simple sign-up for demonstration. In a real app, this would be a separate page.
+      const res = await API.post('/api/auth/signup', { username, password });
+      console.log(res.data.message);
+      navigate('/login');
+    } catch (err) {
+      console.error('Sign up error:', err);
+    }
   };
 
   return (

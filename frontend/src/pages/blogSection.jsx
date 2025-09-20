@@ -1,6 +1,7 @@
 import React, { useState } from 'react';
 import { Mail } from 'lucide-react';
 import { Card, CardHeader, CardContent } from '../components/card.jsx';
+import API from '../api.js';
 
 const BlogSection = () => {
   const [feedback, setFeedback] = useState('');
@@ -13,10 +14,14 @@ const BlogSection = () => {
       return;
     }
     
-    // 📩 Placeholder for a public feedback submission endpoint
-    console.log('Feedback submitted:', feedback);
-    setMessage('Thank you for your valuable feedback! (Simulated submission)');
-    setFeedback('');
+    try {
+      await API.post('/api/feedback', { feedback });
+      setMessage('Thank you for your valuable feedback!');
+      setFeedback('');
+    } catch (error) {
+      console.error('Feedback submission error:', error);
+      setMessage('Failed to submit feedback. Please try again.');
+    }
   };
 
   return (

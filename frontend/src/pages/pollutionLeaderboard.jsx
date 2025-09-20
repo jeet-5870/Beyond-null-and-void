@@ -1,9 +1,8 @@
 import React, { useState, useEffect } from 'react';
 import { TrendingUp, ArrowLeft } from 'lucide-react';
 import { Card, CardHeader, CardContent } from '../components/card.jsx';
-import API from '../api.js'; // Assuming API.js is available for backend calls
+import API from '../api.js';
 
-// Component to display a city's pollution timeline
 const PollutionTimeline = ({ city, onBack }) => {
   const [selectedTimeframe, setSelectedTimeframe] = useState('1m');
   const [timelineData, setTimelineData] = useState([]);
@@ -15,20 +14,8 @@ const PollutionTimeline = ({ city, onBack }) => {
       setIsLoading(true);
       setError(null);
       try {
-        // 🌍 Placeholder for fetching real timeline data from the backend
-        // const res = await API.get(`/api/timeline/${city}?timeframe=${selectedTimeframe}`);
-        // setTimelineData(res.data);
-
-        // Simulated backend response for demonstration
-        const mockData = {
-          '7d': [{ date: '2025-09-14', hpi: 288.1 }, { date: '2025-09-17', hpi: 287.5 }, { date: '2025-09-20', hpi: 285.4 }],
-          '15d': [{ date: '2025-09-06', hpi: 292.1 }, { date: '2025-09-13', hpi: 289.0 }, { date: '2025-09-20', hpi: 285.4 }],
-          '1m': [{ date: '2025-08-21', hpi: 290.1 }, { date: '2025-09-01', hpi: 288.5 }, { date: '2025-09-20', hpi: 285.4 }],
-          '3m': [{ date: '2025-06-21', hpi: 320.5 }, { date: '2025-07-21', hpi: 310.2 }, { date: '2025-08-21', hpi: 290.1 }, { date: '2025-09-20', hpi: 285.4 }],
-          '6m': [{ date: '2025-03-21', hpi: 340.8 }, { date: '2025-06-21', hpi: 320.5 }, { date: '2025-09-20', hpi: 285.4 }],
-        };
-        setTimelineData(mockData[city]?.[selectedTimeframe] || []);
-
+        const res = await API.get(`/api/leaderboard/${city}?timeframe=${selectedTimeframe}`);
+        setTimelineData(res.data);
       } catch (err) {
         console.error('Error fetching timeline data:', err);
         setError('Failed to fetch timeline data.');
@@ -39,7 +26,6 @@ const PollutionTimeline = ({ city, onBack }) => {
     fetchTimelineData();
   }, [city, selectedTimeframe]);
 
-  // Simple logic to determine "best performance"
   const getBestPerformance = () => {
     if (timelineData.length < 2) return null;
     const initialHPI = timelineData[0].hpi;
@@ -110,24 +96,14 @@ const PollutionLeaderboard = () => {
 
   useEffect(() => {
     const fetchLeaderboard = async () => {
-      const mockData = [
-        { city: 'Gwalior', pollutionIndex: 285.4 },
-        { city: 'Kanpur', pollutionIndex: 250.1 },
-        { city: 'Lucknow', pollutionIndex: 215.8 },
-        { city: 'Varanasi', pollutionIndex: 198.5 },
-        { city: 'Agra', pollutionIndex: 180.2 },
-        { city: 'Allahabad', pollutionIndex: 165.7 },
-        { city: 'Bareilly', pollutionIndex: 154.3 },
-        { city: 'Meerut', pollutionIndex: 142.1 },
-        { city: 'Jhansi', pollutionIndex: 130.9 },
-        { city: 'Aligarh', pollutionIndex: 125.6 },
-        { city: 'Moradabad', pollutionIndex: 110.3 },
-        { city: 'Muzaffarnagar', pollutionIndex: 95.7 },
-      ].sort((a, b) => b.pollutionIndex - a.pollutionIndex);
-      setLeaderboardData(mockData.slice((page - 1) * citiesPerPage, page * citiesPerPage));
-      setTotalPages(Math.ceil(mockData.length / citiesPerPage));
+      try {
+        const res = await API.get(`/api/leaderboard?page=${page}&limit=${citiesPerPage}`);
+        setLeaderboardData(res.data.cities);
+        setTotalPages(res.data.totalPages);
+      } catch (err) {
+        console.error('Error fetching leaderboard data:', err);
+      }
     };
-
     fetchLeaderboard();
   }, [page]);
 
