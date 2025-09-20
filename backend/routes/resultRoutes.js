@@ -8,6 +8,8 @@ router.get('/', (req, res, next) => {
   const query = `
     SELECT
       l.name AS location,
+      l.latitude AS lat,
+      l.longitude AS lng,
       pi.hpi,
       pi.hei,
       pi.pli,
