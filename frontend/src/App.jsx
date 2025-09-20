@@ -1,8 +1,10 @@
 import React, { useState } from 'react';
 import { BrowserRouter as Router, Routes, Route, Navigate } from 'react-router-dom';
-import Dashboard from './pages/Dashboard';
-import LoginPage from './pages/LoginPage';
+import MainPage from './pages/mainPage.jsx';
+import LoginPage from './pages/LoginPage.jsx';
+import Dashboard from './pages/Dashboard.jsx';
 
+// Main application component that sets up routing
 function App() {
   const [isAuthenticated, setIsAuthenticated] = useState(false);
 
@@ -13,10 +15,11 @@ function App() {
   return (
     <Router>
       <Routes>
-        <Route path="/" element={<LoginPage onLogin={handleLogin} />} />
+        <Route path="/" element={<MainPage />} />
+        <Route path="/login" element={<LoginPage onLogin={handleLogin} />} />
         <Route
           path="/dashboard"
-          element={isAuthenticated ? <Dashboard /> : <Navigate to="/" />}
+          element={isAuthenticated ? <Dashboard /> : <Navigate to="/login" />}
         />
         <Route path="*" element={<Navigate to="/" />} />
       </Routes>

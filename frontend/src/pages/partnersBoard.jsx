@@ -1,3 +1,7 @@
+import React from 'react';
+import { Handshake } from 'lucide-react';
+import { Card, CardHeader, CardContent } from '../components/card.jsx';
+
 const PartnersBoard = () => {
   const partners = [
     { name: 'EcoConnect NGO', contribution: '120 data submissions' },

@@ -1,3 +1,7 @@
+import React, { useState } from 'react';
+import { Mail } from 'lucide-react';
+import { Card, CardHeader, CardContent } from '../components/card.jsx';
+
 const BlogSection = () => {
   const [feedback, setFeedback] = useState('');
   const [message, setMessage] = useState('');
@@ -8,16 +12,8 @@ const BlogSection = () => {
       setMessage('Feedback cannot be empty.');
       return;
     }
-
-    // 📩 Placeholder for a public feedback submission endpoint
-    // try {
-    //   await axios.post('/api/feedback', { feedback });
-    //   setMessage('Thank you for your valuable feedback!');
-    //   setFeedback('');
-    // } catch (error) {
-    //   setMessage('Failed to submit feedback. Please try again.');
-    // }
     
+    // 📩 Placeholder for a public feedback submission endpoint
     console.log('Feedback submitted:', feedback);
     setMessage('Thank you for your valuable feedback! (Simulated submission)');
     setFeedback('');
@@ -51,6 +47,5 @@ const BlogSection = () => {
     </Card>
   );
 };
-
 
 export default BlogSection;
