@@ -24,7 +24,7 @@ ChartJS.register(
   Legend
 );
 
-function PollutionChart({ data }) {
+function PollutionChart({ data, title }) {
   const chartData = {
     labels: data.map((d) => d.location),
     datasets: [
@@ -58,7 +58,7 @@ function PollutionChart({ data }) {
       },
       title: {
         display: true,
-        text: 'Pollution Indices Comparison',
+        text: title || 'Pollution Indices Comparison',
         font: { size: 16, weight: 'bold' },
         padding: 20,
       },
@@ -96,7 +96,7 @@ function PollutionChart({ data }) {
       <CardHeader>
         <div className="flex items-center space-x-2">
           <BarChart3 className="h-5 w-5 text-blue-600" />
-          <h3 className="text-lg font-semibold text-gray-900">Pollution Analysis</h3>
+          <h3 className="text-lg font-semibold text-gray-900">{title || 'Pollution Analysis'}</h3>
         </div>
       </CardHeader>
       <CardContent>
