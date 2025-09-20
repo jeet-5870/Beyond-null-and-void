@@ -1,4 +1,4 @@
-import { calculateCF, calculatePLI, calculateHPI, calculateMPI } from '../utils/formulaEngine';
+import { calculateCF, calculatePLI, calculateHPI, calculateMPI } from '../utils/formulaEngine.js';
 
 export function computeIndices(req, res) {
   const { concentrations, standards } = req.body;

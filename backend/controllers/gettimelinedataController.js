@@ -1,4 +1,4 @@
-import db from "../db/db"
+import db from "../db/db.js"
 
 export const getTimelineData = async (req, res, next) => {
   const { city } = req.params;
