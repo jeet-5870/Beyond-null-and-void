@@ -1,6 +1,6 @@
 import React, { useState, useEffect } from 'react';
 import { TrendingUp, ArrowLeft } from 'lucide-react';
-import { Card, CardHeader, CardContent } from '../components/card.jsx';
+import { Card, CardHeader, CardContent } from './card.jsx';
 import API from '../api.js';
 
 const PollutionTimeline = ({ city, onBack }) => {
