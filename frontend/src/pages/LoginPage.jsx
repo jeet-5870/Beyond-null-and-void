@@ -1,12 +1,16 @@
 import React, { useState } from 'react';
 import { useNavigate } from 'react-router-dom';
-import { Card, CardContent } from '../components/card.jsx';
+import { Card } from '../components/card.jsx';
 import { Droplets } from 'lucide-react';
 import API from '../api.js';
 
 const LoginPage = ({ onLogin }) => {
-  const [username, setUsername] = useState('');
+  const [mode, setMode] = useState('signup'); // 'login' or 'signup'
+  const [fullname, setFullname] = useState('');
+  const [email, setEmail] = useState('');
   const [password, setPassword] = useState('');
+  const [confirmPassword, setConfirmPassword] = useState('');
+  const [role, setRole] = useState('guest'); // 'ngo', 'guest', 'researcher'
   const [error, setError] = useState('');
   const navigate = useNavigate();
 
@@ -15,12 +19,16 @@ const LoginPage = ({ onLogin }) => {
     setError('');
 
     try {
-      const res = await API.post('/api/auth/login', { username, password });
-      
+      const res = await API.post('/api/auth/login', { fullname, password, role });
+
       if (res.data?.token) {
         localStorage.setItem('token', res.data.token);
+        localStorage.setItem('role', role);
         onLogin(true);
-        navigate('/dashboard');
+
+        if (role === 'ngo') navigate('/ngo-dashboard');
+        else if (role === 'researcher') navigate('/researcher-dashboard');
+        else navigate('/guest-dashboard');
       } else {
         setError('Login failed. Please try again.');
       }
@@ -29,24 +37,44 @@ const LoginPage = ({ onLogin }) => {
       setError(err.response?.data?.error || 'Login failed. Please check your credentials.');
     }
   };
-  
-  const handleForgotPassword = () => {
-    // This function will handle the "Forgot Password" logic
-    // For now, it will simply log a message.
-    console.log('Forgot password clicked');
+
+  const handleSignUp = async (e) => {
+    e.preventDefault();
+    setError('');
+
+    if (password !== confirmPassword) {
+      setError('Passwords do not match.');
+      return;
+    }
+
+    try {
+      const res = await API.post('/api/auth/signup', {
+        fullname,
+        email,
+        password,
+        role
+      });
+
+      if (res.data?.token) {
+        localStorage.setItem('token', res.data.token);
+        localStorage.setItem('role', role);
+        onLogin(true);
+
+        if (role === 'ngo') navigate('/ngo-dashboard');
+        else if (role === 'researcher') navigate('/researcher-dashboard');
+        else navigate('/guest-dashboard');
+      } else {
+        setError('Sign-up failed. Please try again.');
+      }
+    } catch (err) {
+      console.error('Sign-up error:', err);
+      setError(err.response?.data?.error || 'Sign-up failed. Please check your input.');
+    }
   };
 
-  const handleSignUp = async () => {
-    // This function will handle the "Sign Up" logic
-    // For now, it will simply log a message.
-    try {
-      // Assuming a simple sign-up for demonstration. In a real app, this would be a separate page.
-      const res = await API.post('/api/auth/signup', { username, password });
-      console.log(res.data.message);
-      navigate('/login');
-    } catch (err) {
-      console.error('Sign up error:', err);
-    }
+  const handleForgotPassword = () => {
+    console.log('Forgot password clicked');
+    // You can navigate to a /forgot-password route or show a modal
   };
 
   return (
@@ -54,23 +82,63 @@ const LoginPage = ({ onLogin }) => {
       <Card className="max-w-md w-full p-8 space-y-6">
         <div className="flex flex-col items-center">
           <Droplets className="h-12 w-12 text-blue-600 mb-2" />
-          <h2 className="text-3xl font-bold text-center text-gray-900">Login</h2>
-          <p className="mt-2 text-center text-sm text-gray-600">Sign in to access the dashboard.</p>
+          <h2 className="text-3xl font-bold text-center text-gray-900">
+            {mode === 'login' ? 'Login' : 'Sign Up'}
+          </h2>
+          <p className="mt-2 text-center text-sm text-gray-600">
+            {mode === 'login'
+              ? 'Sign in to access the dashboard.'
+              : 'Create an account to get started.'}
+          </p>
         </div>
-        <form onSubmit={handleLogin} className="space-y-4">
+
+        <form onSubmit={mode === 'login' ? handleLogin : handleSignUp} className="space-y-4">
           <div>
-            <label htmlFor="username" className="sr-only">Username</label>
+            <label htmlFor="role" className="block text-sm font-medium text-gray-700">Select Role</label>
+            <select
+              id="role"
+              value={role}
+              onChange={(e) => setRole(e.target.value)}
+              className="mt-1 block w-full px-3 py-2 border border-gray-300 bg-white rounded-md shadow-sm focus:outline-none focus:ring-blue-500 focus:border-blue-500"
+            >
+              <option value="ngo">NGO</option>
+              <option value="guest">Guest</option>
+              <option value="researcher">Researcher</option>
+            </select>
+          </div>
+
+          <div>
+            <label htmlFor="fullname" className="sr-only">Full Name</label>
             <input
-              id="username"
-              name="username"
+              id="fullname"
+              name="fullname"
               type="text"
               required
-              className="appearance-none relative block w-full px-3 py-2 border border-gray-300 placeholder-gray-500 text-gray-900 rounded-md focus:outline-none focus:ring-blue-500 focus:border-blue-500"
-              placeholder="Username"
-              value={username}
-              onChange={(e) => setUsername(e.target.value)}
+              placeholder="Full Name"
+              value={fullname}
+              onChange={(e) => setFullname(e.target.value)}
+              className="block w-full px-3 py-2 border rounded-md text-gray-900"
             />
           </div>
+
+          {mode === 'signup' && (
+            <>
+              <div>
+                <label htmlFor="email" className="sr-only">Email</label>
+                <input
+                  id="email"
+                  name="email"
+                  type="email"
+                  required
+                  placeholder="Email"
+                  value={email}
+                  onChange={(e) => setEmail(e.target.value)}
+                  className="block w-full px-3 py-2 border rounded-md text-gray-900"
+                />
+              </div>
+            </>
+          )}
+
           <div>
             <label htmlFor="password" className="sr-only">Password</label>
             <input
@@ -78,33 +146,54 @@ const LoginPage = ({ onLogin }) => {
               name="password"
               type="password"
               required
-              className="appearance-none relative block w-full px-3 py-2 border border-gray-300 placeholder-gray-500 text-gray-900 rounded-md focus:outline-none focus:ring-blue-500 focus:border-blue-500"
               placeholder="Password"
               value={password}
               onChange={(e) => setPassword(e.target.value)}
+              className="block w-full px-3 py-2 border rounded-md text-gray-900"
             />
           </div>
+
+          {mode === 'signup' && (
+            <div>
+              <label htmlFor="confirmPassword" className="sr-only">Confirm Password</label>
+              <input
+                id="confirmPassword"
+                name="confirmPassword"
+                type="password"
+                required
+                placeholder="Confirm Password"
+                value={confirmPassword}
+                onChange={(e) => setConfirmPassword(e.target.value)}
+                className="block w-full px-3 py-2 border rounded-md text-gray-900"
+              />
+            </div>
+          )}
+
           {error && <p className="text-sm text-red-600 text-center">{error}</p>}
+
           <button
             type="submit"
-            className="group relative w-full flex justify-center py-2 px-4 border border-transparent text-sm font-medium rounded-md text-white bg-blue-600 hover:bg-blue-700 focus:outline-none focus:ring-2 focus:ring-offset-2 focus:ring-blue-500"
+            className="w-full py-2 px-4 text-sm font-medium rounded-md text-white bg-blue-600 hover:bg-blue-700"
           >
-            Sign in
+            {mode === 'login' ? 'Sign in' : 'Sign up'}
           </button>
         </form>
+
         <div className="flex justify-between items-center text-sm">
-          <button
-            onClick={handleForgotPassword}
-            className="text-blue-600 hover:underline"
-          >
-            Forgot Password?
-          </button>
-          <button
-            onClick={handleSignUp}
-            className="text-gray-600 hover:underline"
-          >
-            Sign Up
-          </button>
+          {mode === 'login' ? (
+            <>
+              <button onClick={handleForgotPassword} className="text-blue-600 hover:underline">
+                Forgot Password?
+              </button>
+              <button onClick={() => setMode('signup')} className="text-gray-600 hover:underline">
+                Create Account
+              </button>
+            </>
+          ) : (
+            <button onClick={() => setMode('login')} className="text-gray-600 hover:underline">
+              Back to Login
+            </button>
+          )}
         </div>
       </Card>
     </div>

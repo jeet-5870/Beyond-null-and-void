@@ -45,7 +45,7 @@ const BlogSection = () => {
         <CardHeader>
           <div className="flex items-center space-x-2">
             <Mail className="h-5 w-5 text-orange-600" />
-            <h3 className="text-lg font-semibold text-gray-900">Give Your Valuable Feedback</h3>
+            <h3 className="text-lg font-semibold text-gray-900">Raise Complaint</h3>
           </div>
         </CardHeader>
         <CardContent>
@@ -60,7 +60,7 @@ const BlogSection = () => {
               type="submit"
               className="w-full px-4 py-2 text-white bg-blue-600 rounded-lg font-semibold hover:bg-blue-700 transition-colors"
             >
-              Submit Feedback
+              Raise Complaint
             </button>
           </form>
           {message && <p className={`mt-4 text-center ${message.includes('Thank you') ? 'text-green-600' : 'text-red-600'}`}>{message}</p>}
@@ -80,9 +80,9 @@ const BlogSection = () => {
               {feedbackList.map((item, index) => (
                 <div key={index} className="border-b last:border-b-0 pb-2">
                   <p className="text-gray-800">{item.message}</p>
-                  <p className="text-sm text-gray-500 mt-1">
+                  {/* <p className="text-sm text-gray-500 mt-1">
                     Submitted on {new Date(item.submitted_at).toLocaleDateString()}
-                  </p>
+                  </p> */}
                 </div>
               ))}
             </div>

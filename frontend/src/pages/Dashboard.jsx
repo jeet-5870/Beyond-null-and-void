@@ -12,6 +12,7 @@ import PollutionChart from '../components/pollutionChart.jsx';
 import SafetyBadge from '../components/safetyBadge.jsx';
 import { Card, CardContent, CardHeader } from '../components/card.jsx';
 import WaterQualityMap from '../components/waterQualityMap.jsx';
+import Footer from '../components/footer.jsx';
 
 const Dashboard = () => {
   const [results, setResults] = useState([]);
@@ -364,6 +365,9 @@ const Dashboard = () => {
             </div>
           )}
         </main>
+        <footer>
+          <Footer/>
+        </footer>
       </div>
     </div>
   );

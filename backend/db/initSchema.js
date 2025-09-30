@@ -12,10 +12,17 @@ export const initPostgresSchema = async () => {
         state TEXT
       );
 
+      /* ✅ UPDATED USERS TABLE to match LoginPage fields */
       CREATE TABLE IF NOT EXISTS users (
         user_id SERIAL PRIMARY KEY,
-        username TEXT UNIQUE NOT NULL,
-        password_hash TEXT NOT NULL
+        fullname TEXT NOT NULL,                          -- ✅ Added: Full name from signup
+        email TEXT UNIQUE NOT NULL,                      -- ✅ Added: Email for signup/login
+        password_hash TEXT NOT NULL,                     -- ✅ Renamed from password to password_hash
+        role TEXT CHECK (role IN ('ngo', 'guest', 'researcher')) NOT NULL,  -- ✅ Added: Role selection
+        reset_token TEXT,                                -- ✅ Optional: For password reset
+        reset_token_expires TIMESTAMP,                   -- ✅ Optional: Expiry for reset token
+        created_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP,  -- ✅ Added: Signup timestamp
+        updated_at TIMESTAMP                             -- ✅ Optional: For profile updates
       );
 
       CREATE TABLE IF NOT EXISTS samples (
@@ -51,18 +58,29 @@ export const initPostgresSchema = async () => {
         standard_ppm REAL
       );
 
+      /* ✅ UPDATED FEEDBACK TABLE to link feedback to users */
       CREATE TABLE IF NOT EXISTS feedback (
         feedback_id SERIAL PRIMARY KEY,
+        user_id INTEGER REFERENCES users(user_id),       -- ✅ Added: Feedback tied to user
         message TEXT NOT NULL,
         submitted_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP
       );
-      
+
       CREATE TABLE IF NOT EXISTS pollution_classifications (
         index_name TEXT,
         pollution_level TEXT,
         min_value REAL,
         max_value REAL,
         PRIMARY KEY (index_name, pollution_level)
+      );
+
+      /* ✅ OPTIONAL: LOGIN LOGS for audit and analytics */
+      CREATE TABLE IF NOT EXISTS login_logs (
+        log_id SERIAL PRIMARY KEY,
+        user_id INTEGER REFERENCES users(user_id),
+        login_time TIMESTAMP DEFAULT CURRENT_TIMESTAMP,
+        ip_address TEXT,
+        user_agent TEXT
       );
     `);
     console.log('✅ PostgreSQL schema initialized.');
