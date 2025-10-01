@@ -56,10 +56,8 @@ export default async function handleUpload(req, res, next) {
     
     await db.query('BEGIN');
     
-    // 🗑️ Delete only the current user's data
-    await db.query('DELETE FROM pollution_indices WHERE sample_id IN (SELECT sample_id FROM samples WHERE user_id = $1)', [userId]);
-    await db.query('DELETE FROM metal_concentrations WHERE sample_id IN (SELECT sample_id FROM samples WHERE user_id = $1)', [userId]);
-    await db.query('DELETE FROM samples WHERE user_id = $1', [userId]);
+    // 🔑 FIX: Removed the logic that deletes a user's previous data to enable timeline tracking.
+    // The data for the current user is now appended.
 
     let insertedCount = 0;
     for (const [key, metals] of Object.entries(rowsByLocation)) {

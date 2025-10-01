@@ -192,7 +192,4 @@ export const requestOtp = async (req, res, next) => {
     }
 };
 
-// Old login/signup exports removed, replaced by new auth flow functions.
-export const login = () => { throw new Error("Use /initiate-auth instead."); };
-export const signup = () => { throw new Error("Use /password-auth instead."); };
-export const forgotPassword = () => { throw new Error("Use /request-otp instead."); };
+// 🔑 FIX: Removed placeholder exports as they are no longer used or needed.

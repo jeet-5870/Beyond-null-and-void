@@ -20,18 +20,19 @@ const app = express();
 app.use(cors());
 app.use(express.json());
 
-// 🔐 Public routes
+// 🔐 Public routes (No authMiddleware applied here)
 app.use('/api/auth', authRoutes);
 app.use('/api/leaderboard', leaderboardRoutes);
 app.use('/api/feedback', feedbackRoutes);
 
-// 🔒 Protected routes (require authentication)
-app.use(authMiddleware);
-app.use('/upload', uploadRoutes);
-app.use('/map-data', mapRoutes);
-app.use('/api/samples', resultRoutes);
-app.use('/api/report', reportRoutes);
-app.use('/api/standards', standardRoutes);
+// 🔒 Protected routes (authMiddleware applied explicitly to each route)
+// 🔑 FIX: Removed global app.use(authMiddleware) and applied it inline 
+// to ensure public routes are never checked.
+app.use('/upload', authMiddleware, uploadRoutes);
+app.use('/map-data', authMiddleware, mapRoutes);
+app.use('/api/samples', authMiddleware, resultRoutes);
+app.use('/api/report', authMiddleware, reportRoutes);
+app.use('/api/standards', authMiddleware, standardRoutes);
 
 app.use(errorHandler);
 

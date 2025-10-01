@@ -7,7 +7,7 @@ import API, { AuthAPI } from '../api.js'; // Ensure AuthAPI is imported
 const LoginPage = () => {
   const navigate = useNavigate();
   
-  // 🔑 Step 0: IDENTIFIER, Step 1: PASSWORD/SIGNUP, Step 2: OTP
+  // 泊 Step 0: IDENTIFIER, Step 1: PASSWORD/SIGNUP, Step 2: OTP
   const [step, setStep] = useState(0); 
   
   const [mode, setMode] = useState('login'); // 'login' or 'signup'
@@ -43,13 +43,17 @@ const LoginPage = () => {
     
     // Step 0: Submit Identifier and let the backend determine the next step
     try {
-      // 🔑 FIX: Using AuthAPI (baseURL includes /api/auth), so path is just /initiate-auth
+      // 泊 FIX: Using AuthAPI (baseURL includes /api/auth), so path is just /initiate-auth
       const res = await AuthAPI.post('/initiate-auth', { identifier, mode });
       const data = res.data;
       
       if (data.nextStep === 'password') {
         setStep(1); // User exists or starting signup, prompt for password/details
-        if (data.error) setError(data.error); // Show error if logging in non-existent user (redirect to signup)
+        if (data.error) {
+          setError(data.error); // Show error if logging in non-existent user (redirect to signup)
+          // 🔑 FIX: Switch mode to signup to correctly display form fields and button text in Step 1.
+          setMode('signup'); 
+        }
       } else if (data.nextStep === 'otp') {
         setStep(2); // Prompt for OTP
         setMessage(data.message);
@@ -91,7 +95,7 @@ const LoginPage = () => {
     try {
       const payload = { identifier, password, fullname, role, mode };
       
-      // 🔑 FIX: Using AuthAPI (baseURL includes /api/auth), so path is just /password-auth
+      // 泊 FIX: Using AuthAPI (baseURL includes /api/auth), so path is just /password-auth
       const res = await AuthAPI.post('/password-auth', payload); 
       
       if (res.data?.token) {
@@ -115,7 +119,7 @@ const LoginPage = () => {
     setIsSubmitting(true);
 
     try {
-      // 🔑 FIX: Using AuthAPI, so path is just /request-otp
+      // 泊 FIX: Using AuthAPI, so path is just /request-otp
       const res = await AuthAPI.post('/request-otp', { identifier });
       
       setStep(2); // Move to OTP verification step

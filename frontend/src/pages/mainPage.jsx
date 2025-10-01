@@ -255,8 +255,8 @@ const MainPage = () => {
               {/* Left Column: Complaint Form */}
               <ComplaintForm />
               
-              {/* Right Column: Recent Feedback List */}
-              <FeedbackList />
+              {/* Right Column: User-Specific Feedback List */}
+              <FeedbackList userSpecific={!!role} /> {/* 🔑 CHANGE: Check if user is authenticated (role exists) and pass prop */}
             </div>
           </div>
         </section>

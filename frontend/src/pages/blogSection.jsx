@@ -68,16 +68,18 @@ export const FeedbackList = ({ userSpecific = false }) => {
       setIsLoading(true);
       try {
         // 🔑 Determine which API endpoint to call based on the prop
-        // Assumption: '/api/feedback' is public/all feedback, and 
-        // '/api/user/feedback' is protected and fetches only user-specific feedback.
-        const endpoint = userSpecific ? '/api/user/feedback' : '/api/feedback';
+        // The endpoint /api/feedback/user/feedback is protected and fetches user-specific feedback.
+        const endpoint = userSpecific ? '/api/feedback/user/feedback' : '/api/feedback';
         
-        // Note: '/api/user/feedback' would need to be added/implemented in backend routes.
+        // If userSpecific is true but no token is present (e.g., on a public page), 
+        // the API call will likely fail (401), and we handle it below.
+        
         const res = await API.get(endpoint);
         setFeedbackList(res.data);
       } catch (error) {
+        // Expected error if userSpecific=true but no token is present
         console.error(`Error fetching ${userSpecific ? 'user' : 'public'} feedback:`, error);
-        // Optionally set error state here
+        setFeedbackList([]); // Set to empty array on error
       } finally {
         setIsLoading(false);
       }
@@ -85,7 +87,8 @@ export const FeedbackList = ({ userSpecific = false }) => {
     fetchFeedback();
   }, [userSpecific]);
 
-  const title = userSpecific ? 'My Submitted Concerns' : 'Recent Community Feedback';
+  // 🔑 CHANGE: Update title to 'My Complaints' when userSpecific is true
+  const title = userSpecific ? 'My Complaints' : 'Recent Community Feedback';
   const iconColor = userSpecific ? 'text-accent-blue' : 'text-success';
   const emptyMessage = userSpecific 
     ? 'You have not submitted any complaints or concerns yet.' 
