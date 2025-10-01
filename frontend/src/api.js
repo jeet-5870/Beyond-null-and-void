@@ -15,9 +15,10 @@ API.interceptors.request.use((config) => {
   return config;
 });
 
-// 🔑 FIX: Base URL set to the root. Login components must now include the full '/api/auth' prefix.
 export const AuthAPI = axios.create({
-  baseURL: BASE_URL, 
+  // 🔑 FIX: Corrected baseURL to target the backend auth routes directly,
+  // preventing 404 errors on auth initiation.
+  baseURL: `${BASE_URL}/api/auth`, 
 });
 
 export default API;

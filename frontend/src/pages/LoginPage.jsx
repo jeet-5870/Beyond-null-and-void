@@ -141,7 +141,6 @@ const LoginPage = () => {
     }
 
     try {
-      // 🔑 FIX: Using AuthAPI, so path is just /verify-otp
       const res = await AuthAPI.post('/verify-otp', { identifier, otp });
       
       if (res.data?.token) {

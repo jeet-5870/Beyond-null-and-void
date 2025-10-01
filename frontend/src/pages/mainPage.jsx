@@ -1,7 +1,7 @@
 import React, { useState, useEffect } from 'react';
 import { useNavigate } from 'react-router-dom';
 import { Droplets, LogIn, ArrowRight, ArrowUp, Menu, X } from 'lucide-react';
-import PollutionLeaderboard from './pollutionLeaderboard.jsx';
+import PollutionLeaderboard from '../components/pollutionChart.jsx'; // 🔑 FIX: Changed import to use the interactive component
 import PartnersBoard from './partnersBoard.jsx';
 import BlogSection, { ComplaintForm, FeedbackList } from './blogSection.jsx';
 import API from '../api.js';
@@ -40,7 +40,6 @@ const Navbar = () => {
           </div>
 
           {/* Desktop Navigation Links */}
-          {/* 🔑 Changed lg:flex to xs:flex */}
           <div className="hidden xs:flex items-center space-x-6">
             {navLinks.map((link) => (
               <a 
@@ -72,7 +71,6 @@ const Navbar = () => {
           </div>
 
           {/* Hamburger Menu Button (Mobile) */}
-          {/* 🔑 Changed lg:hidden to xs:hidden */}
           <button 
             className="xs:hidden p-2 text-text-light hover:text-accent-blue transition-colors"
             onClick={() => setIsMenuOpen(!isMenuOpen)}
@@ -84,7 +82,6 @@ const Navbar = () => {
       </div>
 
       {/* Mobile Menu (Collapsible) */}
-      {/* 🔑 Changed lg:hidden to xs:hidden */}
       <div 
         className={`xs:hidden bg-secondary-dark border-t border-gray-700 transition-all duration-300 ${isMenuOpen ? 'max-h-screen opacity-100 py-2' : 'max-h-0 opacity-0 overflow-hidden'}`}
       >
@@ -150,9 +147,7 @@ const MainPage = () => {
     fetchLeaderboard();
   }, []);
 
-  const handleViewTimeline = (city) => {
-    console.log(`View timeline for ${city}`);
-  };
+  // 🔑 REMOVED: handleViewTimeline is no longer needed as the PollutionLeaderboard component handles the logic internally
 
   return (
     <div className="min-h-screen bg-primary-dark">
@@ -201,12 +196,12 @@ const MainPage = () => {
               <PollutionLeaderboard 
                 data={leaderboardData} 
                 title="Top 10 Least Polluted Cities (HPI)" 
-                onViewTimeline={handleViewTimeline}
+                // 🔑 REMOVED: onViewTimeline prop is no longer needed
               />
               <PollutionLeaderboard 
                 data={reversedLeaderboardData} 
                 title="Top 10 Most Polluted Cities (HPI)" 
-                onViewTimeline={handleViewTimeline}
+                // 🔑 REMOVED: onViewTimeline prop is no longer needed
               />
             </>
           )}

@@ -52,7 +52,7 @@ const PollutionTimeline = ({ city, onBack }) => {
             id="timeframe"
             value={selectedTimeframe}
             onChange={(e) => setSelectedTimeframe(e.target.value)}
-            // 🔑 UPDATED input styles for dark theme
+            // 泊 UPDATED input styles for dark theme
             className="rounded-lg border border-gray-600 bg-secondary-dark text-text-light p-2 text-sm focus:outline-none focus:ring-2 focus:ring-accent-blue"
           >
             <option value="7d">Last 7 days</option>
@@ -78,7 +78,7 @@ const PollutionTimeline = ({ city, onBack }) => {
               [Placeholder for Interactive Chart of HPI over time]
             </div>
             <div className="mt-4 text-center">
-              {/* 🔑 UPDATED color based on performance */}
+              {/* 泊 UPDATED color based on performance */}
               <p className="text-lg font-semibold text-text-light">Performance: 
                 <span className={getBestPerformance().includes('Improved') ? 'text-success' : getBestPerformance().includes('Worsened') ? 'text-danger' : 'text-text-muted'}>
                   {` ${getBestPerformance()}`}
@@ -96,34 +96,19 @@ const PollutionTimeline = ({ city, onBack }) => {
 };
 
 const PollutionLeaderboard = ({ data, title }) => {
-  const [leaderboardData, setLeaderboardData] = useState([]);
-  const [page, setPage] = useState(1);
-  const [totalPages, setTotalPages] = useState(1);
+  // 🔑 FIX: Removed pagination states (page, totalPages, citiesPerPage) 
+  // as this component is now used exclusively with pre-fetched data (top/bottom 10).
   const [showTimeline, setShowTimeline] = useState(false);
   const [selectedCity, setSelectedCity] = useState(null);
-  const citiesPerPage = 10;
+  const [leaderboardData, setLeaderboardData] = useState([]); // State now only holds the prop data
   
-  // This useEffect attempts to fetch data if the component is used alone (without data prop)
-  // For mainPage.jsx, it uses the data prop, making the API call inside this useEffect redundant/overridden.
+  // 🔑 FIX: Simplified useEffect to just use the incoming data prop
   useEffect(() => {
     if (data && data.length > 0) {
-        // If data is passed as prop (as in mainPage.jsx), use it
         setLeaderboardData(data);
-        setTotalPages(Math.ceil(data.length / citiesPerPage));
-    } else {
-      // Otherwise, fetch data from the API (for standalone use, if any)
-      const fetchLeaderboard = async () => {
-        try {
-          const res = await API.get(`/api/leaderboard?page=${page}&limit=${citiesPerPage}`);
-          setLeaderboardData(res.data.cities);
-          setTotalPages(res.data.totalPages);
-        } catch (err) {
-          console.error('Error fetching leaderboard data:', err);
-        }
-      };
-      fetchLeaderboard();
-    }
-  }, [page, data, citiesPerPage]); 
+    } 
+    // Removed API fetching logic as it's handled in mainPage.jsx now
+  }, [data]); 
 
   const handleViewTimeline = (city) => {
     setSelectedCity(city);
@@ -140,8 +125,7 @@ const PollutionLeaderboard = ({ data, title }) => {
   }
 
   // Determine which data to render based on props
-  // Slicing local data for pagination if necessary (though the data prop typically contains all 10 items)
-  const displayedData = Array.isArray(data) && data.length > 0 ? data : leaderboardData;
+  const displayedData = leaderboardData;
 
   return (
     <Card className="mb-8">
@@ -155,7 +139,7 @@ const PollutionLeaderboard = ({ data, title }) => {
         <div className="overflow-x-auto">
           <table className="w-full text-left">
             <thead>
-              <tr className="border-b border-gray-700 bg-primary-dark"> {/* 🔑 Table header colors */}
+              <tr className="border-b border-gray-700 bg-primary-dark"> {/* 泊 Table header colors */}
                 <th className="py-2 px-4 text-text-muted">Rank</th>
                 <th className="py-2 px-4 text-text-muted">City</th>
                 <th className="py-2 px-4 text-text-muted">Pollution Index</th>
@@ -165,7 +149,7 @@ const PollutionLeaderboard = ({ data, title }) => {
             <tbody>
               {displayedData.map((city, index) => (
                 <tr key={city.city} className="border-b border-gray-700 last:border-b-0 odd:bg-secondary-dark even:bg-primary-dark/70">
-                  <td className="py-2 px-4 text-text-light font-medium">{(page - 1) * citiesPerPage + index + 1}</td>
+                  <td className="py-2 px-4 text-text-light font-medium">{index + 1}</td> {/* 🔑 FIX: Simplified Rank */}
                   <td className="py-2 px-4 text-text-light">{city.city}</td>
                   <td className="py-2 px-4 text-text-light font-mono">{city.pollutionIndex ? city.pollutionIndex.toFixed(1) : 'N/A'}</td>
                   <td className="py-2 px-4">
@@ -181,25 +165,7 @@ const PollutionLeaderboard = ({ data, title }) => {
             </tbody>
           </table>
         </div>
-        <div className="flex justify-between items-center mt-4">
-          <button
-            onClick={() => setPage(page => Math.max(1, page - 1))}
-            disabled={page === 1}
-            // 🔑 UPDATED pagination styles
-            className="px-4 py-2 text-sm font-medium text-text-light bg-primary-dark rounded-lg hover:bg-primary-dark/80 disabled:opacity-50 disabled:text-text-muted border border-gray-700"
-          >
-            Previous
-          </button>
-          <span className="text-sm text-text-muted">Page {page} of {totalPages}</span>
-          <button
-            onClick={() => setPage(page => Math.min(totalPages, page + 1))}
-            disabled={page === totalPages}
-            // 🔑 UPDATED pagination styles
-            className="px-4 py-2 text-sm font-medium text-text-light bg-primary-dark rounded-lg hover:bg-primary-dark/80 disabled:opacity-50 disabled:text-text-muted border border-gray-700"
-          >
-            Next
-          </button>
-        </div>
+        {/* 🔑 FIX: Removed Pagination Controls */}
       </CardContent>
     </Card>
   );
