@@ -1,4 +1,5 @@
 // frontend/src/pages/LoginPage.jsx
+
 import React, { useState } from 'react';
 import { useNavigate } from 'react-router-dom';
 import { Card } from '../components/card.jsx';
@@ -18,6 +19,11 @@ const LoginPage = ({ onLogin }) => {
   const [password, setPassword] = useState('');
   const [otp, setOtp] = useState('');
 
+  // 🔑 NEW STATE: For new password during reset flow
+  const [newPassword, setNewPassword] = useState('');
+  const [confirmNewPassword, setConfirmNewPassword] = useState('');
+  const [isResettingPassword, setIsResettingPassword] = useState(false); 
+
   const [fullname, setFullname] = useState('');
   const [role, setRole] = useState('guest');
   const [confirmPassword, setConfirmPassword] = useState('');
@@ -36,6 +42,7 @@ const LoginPage = ({ onLogin }) => {
     setError('');
     setMessage('');
     setIsSubmitting(true);
+    setIsResettingPassword(false); // Ensure reset state is cleared initially
 
     if (!identifier) {
       setError('Please enter your email or phone number.');
@@ -106,6 +113,11 @@ const LoginPage = ({ onLogin }) => {
         // 🔑 FIX: Call onLogin to update the global authentication state
         if (onLogin) onLogin(true);
         navigate('/dashboard');
+      } 
+      // Handle successful signup (which sends OTP response)
+      else if (res.data?.nextStep === 'otp') {
+        setStep(2); // Move to OTP verification step
+        setMessage(res.data.message);
       }
 
     } catch (err) {
@@ -122,6 +134,9 @@ const LoginPage = ({ onLogin }) => {
     setMessage('');
     setIsSubmitting(true);
 
+    // 🔑 FIX: Set the reset flag here for the Forgot Password flow
+    setIsResettingPassword(true); 
+
     try {
       // 泊 FIX: Using AuthAPI, so path is just /request-otp
       const res = await AuthAPI.post('/request-otp', { identifier });
@@ -130,6 +145,8 @@ const LoginPage = ({ onLogin }) => {
       setMessage(res.data.message);
 
     } catch (err) {
+      // 🔑 NEW: Clear reset state if OTP request fails
+      setIsResettingPassword(false);
       setError(err.response?.data?.error || 'Failed to send OTP. User not found.');
     } finally {
       setIsSubmitting(false);
@@ -147,9 +164,28 @@ const LoginPage = ({ onLogin }) => {
       setIsSubmitting(false);
       return;
     }
+    
+    // 🔑 NEW: Validate new password if in reset flow
+    if (isResettingPassword) {
+        if (!newPassword || newPassword.length < 6) {
+            setError('New password must be at least 6 characters long.');
+            setIsSubmitting(false);
+            return;
+        }
+        if (newPassword !== confirmNewPassword) {
+            setError('New passwords do not match.');
+            setIsSubmitting(false);
+            return;
+        }
+    }
 
     try {
-      const res = await AuthAPI.post('/verify-otp', { identifier, otp });
+      // 🔑 NEW: Include newPassword in payload if resetting
+      const payload = isResettingPassword 
+        ? { identifier, otp, newPassword } 
+        : { identifier, otp };
+        
+      const res = await AuthAPI.post('/verify-otp', payload);
 
       if (res.data?.token) {
         localStorage.setItem('token', res.data.token);
@@ -163,6 +199,10 @@ const LoginPage = ({ onLogin }) => {
       setError(err.response?.data?.error || 'OTP verification failed. Incorrect or expired code.');
     } finally {
       setIsSubmitting(false);
+      // 🔑 NEW: Clear password fields and reset flag after success/failure
+      setNewPassword('');
+      setConfirmNewPassword('');
+      setIsResettingPassword(false);
     }
   };
 
@@ -177,6 +217,8 @@ const LoginPage = ({ onLogin }) => {
     setFullname('');
     setConfirmPassword('');
     setRole('guest');
+    // 🔑 NEW: Clear reset flag on mode toggle
+    setIsResettingPassword(false); 
   };
 
   // --- Rendering Logic ---
@@ -296,12 +338,12 @@ const LoginPage = ({ onLogin }) => {
           {mode === 'login' && (
             <button
               type="button"
-              onClick={handleRequestOtp}
+              onClick={handleRequestOtp} // 🔑 This is now the "Forgot Password" path
               disabled={isSubmitting}
               className="w-full py-2 px-4 text-sm font-medium rounded-md text-primary-dark bg-accent-blue hover:bg-sky-400/80 transition flex items-center justify-center space-x-2 mt-2 disabled:opacity-50"
             >
               <Send className="h-4 w-4" />
-              <span>Request OTP instead (Password Reset)</span>
+              <span>Forgot Password? Request Reset OTP</span>
             </button>
           )}
 
@@ -323,6 +365,41 @@ const LoginPage = ({ onLogin }) => {
           <p className="text-sm text-text-muted text-center">
             Enter the 6-digit code sent to your {identifierType}.
           </p>
+          
+          {/* 🔑 NEW PASSWORD FIELDS FOR RESET FLOW */}
+          {isResettingPassword && (
+              <>
+              <p className="text-sm font-semibold text-accent-blue text-center pt-2">Set New Password</p>
+              <div>
+                <label htmlFor="newPassword" className="sr-only">New Password</label>
+                <input
+                  id="newPassword"
+                  name="newPassword"
+                  type="password"
+                  required
+                  placeholder="New Password (min 6 chars)"
+                  value={newPassword}
+                  onChange={(e) => setNewPassword(e.target.value)}
+                  className="block w-full px-3 py-2 border border-gray-600 bg-secondary-dark text-text-light rounded-md focus:ring-accent-blue focus:border-accent-blue"
+                />
+              </div>
+              <div>
+                <label htmlFor="confirmNewPassword" className="sr-only">Confirm New Password</label>
+                <input
+                  id="confirmNewPassword"
+                  name="confirmNewPassword"
+                  type="password"
+                  required
+                  placeholder="Confirm New Password"
+                  value={confirmNewPassword}
+                  onChange={(e) => setConfirmNewPassword(e.target.value)}
+                  className="block w-full px-3 py-2 border border-gray-600 bg-secondary-dark text-text-light rounded-md focus:ring-accent-blue focus:border-accent-blue"
+                />
+              </div>
+              </>
+          )}
+
+          {/* OTP Input */}
           <div>
             <label htmlFor="otp" className="sr-only">OTP Code</label>
             <input
@@ -344,7 +421,7 @@ const LoginPage = ({ onLogin }) => {
             disabled={isSubmitting}
             className="w-full py-2 px-4 text-sm font-medium rounded-md text-primary-dark bg-success hover:bg-success/80 transition disabled:opacity-50"
           >
-            Verify OTP
+            {isResettingPassword ? 'Reset Password & Login' : 'Verify OTP'}
           </button>
           <button
             type="button"
@@ -372,7 +449,7 @@ const LoginPage = ({ onLogin }) => {
         <div className="flex flex-col items-center">
           <Droplets className="h-12 w-12 text-accent-blue mb-2" />
           <h2 className="text-3xl font-bold text-center text-text-light">
-            {mode === 'login' ? 'Access Account' : 'Create Account'}
+            {isResettingPassword ? 'Reset Account' : (mode === 'login' ? 'Access Account' : 'Create Account')}
           </h2>
           <p className="mt-2 text-center text-sm text-text-muted">
             {step === 0 ? 'Enter email or phone to begin.' : `Authenticating: ${identifier}`}

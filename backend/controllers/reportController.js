@@ -1,16 +1,17 @@
 // backend/controllers/reportController.js
+
 import db from '../db/db.js';
 import PDFDocument from 'pdfkit';
 import { getHPIClassification, getHEIClassification } from '../utils/classification.js';
 
 export default function generateReport(req, res) {
-    const { userId } = req.user;
+    const { userId, role } = req.user; // 🔑 Get role from the authenticated request
     const doc = new PDFDocument({
         // Set document default to dark theme friendly (white text on dark background)
         bufferPages: true,
         font: 'Helvetica',
         size: 'A4',
-        margin: 50 // Added uniform margin
+        margin: 50
     });
     const filename = `groundwater_report_${new Date().toISOString()}.pdf`;
 
@@ -31,20 +32,48 @@ export default function generateReport(req, res) {
         DANGER: '#ef4444',
     };
     
-    // Set background to primary dark color for the entire page
     doc.on('pageAdded', () => {
         doc.fillColor(COLORS.PRIMARY_DARK).rect(0, 0, doc.page.width, doc.page.height).fill();
     });
     doc.fillColor(COLORS.PRIMARY_DARK).rect(0, 0, doc.page.width, doc.page.height).fill();
 
+    // 🔑 NEW LOGIC: Determine query based on role
+    let query;
+    let params;
+    let reportScope;
 
-    db.query(`
-        SELECT l.name AS location, pi.hpi, pi.hei, pi.pli, pi.mpi
-        FROM pollution_indices pi
-        JOIN samples s ON pi.sample_id = s.sample_id
-        JOIN locations l ON s.location_id = l.location_id
-        WHERE s.user_id = $1
-    `, [userId])
+    // 🔑 FIX: NGO, Researcher, and GUEST get Global data
+    if (role === 'ngo' || role === 'researcher' || role === 'guest') {
+        // Global Data for NGO, Researcher, and Guest
+        query = `
+            SELECT l.name AS location, pi.hpi, pi.hei, pi.pli, pi.mpi
+            FROM pollution_indices pi
+            JOIN samples s ON pi.sample_id = s.sample_id
+            JOIN locations l ON s.location_id = l.location_id
+        `;
+        params = [];
+        
+        if (role === 'guest') {
+            reportScope = 'Global Data Analysis (Guest View)';
+        } else if (role === 'researcher') {
+            reportScope = 'Global Data Analysis (Researcher Scope)';
+        } else {
+            reportScope = 'Global Data Analysis (NGO Scope)';
+        }
+    } else {
+        // Fallback for any other role (local)
+         query = `
+            SELECT l.name AS location, pi.hpi, pi.hei, pi.pli, pi.mpi
+            FROM pollution_indices pi
+            JOIN samples s ON pi.sample_id = s.sample_id
+            JOIN locations l ON s.location_id = l.location_id
+            WHERE s.user_id = $1
+        `;
+        params = [userId];
+        reportScope = 'User Data Analysis (Local)';
+    }
+    
+    db.query(query, params)
     .then(result => {
         const rows = result.rows;
 
@@ -61,7 +90,7 @@ export default function generateReport(req, res) {
         doc.fillColor(COLORS.TEXT_MUTED)
            .fontSize(10)
            .font('Helvetica')
-           .text(`Generated on: ${new Date().toLocaleDateString('en-US')} | User Data Analysis`, 50, 75, { align: 'left' });
+           .text(`Generated on: ${new Date().toLocaleDateString('en-US')} | Scope: ${reportScope}`, 50, 75, { align: 'left' });
         
         // Horizontal Line Separator
         doc.fillColor(COLORS.ACCENT_BLUE).rect(50, 95, doc.page.width - 100, 1).fill(); 
@@ -78,13 +107,13 @@ export default function generateReport(req, res) {
             acc[row.location].count += 1;
             return acc;
         }, {});
-        
+
+        // --- 3. LOCATION BLOCKS ---
         const contentStartX = 50;
         const contentWidth = doc.page.width - contentStartX * 2;
         const locationBlockHeight = 110; 
         const gutter = 20;
-
-        // --- 3. LOCATION BLOCKS ---
+        
         Object.entries(grouped).forEach(([location, vals]) => {
             const hpi = (vals.hpi / vals.count).toFixed(2);
             const hei = (vals.hei / vals.count).toFixed(2);

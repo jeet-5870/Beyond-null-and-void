@@ -16,6 +16,33 @@ const createToken = (user) => {
   );
 };
 
+// Sends OTP and updates user record
+const sendOtpAndRespond = async (userId, identifier, isEmail, res) => {
+  const otp = generateOtp();
+  const expiresAt = new Date(Date.now() + 5 * 60 * 1000); // OTP valid for 5 minutes
+
+  // 🔑 Mask the identifier in the console log for security
+  const maskedIdentifier = isEmail 
+    ? identifier.replace(/^(.{2})[^@]+/, '$1***') 
+    : identifier.substring(0, 3) + '***' + identifier.substring(identifier.length - 2);
+
+  // In a real app, this simulates sending email/SMS
+  console.log(`[AUTH] Sending OTP: ${otp} to ${maskedIdentifier}. Valid until ${expiresAt.toLocaleTimeString()}.`);
+
+  await db.query(
+    'UPDATE users SET reset_token = $1, reset_token_expires = $2 WHERE user_id = $3',
+    [otp, expiresAt, userId]
+  );
+  
+  const identifierType = isEmail ? 'Email' : 'Phone Number';
+  
+  res.json({ 
+    success: true, 
+    nextStep: 'otp', 
+    message: `Verification code sent to your ${identifierType}.` 
+  });
+};
+
 // 1. Handles the start of the authentication process (Step 0)
 export const initiateAuth = async (req, res, next) => {
   const { identifier, mode } = req.body;
@@ -57,28 +84,6 @@ export const initiateAuth = async (req, res, next) => {
   } catch (err) {
     next(err);
   }
-};
-
-// Sends OTP and updates user record
-const sendOtpAndRespond = async (userId, identifier, isEmail, res) => {
-  const otp = generateOtp();
-  const expiresAt = new Date(Date.now() + 5 * 60 * 1000); // OTP valid for 5 minutes
-
-  // In a real app, this simulates sending email/SMS
-  console.log(`[AUTH] Sending OTP: ${otp} to ${identifier}. Valid until ${expiresAt.toLocaleTimeString()}.`);
-
-  await db.query(
-    'UPDATE users SET reset_token = $1, reset_token_expires = $2 WHERE user_id = $3',
-    [otp, expiresAt, userId]
-  );
-  
-  const identifierType = isEmail ? 'Email' : 'Phone Number';
-  
-  res.json({ 
-    success: true, 
-    nextStep: 'otp', 
-    message: `Verification code sent to your ${identifierType}.` 
-  });
 };
 
 // 2. Handles standard login and signup with password (Step 1)
@@ -142,9 +147,14 @@ export const passwordAuth = async (req, res, next) => {
 
 // 3. Handles OTP verification (Step 2)
 export const verifyOtp = async (req, res, next) => {
-  const { identifier, otp } = req.body;
+  const { identifier, otp, newPassword } = req.body; // 🔑 UPDATED: Accept newPassword
   if (!identifier || !otp) {
     return res.status(400).json({ error: 'Identifier and OTP are required.' });
+  }
+  
+  // 🔑 NEW: Validate new password length if provided (for reset flow)
+  if (newPassword && newPassword.length < 6) { 
+      return res.status(400).json({ error: 'New password must be at least 6 characters long.' });
   }
 
   const isEmail = identifier.includes('@');
@@ -160,8 +170,21 @@ export const verifyOtp = async (req, res, next) => {
       return res.status(401).json({ error: 'Invalid or expired OTP.' });
     }
 
-    // Success: Clear OTP fields and log the user in
-    await db.query('UPDATE users SET reset_token = NULL, reset_token_expires = NULL WHERE user_id = $1', [user.user_id]);
+    let updateQuery = 'UPDATE users SET reset_token = NULL, reset_token_expires = NULL';
+    let updateParams = [user.user_id];
+    let paramIndex = 2;
+
+    if (newPassword) {
+        // 🔑 NEW: If newPassword is provided (forgot password flow), update the password hash
+        const password_hash = await bcrypt.hash(newPassword, 10);
+        updateQuery += `, password_hash = $${paramIndex}`;
+        updateParams.unshift(password_hash); // Put hash at the front of params
+    }
+    
+    updateQuery += ` WHERE user_id = $${updateParams.length}`; // user_id is always the last parameter
+
+    // Success: Clear OTP fields and log the user in (and reset password if applicable)
+    await db.query(updateQuery, updateParams);
 
     const token = createToken(user);
     res.json({ token, userId: user.user_id, role: user.role });
@@ -172,7 +195,6 @@ export const verifyOtp = async (req, res, next) => {
 };
 
 // 4. Endpoint to request OTP (e.g., for password reset or initial passwordless login)
-// 🔑 PASSWORD RESET/PASSWORDLESS LOGIN: OTP is required here. (NO CHANGE NEEDED)
 export const requestOtp = async (req, res, next) => {
     const { identifier } = req.body;
     if (!identifier) {
@@ -197,15 +219,9 @@ export const requestOtp = async (req, res, next) => {
     }
 };
 
-// backend/controllers/authController.js
-
-// ... (existing imports and functions) ...
-
 // 5. Endpoint to verify token validity (used by frontend on page load)
 export const verifyToken = (req, res) => {
     // If authMiddleware successfully verified the token and added req.user, 
     // the token is valid. We don't need to do anything else here.
     res.json({ success: true, message: 'Token is valid' });
 };
-
-// 🔑 FIX: Removed placeholder exports as they are no longer used or needed.
