@@ -1,16 +1,17 @@
-// backend/routes/feedbackRoutes.js
 import express from 'express';
-import { getPublicFeedback, getUserFeedback, submitFeedback } from '../controllers/feedbackControllers.js';
+// Note: Changed import names to match the controller functions
+import { getPublicFeedback, submitFeedback, getUserFeedback } from '../controllers/feedbackControllers.js';
+import authMiddleware from '../middleware/authMiddleware.js'; // Need to import authMiddleware for protected routes
 
 const router = express.Router();
 
-// Public route (Main Page: Gets all/recent community feedback)
+// Public routes (Used by the Main Page / anonymous users)
 router.get('/', getPublicFeedback); 
-router.post('/', submitFeedback); // Complaint submission uses token if available
+router.post('/', submitFeedback); 
 
-// Protected route (Dashboard: Gets only the logged-in user's submissions)
+// Protected route (Used by the Dashboard)
+// Must be placed before the app-level authMiddleware or explicitly defined here:
+// Since this file is mounted *before* app.use(authMiddleware), we use authMiddleware explicitly here for this specific sub-route
 router.get('/user/feedback', authMiddleware, getUserFeedback); 
 
 export default router;
-
-// ---

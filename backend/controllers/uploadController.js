@@ -2,17 +2,34 @@ import fs from 'fs';
 import csv from 'csv-parser';
 import db from '../db/db.js';
 import { calculateHPI, calculateHEI, calculatePLI, calculateMPI, calculateCF } from '../utils/formulaEngine.js';
-// 🔑 Import classification utility to check for 'Highly Polluted'
-import { getHEIClassification } from '../utils/classification.js'; 
+import { getHEIClassification } from '../utils/classification.js'; // Need this for classification logic
+
+// 🔑 Conceptual External Notification Service
+async function sendCriticalAlertsToOfficials(alertData) {
+  if (alertData.length === 0) return;
+
+  console.log(`🚨 Attempting to send ${alertData.length} critical pollution alerts externally...`);
+  
+  // -------------------------------------------------------------------------
+  // 🔑 PRODUCTION CODE WOULD GO HERE:
+  // - Send data to an Email Service API (e.g., SendGrid, AWS SES) 
+  // - Send data to a Webhook (e.g., Government Monitoring System)
+  // - Send data to a Messaging Service (e.g., Twilio for SMS)
+  // -------------------------------------------------------------------------
+
+  // Mocking an external server response delay
+  await new Promise(resolve => setTimeout(resolve, 500)); 
+  
+  console.log('✅ External Alert Service notification simulated and complete.');
+}
 
 export default async function handleUpload(req, res, next) {
-  const { userId } = req.user; 
+  const { userId } = req.user;
   const filePath = req.file?.path;
   if (!filePath) return res.status(400).json({ error: 'No file uploaded' });
 
   const rowsByLocation = {};
-  // 🔑 New array to hold generated alerts during processing
-  const generatedAlerts = []; 
+  const generatedAlerts = []; // Array to hold critical alerts
 
   try {
     await new Promise((resolve, reject) => {
@@ -39,7 +56,7 @@ export default async function handleUpload(req, res, next) {
     
     await db.query('BEGIN');
     
-    // Delete only the current user's data
+    // 🗑️ Delete only the current user's data
     await db.query('DELETE FROM pollution_indices WHERE sample_id IN (SELECT sample_id FROM samples WHERE user_id = $1)', [userId]);
     await db.query('DELETE FROM metal_concentrations WHERE sample_id IN (SELECT sample_id FROM samples WHERE user_id = $1)', [userId]);
     await db.query('DELETE FROM samples WHERE user_id = $1', [userId]);
@@ -103,18 +120,19 @@ export default async function handleUpload(req, res, next) {
       const hei = calculateHEI(concentrations, heiStandards);
       const pli = calculatePLI(cfArray);
       const mpi = calculateMPI(concentrations);
-
-      // 🔑 ALERT CHECK: If highly polluted, generate a mock alert.
-      if (getHEIClassification(hei) === 'Highly Polluted') {
+      
+      // 🔑 Check for critical pollution (Highly Polluted HEI >= 20)
+      const classification = getHEIClassification(hei);
+      if (classification === 'Highly Polluted') {
         generatedAlerts.push({
-            location: location,
-            hei: hei.toFixed(2),
-            timestamp: new Date().toISOString(),
-            // Mock notification for officials/NGOs
-            message: `CRITICAL ALERT: ${location} recorded Highly Polluted water (HEI: ${hei.toFixed(2)})! Immediate review required.`,
+          location, 
+          hpi: hpi,
+          hei: hei,
+          message: `HEI score of ${hei.toFixed(2)} exceeds critical safety threshold. Immediate intervention required.`,
+          timestamp: new Date().toISOString()
         });
       }
-      
+
       await db.query(
         `INSERT INTO pollution_indices (sample_id, hpi, hei, pli, mpi, cf)
          VALUES ($1, $2, $3, $4, $5, $6)`,
@@ -126,8 +144,17 @@ export default async function handleUpload(req, res, next) {
     
     await db.query('COMMIT');
     fs.unlinkSync(filePath);
-    // 🔑 Return alerts in the response
-    res.status(200).json({ message: 'Upload complete', inserted: insertedCount, alerts: generatedAlerts });
+    
+    // 🔑 1. Send alerts to external server (simulated, non-blocking)
+    await sendCriticalAlertsToOfficials(generatedAlerts); 
+
+    // 🔑 2. Return alerts to the frontend for dashboard notification (which replaces the mock)
+    res.status(200).json({ 
+      message: 'Upload complete', 
+      inserted: insertedCount,
+      alerts: generatedAlerts, // Send real alerts back for local display
+    });
+    
   } catch (err) {
     await db.query('ROLLBACK');
     console.error('❌ Upload failed:', err);
