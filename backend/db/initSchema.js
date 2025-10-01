@@ -2,6 +2,14 @@ import db from './db.js';
 
 export const initPostgresSchema = async () => {
   try {
+    // 🔑 ADDED: Ensure the email and phone columns exist in the users table 
+    // for robust deployment/migration, handling the "column does not exist" error.
+    await db.query(`
+      ALTER TABLE users
+      ADD COLUMN IF NOT EXISTS email TEXT UNIQUE,
+      ADD COLUMN IF NOT EXISTS phone TEXT UNIQUE;
+    `);
+
     await db.query(`
       CREATE TABLE IF NOT EXISTS locations (
         location_id SERIAL PRIMARY KEY,
