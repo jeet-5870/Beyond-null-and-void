@@ -7,17 +7,26 @@ export const seedDatabase = async () => {
     // Check if users table is empty before seeding
     const userCountRes = await db.query('SELECT COUNT(*) FROM users');
     if (userCountRes.rows[0].count === '0') {
-      console.log('Seeding default user...');
+      console.log('Seeding default users...');
       const passwordHash = await bcrypt.hash('password', 10);
-      // 🔑 UPDATED QUERY to include fullname, email, and role
+      
+      // 1. Default Researcher (Email, with Password)
       await db.query(
-        `INSERT INTO users (fullname, email, password_hash, role)
-         VALUES ('admin', 'admin@example.com', $1, 'researcher')`,
+        `INSERT INTO users (fullname, email, phone, password_hash, role)
+         VALUES ('Researcher Admin', 'admin@example.com', NULL, $1, 'researcher')`,
         [passwordHash]
       );
-      console.log('✅ Default user seeded.');
+      
+      // 2. Default Guest (Phone, with Password)
+       await db.query(
+        `INSERT INTO users (fullname, email, phone, password_hash, role)
+         VALUES ('Guest User', NULL, '9991234567', $1, 'guest')`,
+        [passwordHash]
+      );
+
+      console.log('✅ Default users seeded.');
     } else {
-      console.log('Default user already exists. Skipping seeding.');
+      console.log('Default users already exist. Skipping seeding.');
     }
 
     // Check if standards table is empty before seeding

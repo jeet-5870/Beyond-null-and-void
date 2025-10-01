@@ -12,17 +12,18 @@ export const initPostgresSchema = async () => {
         state TEXT
       );
 
-      /* ✅ UPDATED USERS TABLE to match LoginPage fields */
+      /* ✅ UPDATED USERS TABLE to support OTP and Phone Number authentication */
       CREATE TABLE IF NOT EXISTS users (
         user_id SERIAL PRIMARY KEY,
-        fullname TEXT NOT NULL,                          -- ✅ Added: Full name from signup
-        email TEXT UNIQUE NOT NULL,                      -- ✅ Added: Email for signup/login
-        password_hash TEXT NOT NULL,                     -- ✅ Renamed from password to password_hash
-        role TEXT CHECK (role IN ('ngo', 'guest', 'researcher')) NOT NULL,  -- ✅ Added: Role selection
-        reset_token TEXT,                                -- ✅ Optional: For password reset
-        reset_token_expires TIMESTAMP,                   -- ✅ Optional: Expiry for reset token
-        created_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP,  -- ✅ Added: Signup timestamp
-        updated_at TIMESTAMP                             -- ✅ Optional: For profile updates
+        fullname TEXT NOT NULL,                          
+        email TEXT UNIQUE,                               -- 🔑 Changed: Email is UNIQUE but can be NULL if phone is used
+        phone TEXT UNIQUE,                               -- 🔑 NEW: Phone number field, must be UNIQUE or NULL
+        password_hash TEXT,                              -- 🔑 Changed: Can be NULL for passwordless accounts
+        role TEXT CHECK (role IN ('ngo', 'guest', 'researcher')) NOT NULL,  
+        reset_token TEXT,                                -- ✅ Used for OTP storage
+        reset_token_expires TIMESTAMP,                   -- ✅ Used for OTP expiry
+        created_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP,  
+        updated_at TIMESTAMP                             
       );
 
       CREATE TABLE IF NOT EXISTS samples (
@@ -58,10 +59,10 @@ export const initPostgresSchema = async () => {
         standard_ppm REAL
       );
 
-      /* ✅ UPDATED FEEDBACK TABLE to link feedback to users */
+      /* ✅ FEEDBACK TABLE */
       CREATE TABLE IF NOT EXISTS feedback (
         feedback_id SERIAL PRIMARY KEY,
-        user_id INTEGER REFERENCES users(user_id),       -- ✅ Added: Feedback tied to user
+        user_id INTEGER REFERENCES users(user_id),       
         message TEXT NOT NULL,
         submitted_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP
       );
@@ -74,7 +75,7 @@ export const initPostgresSchema = async () => {
         PRIMARY KEY (index_name, pollution_level)
       );
 
-      /* ✅ OPTIONAL: LOGIN LOGS for audit and analytics */
+      /* ✅ LOGIN LOGS */
       CREATE TABLE IF NOT EXISTS login_logs (
         log_id SERIAL PRIMARY KEY,
         user_id INTEGER REFERENCES users(user_id),
