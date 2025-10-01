@@ -1,25 +1,27 @@
+// frontend/src/pages/LoginPage.jsx
 import React, { useState } from 'react';
 import { useNavigate } from 'react-router-dom';
 import { Card } from '../components/card.jsx';
 import { Droplets, Mail, Smartphone, Send, Key } from 'lucide-react';
 import API, { AuthAPI } from '../api.js'; // Ensure AuthAPI is imported
 
-const LoginPage = () => {
+// 🔑 FIX: Accept the onLogin prop from App.jsx
+const LoginPage = ({ onLogin }) => {
   const navigate = useNavigate();
-  
+
   // 泊 Step 0: IDENTIFIER, Step 1: PASSWORD/SIGNUP, Step 2: OTP
-  const [step, setStep] = useState(0); 
-  
+  const [step, setStep] = useState(0);
+
   const [mode, setMode] = useState('login'); // 'login' or 'signup'
-  
-  const [identifier, setIdentifier] = useState(''); 
+
+  const [identifier, setIdentifier] = useState('');
   const [password, setPassword] = useState('');
   const [otp, setOtp] = useState('');
-  
+
   const [fullname, setFullname] = useState('');
-  const [role, setRole] = useState('guest'); 
+  const [role, setRole] = useState('guest');
   const [confirmPassword, setConfirmPassword] = useState('');
-  
+
   const [error, setError] = useState('');
   const [message, setMessage] = useState('');
   const [isSubmitting, setIsSubmitting] = useState(false);
@@ -34,31 +36,31 @@ const LoginPage = () => {
     setError('');
     setMessage('');
     setIsSubmitting(true);
-    
+
     if (!identifier) {
       setError('Please enter your email or phone number.');
       setIsSubmitting(false);
       return;
     }
-    
+
     // Step 0: Submit Identifier and let the backend determine the next step
     try {
       // 泊 FIX: Using AuthAPI (baseURL includes /api/auth), so path is just /initiate-auth
       const res = await AuthAPI.post('/initiate-auth', { identifier, mode });
       const data = res.data;
-      
+
       if (data.nextStep === 'password') {
         setStep(1); // User exists or starting signup, prompt for password/details
         if (data.error) {
           setError(data.error); // Show error if logging in non-existent user (redirect to signup)
           // 🔑 FIX: Switch mode to signup to correctly display form fields and button text in Step 1.
-          setMode('signup'); 
+          setMode('signup');
         }
       } else if (data.nextStep === 'otp') {
         setStep(2); // Prompt for OTP
         setMessage(data.message);
       } else {
-         setError('Invalid response from server.');
+        setError('Invalid response from server.');
       }
 
     } catch (err) {
@@ -74,7 +76,7 @@ const LoginPage = () => {
     e.preventDefault();
     setError('');
     setIsSubmitting(true);
-    
+
     if (mode === 'signup') {
       if (password !== confirmPassword) {
         setError('Passwords do not match.');
@@ -94,16 +96,18 @@ const LoginPage = () => {
 
     try {
       const payload = { identifier, password, fullname, role, mode };
-      
+
       // 泊 FIX: Using AuthAPI (baseURL includes /api/auth), so path is just /password-auth
-      const res = await AuthAPI.post('/password-auth', payload); 
-      
+      const res = await AuthAPI.post('/password-auth', payload);
+
       if (res.data?.token) {
         localStorage.setItem('token', res.data.token);
         localStorage.setItem('role', res.data.role);
+        // 🔑 FIX: Call onLogin to update the global authentication state
+        if (onLogin) onLogin(true);
         navigate('/dashboard');
-      } 
-      
+      }
+
     } catch (err) {
       console.error('Password Auth error:', err);
       setError(err.response?.data?.error || 'Authentication failed.');
@@ -111,7 +115,7 @@ const LoginPage = () => {
       setIsSubmitting(false);
     }
   };
-  
+
   // Explicitly request OTP (e.g., for password reset or passwordless login)
   const handleRequestOtp = async () => {
     setError('');
@@ -121,10 +125,10 @@ const LoginPage = () => {
     try {
       // 泊 FIX: Using AuthAPI, so path is just /request-otp
       const res = await AuthAPI.post('/request-otp', { identifier });
-      
+
       setStep(2); // Move to OTP verification step
-      setMessage(res.data.message); 
-      
+      setMessage(res.data.message);
+
     } catch (err) {
       setError(err.response?.data?.error || 'Failed to send OTP. User not found.');
     } finally {
@@ -137,7 +141,7 @@ const LoginPage = () => {
     e.preventDefault();
     setError('');
     setIsSubmitting(true);
-    
+
     if (!otp) {
       setError('OTP is required.');
       setIsSubmitting(false);
@@ -146,13 +150,15 @@ const LoginPage = () => {
 
     try {
       const res = await AuthAPI.post('/verify-otp', { identifier, otp });
-      
+
       if (res.data?.token) {
         localStorage.setItem('token', res.data.token);
         localStorage.setItem('role', res.data.role);
+        // 🔑 FIX: Call onLogin to update the global authentication state
+        if (onLogin) onLogin(true);
         navigate('/dashboard');
-      } 
-      
+      }
+
     } catch (err) {
       setError(err.response?.data?.error || 'OTP verification failed. Incorrect or expired code.');
     } finally {
@@ -172,7 +178,7 @@ const LoginPage = () => {
     setConfirmPassword('');
     setRole('guest');
   };
-  
+
   // --- Rendering Logic ---
 
   const renderFormStep = () => {
@@ -203,13 +209,13 @@ const LoginPage = () => {
         </form>
       );
     }
-    
+
     // STEP 1: PASSWORD AUTHENTICATION / SIGNUP DETAILS
     if (step === 1) {
       return (
         <form onSubmit={handlePasswordAuth} className="space-y-4">
           <p className="text-sm text-text-muted text-center font-semibold">
-             {mode === 'login' ? `Login as ${identifier}:` : `Complete sign up for ${identifier}:`}
+            {mode === 'login' ? `Login as ${identifier}:` : `Complete sign up for ${identifier}:`}
           </p>
 
           {/* Signup Details */}
@@ -298,7 +304,7 @@ const LoginPage = () => {
               <span>Request OTP instead (Password Reset)</span>
             </button>
           )}
-          
+
           <button
             type="button"
             onClick={() => setStep(0)}
