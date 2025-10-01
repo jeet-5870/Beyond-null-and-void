@@ -2,7 +2,7 @@ import React, { useState } from 'react';
 import { useNavigate } from 'react-router-dom';
 import { Card } from '../components/card.jsx';
 import { Droplets, Mail, Smartphone, Send, Key } from 'lucide-react';
-import API from '../api.js';
+import API, { AuthAPI } from '../api.js'; // Ensure AuthAPI is imported
 
 const LoginPage = () => {
   const navigate = useNavigate();
@@ -43,7 +43,8 @@ const LoginPage = () => {
     
     // Step 0: Submit Identifier and let the backend determine the next step
     try {
-      const res = await API.post('/api/auth/initiate-auth', { identifier, mode });
+      // 🔑 FIX: Using AuthAPI (baseURL includes /api/auth), so path is just /initiate-auth
+      const res = await AuthAPI.post('/initiate-auth', { identifier, mode });
       const data = res.data;
       
       if (data.nextStep === 'password') {
@@ -57,6 +58,7 @@ const LoginPage = () => {
       }
 
     } catch (err) {
+      // The 401 error is gone, but the 404 is now handled
       console.error('Auth initiation error:', err);
       setError(err.response?.data?.error || `Could not initiate authentication.`);
     } finally {
@@ -89,7 +91,8 @@ const LoginPage = () => {
     try {
       const payload = { identifier, password, fullname, role, mode };
       
-      const res = await API.post('/api/auth/password-auth', payload); 
+      // 🔑 FIX: Using AuthAPI (baseURL includes /api/auth), so path is just /password-auth
+      const res = await AuthAPI.post('/password-auth', payload); 
       
       if (res.data?.token) {
         localStorage.setItem('token', res.data.token);
@@ -112,8 +115,8 @@ const LoginPage = () => {
     setIsSubmitting(true);
 
     try {
-      // Use the dedicated OTP request endpoint
-      const res = await API.post('/api/auth/request-otp', { identifier });
+      // 🔑 FIX: Using AuthAPI, so path is just /request-otp
+      const res = await AuthAPI.post('/request-otp', { identifier });
       
       setStep(2); // Move to OTP verification step
       setMessage(res.data.message); 
@@ -138,7 +141,8 @@ const LoginPage = () => {
     }
 
     try {
-      const res = await API.post('/api/auth/verify-otp', { identifier, otp });
+      // 🔑 FIX: Using AuthAPI, so path is just /verify-otp
+      const res = await AuthAPI.post('/verify-otp', { identifier, otp });
       
       if (res.data?.token) {
         localStorage.setItem('token', res.data.token);
