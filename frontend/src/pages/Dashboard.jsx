@@ -389,11 +389,6 @@ const Dashboard = () => {
                   <WaterQualityMap data={results} selectedLocation={selectedLocation} />
                 </div>
 
-                <SafetyBadge data={results} />
-                {/* 🔑 REMOVED: Pollution Chart for Top 10 Safest Cities by HEI */}
-                <PollutionChart data={results} key={JSON.stringify(results)} />
-                {/* <PollutionChart data={safeCitiesData} key={JSON.stringify(safeCitiesData)} title="Top 10 Safest Cities by HEI" />
-                */}
                 <ResultTable data={results} onShowOnMap={handleShowOnMap} />
 
                 <div className="flex justify-center mt-8">

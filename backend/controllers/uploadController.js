@@ -1,3 +1,5 @@
+// backend/controllers/uploadController.js
+
 import fs from 'fs';
 import csv from 'csv-parser';
 import db from '../db/db.js';
@@ -30,20 +32,40 @@ export default async function handleUpload(req, res, next) {
 
   const rowsByLocation = {};
   const generatedAlerts = []; // Array to hold critical alerts
+  
+  // 🔑 Define required CSV headers for samples
+  const requiredHeaders = ['location', 'lat', 'lng', 'metal_name', 'concentration'];
 
   try {
     await new Promise((resolve, reject) => {
-      fs.createReadStream(filePath)
-        .pipe(csv())
-        .on('data', (row) => {
-          const key = `${row.location}_${row.lat}_${row.lng}`;
-          if (!rowsByLocation[key]) rowsByLocation[key] = [];
-          rowsByLocation[key].push(row);
+      const stream = fs.createReadStream(filePath)
+        .pipe(csv());
+        
+      let headersValid = false;
+
+      // Check headers before reading data
+      stream.on('headers', (headers) => {
+        const missingHeaders = requiredHeaders.filter(header => !headers.includes(header));
+        if (missingHeaders.length > 0) {
+          // If headers are missing, destroy the stream and reject the promise.
+          stream.destroy(new Error(`Missing required CSV headers: ${missingHeaders.join(', ')}`));
+        } else {
+          headersValid = true;
+        }
+      });
+        
+      stream.on('data', (row) => {
+          if (headersValid) {
+            const key = `${row.location}_${row.lat}_${row.lng}`;
+            if (!rowsByLocation[key]) rowsByLocation[key] = [];
+            rowsByLocation[key].push(row);
+          }
         })
         .on('end', resolve)
         .on('error', reject);
     });
     
+    // 🔑 FIX: Moved the standards query outside the transaction block (before BEGIN)
     const { rows: standardsRows } = await db.query('SELECT metal_name, mac_ppm, standard_ppm FROM metal_standards');
     const metalStandards = {};
     standardsRows.forEach(row => {
@@ -54,11 +76,9 @@ export default async function handleUpload(req, res, next) {
       throw new Error("No metal standards found. Please upload standards first.");
     }
     
+    // Start Transaction
     await db.query('BEGIN');
     
-    // 🔑 FIX: Removed the logic that deletes a user's previous data to enable timeline tracking.
-    // The data for the current user is now appended.
-
     let insertedCount = 0;
     for (const [key, metals] of Object.entries(rowsByLocation)) {
       const firstMetal = metals[0];

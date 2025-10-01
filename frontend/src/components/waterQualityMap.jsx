@@ -1,3 +1,4 @@
+// frontend/src/components/waterQualityMap.jsx
 import React, { useEffect, useRef } from "react";
 import { MapContainer, TileLayer, Marker, Popup, useMap } from 'react-leaflet';
 import 'leaflet/dist/leaflet.css';
@@ -73,6 +74,8 @@ const WaterQualityMap = ({ data, selectedLocation }) => {
               <div className="p-2 text-gray-900">
                 <h1 className="text-lg font-semibold">{location.location}</h1>
                 <p>HPI: {location.hpi.toFixed(2)}</p>
+                {/* 🔑 FIX: Added HEI to the map popup for clarity and consistency with pin color */}
+                <p>HEI: {location.hei.toFixed(2)}</p> 
                 <p>Classification: {location.classification}</p>
               </div>
             </Popup>

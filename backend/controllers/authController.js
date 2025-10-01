@@ -1,3 +1,5 @@
+// backend/controllers/authController.js
+
 import bcrypt from 'bcrypt';
 import jwt from 'jsonwebtoken';
 import db from '../db/db.js';
@@ -84,19 +86,17 @@ export const passwordAuth = async (req, res, next) => {
   const { identifier, password, fullname, role, mode } = req.body;
   const isEmail = identifier.includes('@');
   const identifierField = isEmail ? 'email' : 'phone';
-  const otherIdentifierField = isEmail ? 'phone' : 'email';
 
   try {
     let user;
 
     if (mode === 'signup') {
-      // Check if user already exists (should have been caught in initiateAuth, but for safety)
+      // 🔑 SIGNUP LOGIC: Create user, then enforce OTP verification.
       const existingUser = await db.query(`SELECT * FROM users WHERE ${identifierField} = $1`, [identifier]);
       if (existingUser.rows.length > 0) {
         return res.status(409).json({ error: `${identifierField} already registered.` });
       }
 
-      // Create new user
       const password_hash = await bcrypt.hash(password, 10);
       const emailValue = isEmail ? identifier : null;
       const phoneValue = isEmail ? null : identifier;
@@ -107,8 +107,12 @@ export const passwordAuth = async (req, res, next) => {
         [fullname, emailValue, phoneValue, password_hash, role]
       );
       user = result.rows[0];
+      
+      // Enforce OTP after signup (Step 2)
+      return sendOtpAndRespond(user.user_id, identifier, isEmail, res);
 
     } else { // Login mode
+      // 🔑 LOGIN LOGIC: Only password required.
       const userRes = await db.query(`SELECT * FROM users WHERE ${identifierField} = $1`, [identifier]);
       user = userRes.rows[0];
 
@@ -116,7 +120,7 @@ export const passwordAuth = async (req, res, next) => {
         return res.status(401).json({ error: 'Invalid credentials or user not found.' });
       }
       
-      // If user is found but hasn't set a password yet, we block standard login
+      // Enforce password check for standard login path
       if (!user.password_hash) {
           return res.status(401).json({ error: 'Account requires OTP verification. Please request OTP.' });
       }
@@ -125,12 +129,12 @@ export const passwordAuth = async (req, res, next) => {
       if (!isPasswordValid) {
         return res.status(401).json({ error: 'Invalid password.' });
       }
+      
+      // Standard login success: Generate and return token (NO OTP required for login)
+      const token = createToken(user);
+      res.json({ token, userId: user.user_id, role: user.role });
     }
     
-    // Success: Generate and return token
-    const token = createToken(user);
-    res.json({ token, userId: user.user_id, role: user.role });
-
   } catch (err) {
     next(err);
   }
@@ -168,6 +172,7 @@ export const verifyOtp = async (req, res, next) => {
 };
 
 // 4. Endpoint to request OTP (e.g., for password reset or initial passwordless login)
+// 🔑 PASSWORD RESET/PASSWORDLESS LOGIN: OTP is required here. (NO CHANGE NEEDED)
 export const requestOtp = async (req, res, next) => {
     const { identifier } = req.body;
     if (!identifier) {
@@ -190,6 +195,17 @@ export const requestOtp = async (req, res, next) => {
     } catch (err) {
         next(err);
     }
+};
+
+// backend/controllers/authController.js
+
+// ... (existing imports and functions) ...
+
+// 5. Endpoint to verify token validity (used by frontend on page load)
+export const verifyToken = (req, res) => {
+    // If authMiddleware successfully verified the token and added req.user, 
+    // the token is valid. We don't need to do anything else here.
+    res.json({ success: true, message: 'Token is valid' });
 };
 
 // 🔑 FIX: Removed placeholder exports as they are no longer used or needed.
