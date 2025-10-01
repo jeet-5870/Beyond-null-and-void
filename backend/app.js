@@ -1,5 +1,6 @@
 import express from "express";
 import cors from "cors";
+import dotenv from 'dotenv';
 import uploadRoutes from "./routes/uploadRoutes.js";
 import mapRoutes from "./routes/mapRoutes.js";
 import resultRoutes from "./routes/resultRoutes.js";
@@ -12,22 +13,19 @@ import errorHandler from "./middleware/errorHandler.js";
 import authMiddleware from "./middleware/authMiddleware.js";
 import { initPostgresSchema } from './db/initSchema.js';
 import { seedDatabase } from "./db/seed.js";
-import dotenv from 'dotenv';
-dotenv.config();
 
+dotenv.config();
 
 const app = express();
 app.use(cors());
 app.use(express.json());
 
-// 🔐 Public routes (No authMiddleware applied here)
+// 🔐 Public routes
 app.use('/api/auth', authRoutes);
 app.use('/api/leaderboard', leaderboardRoutes);
 app.use('/api/feedback', feedbackRoutes);
 
-// 🔒 Protected routes (authMiddleware applied explicitly to each route)
-// 🔑 FIX: Removed global app.use(authMiddleware) and applied it inline 
-// to ensure public routes are never checked.
+// 🔒 Protected routes (authMiddleware applied inline)
 app.use('/upload', authMiddleware, uploadRoutes);
 app.use('/map-data', authMiddleware, mapRoutes);
 app.use('/api/samples', authMiddleware, resultRoutes);
@@ -36,6 +34,7 @@ app.use('/api/standards', authMiddleware, standardRoutes);
 
 app.use(errorHandler);
 
+// 🩺 Health check
 app.get('/', (req, res) => {
   res.send("👋 Welcome to Beyond Null and Void.\nThis server powers groundwater insights.");
 });
@@ -45,16 +44,18 @@ app.get('/health', (req, res) => {
 });
 
 const PORT = process.env.PORT || 3000;
+
 app.listen(PORT, async () => {
   console.log(`🚀 Server is live on port ${PORT}`);
+
   try {
+    // ✅ FIXED ORDER: Schema must be initialized before seeding
     await initPostgresSchema();
     await seedDatabase();
   } catch (err) {
     console.error("❌ Failed to set up database on startup: ", err);
   }
 });
-
 
 
 

@@ -2,13 +2,8 @@ import db from './db.js';
 
 export const initPostgresSchema = async () => {
   try {
-    // 🔑 ADDED: Ensure the email and phone columns exist in the users table 
-    // for robust deployment/migration, handling the "column does not exist" error.
-    await db.query(`
-      ALTER TABLE users
-      ADD COLUMN IF NOT EXISTS email TEXT UNIQUE,
-      ADD COLUMN IF NOT EXISTS phone TEXT UNIQUE;
-    `);
+    // ❌ REMOVED: ALTER TABLE users (was failing if users table didn't exist)
+    // ✅ FIX: Create users table first, with all required columns
 
     await db.query(`
       CREATE TABLE IF NOT EXISTS locations (
@@ -20,20 +15,19 @@ export const initPostgresSchema = async () => {
         state TEXT
       );
 
-      /* ✅ UPDATED USERS TABLE to support OTP and Phone Number authentication */
+      /* ✅ USERS TABLE: supports email, phone, OTP, and role-based access */
       CREATE TABLE IF NOT EXISTS users (
         user_id SERIAL PRIMARY KEY,
-        fullname TEXT NOT NULL,                          
-        email TEXT UNIQUE,                               -- Allows NULL (for phone login). Must be UNIQUE if present.
-        phone TEXT UNIQUE,                               -- NEW: Phone number field. Allows NULL. Must be UNIQUE if present.
-        password_hash TEXT,                              -- Allows NULL (for accounts created via OTP only).
-        role TEXT CHECK (role IN ('ngo', 'guest', 'researcher')) NOT NULL,  
-        reset_token TEXT,                                -- Used for OTP storage
-        reset_token_expires TIMESTAMP,                   -- Used for OTP expiry
-        created_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP,  
+        fullname TEXT NOT NULL,
+        email TEXT UNIQUE,
+        phone TEXT UNIQUE,
+        password_hash TEXT,
+        role TEXT CHECK (role IN ('ngo', 'guest', 'researcher')) NOT NULL,
+        reset_token TEXT,
+        reset_token_expires TIMESTAMP,
+        created_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP,
         updated_at TIMESTAMP,
-        -- Constraint to ensure at least one identifier is present
-        CONSTRAINT chk_email_or_phone CHECK (email IS NOT NULL OR phone IS NOT NULL) 
+        CONSTRAINT chk_email_or_phone CHECK (email IS NOT NULL OR phone IS NOT NULL)
       );
 
       CREATE TABLE IF NOT EXISTS samples (
@@ -69,10 +63,9 @@ export const initPostgresSchema = async () => {
         standard_ppm REAL
       );
 
-      /* ✅ FEEDBACK TABLE */
       CREATE TABLE IF NOT EXISTS feedback (
         feedback_id SERIAL PRIMARY KEY,
-        user_id INTEGER REFERENCES users(user_id),       
+        user_id INTEGER REFERENCES users(user_id),
         message TEXT NOT NULL,
         submitted_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP
       );
@@ -85,7 +78,6 @@ export const initPostgresSchema = async () => {
         PRIMARY KEY (index_name, pollution_level)
       );
 
-      /* ✅ LOGIN LOGS */
       CREATE TABLE IF NOT EXISTS login_logs (
         log_id SERIAL PRIMARY KEY,
         user_id INTEGER REFERENCES users(user_id),
@@ -94,6 +86,7 @@ export const initPostgresSchema = async () => {
         user_agent TEXT
       );
     `);
+
     console.log('✅ PostgreSQL schema initialized.');
   } catch (err) {
     console.error('❌ PostgreSQL schema init failed:', err.message);
