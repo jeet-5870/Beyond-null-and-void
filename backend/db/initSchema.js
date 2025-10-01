@@ -16,14 +16,16 @@ export const initPostgresSchema = async () => {
       CREATE TABLE IF NOT EXISTS users (
         user_id SERIAL PRIMARY KEY,
         fullname TEXT NOT NULL,                          
-        email TEXT UNIQUE,                               -- 🔑 Changed: Email is UNIQUE but can be NULL if phone is used
-        phone TEXT UNIQUE,                               -- 🔑 NEW: Phone number field, must be UNIQUE or NULL
-        password_hash TEXT,                              -- 🔑 Changed: Can be NULL for passwordless accounts
+        email TEXT UNIQUE,                               -- Allows NULL (for phone login). Must be UNIQUE if present.
+        phone TEXT UNIQUE,                               -- NEW: Phone number field. Allows NULL. Must be UNIQUE if present.
+        password_hash TEXT,                              -- Allows NULL (for accounts created via OTP only).
         role TEXT CHECK (role IN ('ngo', 'guest', 'researcher')) NOT NULL,  
-        reset_token TEXT,                                -- ✅ Used for OTP storage
-        reset_token_expires TIMESTAMP,                   -- ✅ Used for OTP expiry
+        reset_token TEXT,                                -- Used for OTP storage
+        reset_token_expires TIMESTAMP,                   -- Used for OTP expiry
         created_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP,  
-        updated_at TIMESTAMP                             
+        updated_at TIMESTAMP,
+        -- Constraint to ensure at least one identifier is present
+        CONSTRAINT chk_email_or_phone CHECK (email IS NOT NULL OR phone IS NOT NULL) 
       );
 
       CREATE TABLE IF NOT EXISTS samples (
