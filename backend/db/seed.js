@@ -9,9 +9,10 @@ export const seedDatabase = async () => {
     if (userCountRes.rows[0].count === '0') {
       console.log('Seeding default user...');
       const passwordHash = await bcrypt.hash('password', 10);
+      // 🔑 UPDATED QUERY to include fullname, email, and role
       await db.query(
-        `INSERT INTO users (username, password_hash)
-         VALUES ('admin', $1)`,
+        `INSERT INTO users (fullname, email, password_hash, role)
+         VALUES ('admin', 'admin@example.com', $1, 'researcher')`,
         [passwordHash]
       );
       console.log('✅ Default user seeded.');

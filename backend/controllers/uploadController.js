@@ -2,13 +2,17 @@ import fs from 'fs';
 import csv from 'csv-parser';
 import db from '../db/db.js';
 import { calculateHPI, calculateHEI, calculatePLI, calculateMPI, calculateCF } from '../utils/formulaEngine.js';
+// 🔑 Import classification utility to check for 'Highly Polluted'
+import { getHEIClassification } from '../utils/classification.js'; 
 
 export default async function handleUpload(req, res, next) {
-  const { userId } = req.user; // 🔑 Get userId from the authenticated request
+  const { userId } = req.user; 
   const filePath = req.file?.path;
   if (!filePath) return res.status(400).json({ error: 'No file uploaded' });
 
   const rowsByLocation = {};
+  // 🔑 New array to hold generated alerts during processing
+  const generatedAlerts = []; 
 
   try {
     await new Promise((resolve, reject) => {
@@ -35,15 +39,19 @@ export default async function handleUpload(req, res, next) {
     
     await db.query('BEGIN');
     
-    // 🗑️ Delete only the current user's data
+    // Delete only the current user's data
     await db.query('DELETE FROM pollution_indices WHERE sample_id IN (SELECT sample_id FROM samples WHERE user_id = $1)', [userId]);
     await db.query('DELETE FROM metal_concentrations WHERE sample_id IN (SELECT sample_id FROM samples WHERE user_id = $1)', [userId]);
     await db.query('DELETE FROM samples WHERE user_id = $1', [userId]);
 
     let insertedCount = 0;
     for (const [key, metals] of Object.entries(rowsByLocation)) {
-      const { location, lat, lng, district, state } = metals[0];
+      const firstMetal = metals[0];
+      const { location, lat, lng } = firstMetal;
 
+      const district = firstMetal.district || location;
+      const state = firstMetal.state || 'N/A';
+      
       let locRes = await db.query(
         'SELECT location_id FROM locations WHERE name = $1',
         [location]
@@ -55,7 +63,7 @@ export default async function handleUpload(req, res, next) {
         const insertLoc = await db.query(
           `INSERT INTO locations (name, latitude, longitude, district, state)
            VALUES ($1, $2, $3, $4, $5) RETURNING location_id`,
-          [location, lat, lng, district || location, state || 'UP']
+          [location, lat, lng, district, state]
         );
         location_id = insertLoc.rows[0].location_id;
       }
@@ -63,7 +71,7 @@ export default async function handleUpload(req, res, next) {
       const sampleRes = await db.query(
         `INSERT INTO samples (location_id, sample_date, source_type, notes, user_id)
          VALUES ($1, $2, $3, $4, $5) RETURNING sample_id`,
-        [location_id, new Date().toISOString(), 'Groundwater', 'CSV import', userId] // 🔑 Add user_id
+        [location_id, new Date().toISOString(), 'Groundwater', 'CSV import', userId]
       );
       const sample_id = sampleRes.rows[0].sample_id;
 
@@ -95,6 +103,17 @@ export default async function handleUpload(req, res, next) {
       const hei = calculateHEI(concentrations, heiStandards);
       const pli = calculatePLI(cfArray);
       const mpi = calculateMPI(concentrations);
+
+      // 🔑 ALERT CHECK: If highly polluted, generate a mock alert.
+      if (getHEIClassification(hei) === 'Highly Polluted') {
+        generatedAlerts.push({
+            location: location,
+            hei: hei.toFixed(2),
+            timestamp: new Date().toISOString(),
+            // Mock notification for officials/NGOs
+            message: `CRITICAL ALERT: ${location} recorded Highly Polluted water (HEI: ${hei.toFixed(2)})! Immediate review required.`,
+        });
+      }
       
       await db.query(
         `INSERT INTO pollution_indices (sample_id, hpi, hei, pli, mpi, cf)
@@ -107,7 +126,8 @@ export default async function handleUpload(req, res, next) {
     
     await db.query('COMMIT');
     fs.unlinkSync(filePath);
-    res.status(200).json({ message: 'Upload complete', inserted: insertedCount });
+    // 🔑 Return alerts in the response
+    res.status(200).json({ message: 'Upload complete', inserted: insertedCount, alerts: generatedAlerts });
   } catch (err) {
     await db.query('ROLLBACK');
     console.error('❌ Upload failed:', err);

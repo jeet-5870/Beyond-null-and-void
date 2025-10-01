@@ -2,13 +2,15 @@
 import React from 'react';
 
 const Card = ({ children, className = '', ...props }) => (
-  <div className={`bg-white rounded-xl shadow-lg border border-gray-200 overflow-hidden ${className}`} {...props}>
+  // 🔑 UPDATED for dark theme: white background changed to primary-dark/secondary-dark base
+  <div className={`bg-secondary-dark rounded-xl shadow-2xl border border-gray-700 overflow-hidden ${className}`} {...props}>
     {children}
   </div>
 );
 
 const CardHeader = ({ children, className = '' }) => (
-  <div className={`px-6 py-4 border-b border-gray-200 bg-gray-50 ${className}`}>{children}</div>
+  // 🔑 UPDATED for dark theme: colors and borders
+  <div className={`px-6 py-4 border-b border-gray-700 bg-primary-dark ${className}`}>{children}</div>
 );
 
 const CardContent = ({ children, className = '' }) => (

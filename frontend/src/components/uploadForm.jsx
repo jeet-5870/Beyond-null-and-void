@@ -55,23 +55,22 @@ function UploadForm({ onUploadComplete, uploadType }) {
     }
   };
   
-  // Correctly define messageColor before the return statement
-  const messageColor = message.includes('failed') ? 'text-red-500' : 'text-green-500';
-
+  const messageColor = message.includes('failed') ? 'text-danger' : 'text-success';
   const formTitle = uploadType === 'standards' ? 'Upload Metal Standards CSV' : 'Upload Groundwater Samples CSV';
 
   return (
-    <div className="flex flex-col items-center justify-center p-6 bg-white rounded-xl shadow-lg border border-gray-200 mb-8">
-      <h3 className="text-2xl font-bold text-gray-900 mb-4">{formTitle}</h3>
-      <p className="text-gray-500 mb-6">Upload a CSV file to analyze pollution indices.</p>
+    // 🔑 UPDATED colors for dark theme
+    <div className="flex flex-col items-center justify-center p-6 bg-secondary-dark rounded-xl shadow-lg border border-gray-700 mb-8">
+      <h3 className="text-2xl font-bold text-text-light mb-4">{formTitle}</h3>
+      <p className="text-text-muted mb-6">Upload a CSV file to analyze pollution indices.</p>
       <form onSubmit={handleSubmit} className="flex flex-col items-center space-y-4 w-full max-w-sm">
         <label htmlFor={`file-upload-${uploadType}`} className="w-full">
-          <div className="flex flex-col items-center justify-center w-full px-6 py-8 border-2 border-dashed border-gray-300 rounded-lg cursor-pointer bg-gray-50 hover:bg-gray-100 transition-colors duration-200">
-            <Upload className="h-12 w-12 text-gray-400 mb-2" />
-            <p className="text-sm text-gray-500">
+          <div className="flex flex-col items-center justify-center w-full px-6 py-8 border-2 border-dashed border-gray-600 rounded-lg cursor-pointer bg-primary-dark hover:bg-primary-dark/80 transition-colors duration-200">
+            <Upload className="h-12 w-12 text-accent-blue mb-2" />
+            <p className="text-sm text-text-light">
               <span className="font-semibold">Click to upload</span> or drag and drop
             </p>
-            <p className="text-xs text-gray-400 mt-1">CSV file only</p>
+            <p className="text-xs text-text-muted mt-1">CSV file only</p>
           </div>
           <input
             id={`file-upload-${uploadType}`}
@@ -82,15 +81,16 @@ function UploadForm({ onUploadComplete, uploadType }) {
             className="hidden"
           />
         </label>
-        {file && <p className="text-sm text-gray-600 truncate max-w-full">Selected: {file.name}</p>}
+        <p className="text-sm text-text-muted truncate max-w-full">{file ? `Selected: ${file.name}` : 'No file selected'}</p>
         <button
           type="submit"
           disabled={isUploading || !file}
-          className="w-full px-4 py-2 text-white bg-color rounded-lg font-semibold flex items-center justify-center space-x-2 transition-colors duration-200 hover:scale-105 disabled:bg-gray-400 disabled:cursor-not-allowed"
+          // 🔑 FIXED: Replaced 'bg-color' with 'bg-accent-blue' for consistency
+          className="w-full px-4 py-2 text-primary-dark bg-accent-blue rounded-lg font-semibold flex items-center justify-center space-x-2 transition-colors duration-200 hover:scale-105 disabled:bg-gray-600 disabled:cursor-not-allowed disabled:text-text-muted"
         >
           {isUploading ? (
             <>
-              <div className="animate-spin rounded-full h-4 w-4 border-2 border-white border-t-transparent"></div>
+              <div className="animate-spin rounded-full h-4 w-4 border-2 border-primary-dark border-t-transparent"></div>
               <span>Uploading...</span>
             </>
           ) : (

@@ -2,6 +2,7 @@ import React, { useEffect, useRef } from "react";
 import { MapContainer, TileLayer, Marker, Popup, useMap } from 'react-leaflet';
 import 'leaflet/dist/leaflet.css';
 import L from 'leaflet';
+import { Card } from './card.jsx'; // 🔑 Import Card component
 
 // Create a custom icon function
 const getPinIcon = (classification) => {
@@ -47,8 +48,9 @@ const WaterQualityMap = ({ data, selectedLocation }) => {
   const center = [23.2599, 77.4126];
 
   return (
-    <div className="mb-8">
-      <h2 className="text-xl font-bold mb-2 text-gray-900">
+    // 🔑 Wrap in Card for consistent dashboard styling
+    <Card className="mb-8 p-6"> 
+      <h2 className="text-xl font-bold mb-4 text-text-light">
         Groundwater Heavy Metal Pollution Map
       </h2>
       <MapContainer 
@@ -67,8 +69,9 @@ const WaterQualityMap = ({ data, selectedLocation }) => {
             icon={getPinIcon(location.classification)}
           >
             <Popup>
-              <div class="p-2">
-                <h1 class="text-lg font-semibold">{location.location}</h1>
+              {/* Popups are hardcoded to standard colors to ensure readability on a map */}
+              <div className="p-2 text-gray-900">
+                <h1 className="text-lg font-semibold">{location.location}</h1>
                 <p>HPI: {location.hpi.toFixed(2)}</p>
                 <p>Classification: {location.classification}</p>
               </div>
@@ -77,7 +80,7 @@ const WaterQualityMap = ({ data, selectedLocation }) => {
         ))}
         <FlyToLocation selectedLocation={selectedLocation} />
       </MapContainer>
-    </div>
+    </Card>
   );
 };
 

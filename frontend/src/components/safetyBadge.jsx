@@ -4,15 +4,16 @@ import { Card, CardHeader, CardContent } from './card.jsx';
 
 function SafetyBadge({ data }) {
   const getStatusColor = (classification) => {
+    // 🔑 Using dark theme color variables
     switch (classification) {
       case 'Safe':
-        return 'bg-green-100 text-green-800 border-green-200';
+        return 'bg-success/20 text-success border-success/50';
       case 'Polluted':
-        return 'bg-orange-100 text-orange-800 border-orange-200';
+        return 'bg-warning/20 text-warning border-warning/50';
       case 'Highly Polluted':
-        return 'bg-red-100 text-red-800 border-red-200';
+        return 'bg-danger/20 text-danger border-danger/50';
       default:
-        return 'bg-gray-100 text-gray-800 border-gray-200';
+        return 'bg-secondary-dark/50 text-text-muted border-gray-700';
     }
   };
 
@@ -32,8 +33,8 @@ function SafetyBadge({ data }) {
     <Card className="mb-8">
       <CardHeader>
         <div className="flex items-center space-x-2">
-          <Shield className="h-5 w-5 text-blue-600" />
-          <h3 className="text-lg font-semibold text-gray-900">Water Safety Status</h3>
+          <Shield className="h-5 w-5 text-accent-blue" />
+          <h3 className="text-lg font-semibold text-text-light">Water Safety Status</h3>
         </div>
       </CardHeader>
       <CardContent>

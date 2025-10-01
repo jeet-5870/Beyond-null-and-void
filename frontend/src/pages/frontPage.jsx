@@ -10,21 +10,22 @@ const Navbar = () => {
   };
 
   return (
-    <nav className="fixed top-0 left-0 right-0 z-50 bg-white shadow-md">
+    // 🔑 UPDATED Navbar to dark theme
+    <nav className="fixed top-0 left-0 right-0 z-50 bg-primary-dark/95 backdrop-blur-md shadow-md border-b border-gray-700">
       <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8">
         <div className="flex justify-between items-center h-16">
           {/* Logo and App Title */}
           <div className="flex items-center space-x-3">
-            <Droplets className="h-8 w-8 text-blue-600" />
-            <span className="text-xl font-bold text-gray-900">E-Cell</span>
+            <Droplets className="h-8 w-8 text-accent-blue" />
+            <span className="text-xl font-bold text-text-light">Groundwater Analyzer</span>
           </div>
           {/* Login Button */}
           <button
             onClick={handleLoginClick}
-            className="flex items-center space-x-2 px-4 py-2 text-sm font-semibold rounded-lg text-white bg-blue-600 hover:bg-blue-700 transition-colors"
+            className="flex items-center space-x-2 px-4 py-2 text-sm font-semibold rounded-lg text-primary-dark bg-accent-blue hover:bg-sky-400/80 transition-colors"
           >
             <LogIn className="h-4 w-4" />
-            <span>Login</span>
+            <span>Login / Sign Up</span>
           </button>
         </div>
       </div>
@@ -41,38 +42,40 @@ const FrontPage = () => {
   };
 
   return (
-    <div className="min-h-screen bg-white">
+    // 🔑 UPDATED background to dark theme
+    <div className="min-h-screen bg-primary-dark text-text-light">
       <Navbar />
       <main className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 py-20 flex flex-col items-center justify-center text-center">
         {/* Hero Section */}
         <div className="pt-24">
-          <h1 className="text-4xl sm:text-5xl lg:text-6xl font-extrabold text-gray-900 leading-tight mb-4">
-            Empowering the Next Generation of Founders
+          <h1 className="text-4xl sm:text-5xl lg:text-6xl font-extrabold text-text-light leading-tight mb-4">
+            Monitor, Analyze, <span className="text-accent-blue">Act.</span>
           </h1>
-          <p className="text-lg text-gray-600 max-w-2xl mx-auto mb-8">
-            The Entrepreneurship Cell is a student-run body dedicated to fostering innovation and entrepreneurial spirit among students.
+          <p className="text-lg text-text-muted max-w-2xl mx-auto mb-8">
+            The Groundwater Analyzer is a Smart India Hackathon initiative to bring clarity to India's water quality through community data and smart indexing.
           </p>
           <button
             onClick={handleLoginClick}
-            className="inline-flex items-center px-8 py-4 border border-transparent text-base font-medium rounded-full shadow-lg text-white bg-blue-600 hover:bg-blue-700 transition-all transform hover:scale-105"
+            className="inline-flex items-center px-8 py-4 border border-transparent text-base font-medium rounded-full shadow-lg text-primary-dark bg-accent-blue hover:bg-sky-400/80 transition-all transform hover:scale-105"
           >
-            Get Started
+            Get Started with Dashboard
           </button>
         </div>
 
         {/* Feature Highlights Section */}
         <div className="grid grid-cols-1 md:grid-cols-3 gap-8 mt-20 w-full">
-          <div className="bg-gray-50 rounded-lg p-6 shadow-md transition-all hover:shadow-xl">
-            <h3 className="text-xl font-bold text-gray-900 mb-2">Event Check-in</h3>
-            <p className="text-gray-600">Quick and seamless entry to all E-Cell events with our QR-based system.</p>
+          {/* 🔑 UPDATED feature card styles */}
+          <div className="bg-secondary-dark rounded-lg p-6 shadow-md transition-all hover:shadow-xl border border-gray-700">
+            <h3 className="text-xl font-bold text-accent-blue mb-2">Real-time HPI</h3>
+            <p className="text-text-muted">Instantly calculate the Heavy Metal Pollution Index upon data submission.</p>
           </div>
-          <div className="bg-gray-50 rounded-lg p-6 shadow-md transition-all hover:shadow-xl">
-            <h3 className="text-xl font-bold text-gray-900 mb-2">Startup Showcase</h3>
-            <p className="text-gray-600">Explore and connect with groundbreaking startups and our successful alumni network.</p>
+          <div className="bg-secondary-dark rounded-lg p-6 shadow-md transition-all hover:shadow-xl border border-gray-700">
+            <h3 className="text-xl font-bold text-accent-blue mb-2">Role-based Access</h3>
+            <p className="text-text-muted">Tailored views for NGOs, researchers, and general users to fit their needs.</p>
           </div>
-          <div className="bg-gray-50 rounded-lg p-6 shadow-md transition-all hover:shadow-xl">
-            <h3 className="text-xl font-bold text-gray-900 mb-2">Dynamic Sponsor Wall</h3>
-            <p className="text-gray-600">Showcase your support with dynamic badges on a dedicated page for our sponsors.</p>
+          <div className="bg-secondary-dark rounded-lg p-6 shadow-md transition-all hover:shadow-xl border border-gray-700">
+            <h3 className="text-xl font-bold text-accent-blue mb-2">Location Mapping</h3>
+            <p className="text-text-muted">Visualize all pollution data geographically using a live map interface.</p>
           </div>
         </div>
       </main>
