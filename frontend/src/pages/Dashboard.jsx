@@ -1,3 +1,4 @@
+// frontend/src/pages/Dashboard.jsx
 import React, { useState, useEffect, useRef } from 'react';
 import { useNavigate } from 'react-router-dom';
 import {
@@ -192,10 +193,13 @@ const Dashboard = () => {
     },
   ];
   
+  // 🔑 REMOVED: Calculation for safeCitiesData is removed
+  /*
   const safeCitiesData = results
     .filter(city => city.classification === 'Safe')
     .sort((a, b) => a.hei - b.hei)
     .slice(0, 10);
+  */
 
   return (
     <div className="min-h-screen bg-primary-dark">
@@ -386,10 +390,10 @@ const Dashboard = () => {
                 </div>
 
                 <SafetyBadge data={results} />
+                {/* 🔑 REMOVED: Pollution Chart for Top 10 Safest Cities by HEI */}
                 <PollutionChart data={results} key={JSON.stringify(results)} />
-                {safeCitiesData.length > 0 && (
-                  <PollutionChart data={safeCitiesData} key={JSON.stringify(safeCitiesData)} title="Top 10 Safest Cities by HEI" />
-                )}
+                {/* <PollutionChart data={safeCitiesData} key={JSON.stringify(safeCitiesData)} title="Top 10 Safest Cities by HEI" />
+                */}
                 <ResultTable data={results} onShowOnMap={handleShowOnMap} />
 
                 <div className="flex justify-center mt-8">
