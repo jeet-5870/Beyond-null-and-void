@@ -10,6 +10,7 @@ import authRoutes from "./routes/authRoutes.js";
 import leaderboardRoutes from "./routes/leaderboardRoutes.js";
 import feedbackRoutes from "./routes/feedbackRoutes.js";
 import predictionRoutes from "./routes/predictionRoutes.js"; // 🔑 NEW IMPORT
+import analysisRoutes from "./routes/analysisRoutes.js"; // 🔑 NEW IMPORT
 import errorHandler from "./middleware/errorHandler.js";
 import authMiddleware from "./middleware/authMiddleware.js";
 import { initPostgresSchema } from './db/initSchema.js';
@@ -25,6 +26,7 @@ app.use(express.json());
 app.use('/api/auth', authRoutes);
 app.use('/api/leaderboard', leaderboardRoutes);
 app.use('/api/feedback', feedbackRoutes);
+app.use('/api/auth', authRoutes);
 
 // 🔒 Protected routes (authMiddleware applied inline)
 app.use('/upload', authMiddleware, uploadRoutes);
@@ -33,6 +35,10 @@ app.use('/api/samples', authMiddleware, resultRoutes);
 app.use('/api/report', authMiddleware, reportRoutes);
 app.use('/api/standards', authMiddleware, standardRoutes);
 app.use('/api/prediction', authMiddleware, predictionRoutes); // 🔑 NEW PROTECTED ROUTE
+app.use('/api/standards', authMiddleware, standardRoutes);
+app.use('/api/prediction', authMiddleware, predictionRoutes);
+app.use('/api/analysis', authMiddleware, analysisRoutes); // 🔑 NEW PROTECTED ROUTE
+
 
 app.use(errorHandler);
 

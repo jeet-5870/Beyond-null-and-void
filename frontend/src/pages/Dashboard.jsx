@@ -2,19 +2,19 @@
 import React, { useState, useEffect, useRef } from 'react';
 import { useNavigate } from 'react-router-dom';
 import {
-  Download, Droplets, MapPin, TrendingUp,
+  Download, Droplets, MapPin, TrendingUp, BarChart2,
   FileText, CheckCircle, AlertCircle, Eye, EyeOff,
   Menu, X, Home, LogOut, UploadCloud, Bell, Slash, ArrowLeft 
-} from 'lucide-react';
+} from 'lucide-react'; // 🔑 Added BarChart2 for new tab
 import API from '../api.js';
 import UploadForm from '../components/uploadForm.jsx';
 import ResultTable from '../components/resultTable.jsx';
-import PollutionChart from '../components/pollutionChart.jsx';
-import SafetyBadge from '../components/safetyBadge.jsx';
-import { Card, CardContent, CardHeader } from '../components/card.jsx';
 import WaterQualityMap from '../components/waterQualityMap.jsx';
 import Footer from '../components/footer.jsx';
-import PredictionChart from '../components/predictionChart.jsx'; 
+import PredictionChart from '../components/predictionChart.jsx';
+import HotspotsPage from './HotspotsPage.jsx'; // 🔑 NEW IMPORT
+import AnomaliesPage from './AnomaliesPage.jsx'; // 🔑 NEW IMPORT
+import { Card, CardContent, CardHeader } from '../components/card.jsx';
 
 const Dashboard = () => {
   const [results, setResults] = useState([]);
@@ -32,9 +32,9 @@ const Dashboard = () => {
   const mapRef = useRef(null);
   const alertButtonRef = useRef(null);
 
-  // 🔑 NEW STATES FOR GATED FEATURES
-  const [currentView, setCurrentView] = useState('results'); // 'results', 'prediction'
-  const [predictionLocation, setPredictionLocation] = useState(null); // Location for prediction
+  // 🔑 NEW: State to manage the active view/tab
+  const [currentView, setCurrentView] = useState('dashboard'); // 'dashboard', 'hotspots', 'anomalies', 'prediction'
+  const [predictionLocation, setPredictionLocation] = useState(null);
 
   useEffect(() => {
     const token = localStorage.getItem('token');
@@ -52,36 +52,26 @@ const Dashboard = () => {
       }
     }
     
-    // Load persisted alerts from localStorage
     const storedAlerts = JSON.parse(localStorage.getItem('alerts')) || [];
     setAlerts(storedAlerts);
   }, []);
 
-  // Close alert dropdown when clicking outside
   useEffect(() => {
     const handleClickOutside = (event) => {
       if (alertButtonRef.current && !alertButtonRef.current.contains(event.target) && isAlertsOpen) {
         setIsAlertsOpen(false);
       }
     };
-
     document.addEventListener("mousedown", handleClickOutside);
     return () => document.removeEventListener("mousedown", handleClickOutside);
   }, [isAlertsOpen]);
 
-  // Logic to determine upload permission (Guest and Researcher can upload)
   const isUploadAllowed = role !== 'ngo'; 
-  
-  // 🔑 NEW: Logic to determine prediction permission
-  const isPredictionAllowed = role === 'researcher' || role === 'ngo'; // 🔑 Gating logic
+  const isPredictionAllowed = role === 'researcher' || role === 'ngo';
 
   const getUploadDescription = () => {
-    if (role === 'researcher') {
-      return 'Researcher accounts can upload files for project-wide storage and permanent analysis.';
-    }
-    if (role === 'guest') {
-      return 'Guest accounts can upload files for personal, private analysis within your session.';
-    }
+    if (role === 'researcher') return 'Researcher accounts can upload files for project-wide storage and permanent analysis.';
+    if (role === 'guest') return 'Guest accounts can upload files for personal, private analysis within your session.';
     return ''; 
   };
 
@@ -91,19 +81,15 @@ const Dashboard = () => {
     navigate('/login');
   };
 
-  const handleGoToMainPage = () => {
-    navigate('/');
-  };
+  const handleGoToMainPage = () => navigate('/');
 
   const fetchResults = async () => {
     setIsLoading(true);
     setError(null);
     try {
-      // Fetches user-specific results
       const res = await API.get('/api/samples'); 
       setResults(res.data);
       setShowResults(true);
-      setCurrentView('results'); // Reset view on new fetch
     } catch (err) {
       console.error('Error fetching results:', err);
       setError('Failed to load data. Please check the backend connection.');
@@ -114,38 +100,30 @@ const Dashboard = () => {
   };
 
   const handleRetrieveResults = () => {
-    showResults ? setShowResults(false) : fetchResults();
+    if (showResults) {
+      setShowResults(false);
+    } else {
+      fetchResults();
+    }
   };
 
-  // 🔑 MODIFIED: Only process and notify for alerts if the role is not 'guest'
   const handleUploadComplete = (response) => {
-    if (response && response.alerts && response.alerts.length > 0) {
+    if (response?.alerts?.length > 0) {
       if (role !== 'guest') {
-        const newAlerts = response.alerts.map(alert => ({
-          ...alert,
-          id: Date.now() + Math.random(),
-          read: false,
-        }));
-        
+        const newAlerts = response.alerts.map(alert => ({ ...alert, id: Date.now() + Math.random(), read: false }));
         const updatedAlerts = [...newAlerts, ...alerts];
         setAlerts(updatedAlerts);
         localStorage.setItem('alerts', JSON.stringify(updatedAlerts));
-        
-        // Notify the user about the critical alert in the main error area
         setError(`CRITICAL ALERT: ${newAlerts.length} highly polluted sample(s) detected. Check notifications for details.`);
       } else {
-         // Provide a generic alert for guest users without mentioning the notification system
          setError(`ATTENTION: ${response.alerts.length} highly polluted sample(s) detected. Please check the result table for details.`);
       }
     }
-    // Automatically fetch new data upon successful upload
     fetchResults();
   };
   
   const handleMarkAsRead = (id) => {
-    const updatedAlerts = alerts.map(alert => 
-      alert.id === id ? { ...alert, read: true } : alert
-    );
+    const updatedAlerts = alerts.map(alert => alert.id === id ? { ...alert, read: true } : alert);
     setAlerts(updatedAlerts);
     localStorage.setItem('alerts', JSON.stringify(updatedAlerts));
   };
@@ -156,7 +134,7 @@ const Dashboard = () => {
     setIsDownloading(true);
     try {
       const res = await API.get('/api/report', { responseType: 'blob' });
-      const blob = res.data;
+      const blob = new Blob([res.data], { type: 'application/pdf' });
       const url = window.URL.createObjectURL(blob);
       const link = document.createElement('a');
       link.href = url;
@@ -180,52 +158,23 @@ const Dashboard = () => {
     }
   };
 
-  // 🔑 NEW: Handler to switch to prediction view
   const handleShowPrediction = (location) => {
-    // Only proceed if prediction is allowed
     if (isPredictionAllowed) {
-        setPredictionLocation(location.location); // Location name is used for the API call
+        setPredictionLocation(location.location);
         setCurrentView('prediction');
     }
   };
   
-  const handleBackToResults = () => {
-      setCurrentView('results');
+  const handleBackToMainDashboard = () => {
+      setCurrentView('dashboard');
       setPredictionLocation(null);
   };
 
-
   const stats = [
-    {
-      title: 'Total Locations',
-      value: results.length,
-      icon: MapPin,
-      color: 'text-accent-blue',
-    },
-    {
-      title: 'Safe Sites',
-      value: results.filter((r) => r.classification === 'Safe').length,
-      icon: CheckCircle,
-      color: 'text-success',
-    },
-    {
-      title: 'Polluted Sites',
-      value: results.filter((r) => r.classification === 'Polluted' || r.classification === 'Highly Polluted').length,
-      icon: AlertCircle,
-      color: 'text-danger',
-    },
-    {
-      title: 'Anomalous Samples', // 🔑 NEW STAT
-      value: results.filter((r) => r.is_anomaly).length,
-      icon: Slash, // Using Slash for anomaly
-      color: 'text-danger',
-    },
-    {
-      title: 'Average HPI',
-      value: results.length ? (results.reduce((sum, r) => sum + r.hpi, 0) / results.length).toFixed(1) : '0.0',
-      icon: TrendingUp,
-      color: 'text-text-muted',
-    },
+    { title: 'Total Locations', value: results.length, icon: MapPin, color: 'text-accent-blue' },
+    { title: 'Safe Sites', value: results.filter(r => r.classification === 'Safe').length, icon: CheckCircle, color: 'text-success' },
+    { title: 'Polluted Sites', value: results.filter(r => r.classification === 'Polluted' || r.classification === 'Highly Polluted').length, icon: AlertCircle, color: 'text-danger' },
+    { title: 'Anomalous Samples', value: results.filter(r => r.is_anomaly).length, icon: Slash, color: 'text-danger' },
   ];
   
   return (
@@ -243,98 +192,38 @@ const Dashboard = () => {
           </div>
           
           <div className="flex items-center space-x-4">
-             {/* Notification Bell System (Only for non-guest roles) */}
             {role !== 'guest' && (
               <div className="relative" ref={alertButtonRef}>
                 <button
                   onClick={() => setIsAlertsOpen(!isAlertsOpen)}
-                  className="p-2 rounded-full text-text-light hover:text-danger hover:bg-primary-dark transition-colors focus:outline-none focus:ring-2 focus:ring-accent-blue"
-                  aria-label="View notifications"
+                  className="p-2 rounded-full text-text-light hover:text-danger hover:bg-primary-dark transition-colors"
                 >
                   <Bell className="h-6 w-6" />
                   {unreadAlertCount > 0 && (
-                    <span className="absolute top-0 right-0 block h-3 w-3 rounded-full ring-2 ring-secondary-dark bg-danger text-white text-xs font-bold leading-none transform translate-x-1/2 -translate-y-1/2 flex items-center justify-center">
-                      {/* Display unread count (max 9 for small badge) */}
-                      {unreadAlertCount > 9 ? '9+' : unreadAlertCount}
-                    </span>
+                    <span className="absolute top-0 right-0 block h-3 w-3 rounded-full ring-2 ring-secondary-dark bg-danger" />
                   )}
                 </button>
                 
                 {isAlertsOpen && (
-                  <Card className="absolute right-0 mt-3 w-80 max-w-xs origin-top-right shadow-2xl z-50 p-0">
-                    <CardHeader className="flex justify-between items-center">
-                      <h4 className="text-lg font-bold text-text-light">Alerts ({unreadAlertCount} unread)</h4>
-                      <button 
-                         onClick={() => setAlerts(alerts.map(a => ({...a, read: true})))}
-                         className="text-xs text-accent-blue hover:underline disabled:opacity-50"
-                         disabled={unreadAlertCount === 0}
-                      >
-                          Mark All Read
-                      </button>
-                    </CardHeader>
-                    <CardContent className="p-0 max-h-96 overflow-y-auto">
-                      {alerts.length === 0 ? (
-                        <div className="p-4 text-center text-text-muted">
-                          <Slash className="h-5 w-5 mx-auto mb-1" />
-                          No recent alerts.
-                        </div>
-                      ) : (
-                        <ul className="divide-y divide-gray-700">
-                          {alerts.map(alert => (
-                            <li 
-                              key={alert.id} 
-                              className={`p-3 transition-colors ${alert.read ? 'bg-secondary-dark/50' : 'bg-secondary-dark hover:bg-primary-dark border-l-4 border-4 border-danger'}`}
-                              onClick={() => !alert.read && handleMarkAsRead(alert.id)}
-                            >
-                              <div className="flex items-start space-x-2">
-                                <AlertCircle className={`h-4 w-4 mt-0.5 ${alert.read ? 'text-text-muted' : 'text-danger'}`} />
-                                <div className="flex-1">
-                                  <p className={`text-sm font-semibold ${alert.read ? 'text-text-muted' : 'text-danger'}`}>
-                                      Critical Pollution Alert
-                                  </p>
-                                  <p className={`text-xs ${alert.read ? 'text-text-muted' : 'text-text-light'}`}>
-                                      {alert.message}
-                                  </p>
-                                  <span className="text-xs text-text-muted mt-1 block">
-                                      {alert.location} - {new Date(alert.timestamp).toLocaleTimeString()}
-                                  
-                                  </span>
-                                </div>
-                              </div>
-                            </li>
-                          ))}
-                        </ul>
-                      )}
+                  <Card className="absolute right-0 mt-3 w-80 max-w-xs z-50 p-0">
+                    <CardHeader><h4>Alerts</h4></CardHeader>
+                    <CardContent>
+                      {alerts.length === 0 ? <p>No recent alerts.</p> : <ul>{alerts.map(a => <li key={a.id}>{a.message}</li>)}</ul>}
                     </CardContent>
                   </Card>
                 )}
               </div>
             )}
             
-            {/* Nav Menu Button */}
             <div className="relative">
-              <button onClick={() => setIsNavOpen(!isNavOpen)} className="p-2 rounded-lg hover:bg-primary-dark transition-colors focus:outline-none focus:ring-2 focus:ring-accent-blue">
+              <button onClick={() => setIsNavOpen(!isNavOpen)} className="p-2 rounded-lg hover:bg-primary-dark">
                 {isNavOpen ? <X className="h-6 w-6 text-text-light" /> : <Menu className="h-6 w-6 text-text-light" />}
               </button>
               {isNavOpen && (
                 <div className="absolute right-0 mt-2 w-48 bg-secondary-dark border border-gray-700 rounded-lg shadow-lg py-2 z-50">
-                  <div className="px-4 py-2 text-sm font-semibold text-text-light border-b border-gray-700">
-                    Hi, {fullname}!
-                  </div>
-                  <button
-                    onClick={handleGoToMainPage}
-                    className="w-full text-left flex items-center space-x-2 px-4 py-2 text-sm text-text-light hover:bg-primary-dark"
-                  >
-                    <Home className="h-4 w-4" />
-                    <span>Go to Main Page</span>
-                  </button>
-                  <button
-                    onClick={handleLogout}
-                    className="w-full text-left flex items-center space-x-2 px-4 py-2 text-sm text-danger hover:bg-primary-dark"
-                  >
-                    <LogOut className="h-4 w-4" />
-                    <span>Logout</span>
-                  </button>
+                  <div className="px-4 py-2 text-sm text-text-light border-b border-gray-700">Hi, {fullname}!</div>
+                  <button onClick={handleGoToMainPage} className="w-full text-left flex items-center space-x-2 px-4 py-2 text-sm hover:bg-primary-dark"><Home/><span>Main Page</span></button>
+                  <button onClick={handleLogout} className="w-full text-left flex items-center space-x-2 px-4 py-2 text-sm text-danger hover:bg-primary-dark"><LogOut/><span>Logout</span></button>
                 </div>
               )}
             </div>
@@ -342,146 +231,89 @@ const Dashboard = () => {
         </div>
       </header>
       <div className="pt-20">
-        <nav className="flex justify-end p-4 bg-primary-dark border-b border-gray-700">
+        <nav className="flex justify-between items-center p-4 bg-primary-dark border-b border-gray-700">
+          <div className="flex space-x-2">
+            <TabButton icon={BarChart2} label="Dashboard" activeView={currentView} targetView="dashboard" onClick={() => setCurrentView('dashboard')} />
+            <TabButton icon={MapPin} label="Hotspots" activeView={currentView} targetView="hotspots" onClick={() => setCurrentView('hotspots')} />
+            <TabButton icon={AlertTriangle} label="Anomalies" activeView={currentView} targetView="anomalies" onClick={() => setCurrentView('anomalies')} />
+          </div>
           <button
             onClick={handleRetrieveResults}
-            className="flex items-center space-x-2 px-4 py-2 text-sm font-semibold rounded-lg text-accent-blue border border-accent-blue hover:bg-accent-blue/20 transition-colors"
+            className="flex items-center space-x-2 px-4 py-2 text-sm font-semibold rounded-lg text-accent-blue border border-accent-blue hover:bg-accent-blue/20"
           >
-            {showResults ? (
-              <>
-                <EyeOff className="h-4 w-4" />
-                <span>Hide Results</span>
-              </>
-            ) : (
-              <>
-                <Eye className="h-4 w-4" />
-                <span>Retrieve My Results</span>
-              </>
-            )}
+            {showResults ? <><EyeOff className="h-4 w-4" /><span>Hide Results</span></> : <><Eye className="h-4 w-4" /><span>Retrieve Results</span></>}
           </button>
         </nav>
         <main className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 py-8">
           
           {isUploadAllowed ? (
-            <div className="mb-8">
-              <div className="p-4 bg-secondary-dark rounded-t-xl border-b border-gray-700">
-                 <p className="text-sm text-text-muted text-center italic">
-                    {getUploadDescription()}
-                </p>
-              </div>
-              {/* Note: handleUploadComplete is now correctly receiving the response object */}
-              <UploadForm onUploadComplete={handleUploadComplete} uploadType="samples" />
-            </div>
+            <UploadForm onUploadComplete={handleUploadComplete} uploadType="samples" />
           ) : (
-            <div className="flex flex-col items-center justify-center p-6 bg-secondary-dark rounded-xl shadow-lg border border-gray-700 mb-8">
-              <UploadCloud className="h-12 w-12 text-warning mb-4" />
-              <h3 className="text-2xl font-bold text-text-light mb-2">Upload Disabled</h3>
-              <p className="text-text-muted text-center max-w-lg">
-                File upload functionality is restricted for <span className="font-semibold text-danger uppercase">{role}</span> accounts. 
-                Please use the "Retrieve My Results" button above to view previously analyzed data or contact a researcher to submit new data.
-              </p>
+            <div className="p-6 bg-secondary-dark rounded-xl text-center mb-8">
+              <h3 className="text-xl font-bold">Upload Disabled</h3>
+              <p>File upload is restricted for {role} accounts.</p>
             </div>
           )}
 
-          {error && (
-            <div className="bg-danger/20 text-danger p-4 rounded-md mb-8">
-              <p className="font-medium text-center">{error}</p>
-            </div>
-          )}
+          {error && <div className="bg-danger/20 text-danger p-4 rounded-md mb-8">{error}</div>}
 
           {isLoading ? (
-            <div className="flex flex-col items-center justify-center py-20 text-center text-text-muted">
-              <div className="animate-spin rounded-full h-16 w-16 border-4 border-gray-700 border-t-accent-blue mb-4"></div>
-              <p className="text-xl">Loading analysis results...</p>
-            </div>
+            <div className="text-center py-20">Loading...</div>
           ) : showResults ? (
-            results.length > 0 ? (
-              <>
-                {currentView === 'prediction' && predictionLocation && isPredictionAllowed ? (
-                    // 🔑 Prediction View for Researcher/NGO
-                    <>
-                        <button 
-                            onClick={handleBackToResults} 
-                            className="flex items-center space-x-1 px-4 py-2 mb-4 text-sm font-semibold rounded-lg text-text-light bg-secondary-dark hover:bg-primary-dark transition-colors border border-gray-700"
-                        >
-                            <ArrowLeft className="h-4 w-4" />
-                            <span>Back to Results</span>
-                        </button>
-                        <PredictionChart location={predictionLocation} onBack={handleBackToResults} />
-                    </>
-                ) : (
-                    // 🔑 Default Results View
-                    <>
-                        <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-4 gap-6 mb-8">
-                            {stats.map((stat, index) => (
-                                <Card key={index} className="hover:shadow-xl transition-shadow">
-                                  <CardContent className="p-6">
-                                    <div className="flex items-center justify-between">
-                                      <div>
-                                        <p className="text-sm font-medium text-text-muted mb-1">{stat.title}</p>
-                                        <p className="text-2xl font-bold text-text-light">{stat.value}</p>
-                                      </div>
-                                      <div className={`p-3 rounded-full bg-primary-dark ${stat.color}`}>
-                                        <stat.icon className="h-6 w-6" />
-                                      </div>
-                                    </div>
-                                  </CardContent>
-                                </Card>
-                            ))}
-                        </div>
-                        
-                        <div ref={mapRef}>
-                            <WaterQualityMap data={results} selectedLocation={selectedLocation} />
-                        </div>
+            <>
+              {currentView === 'dashboard' && (
+                <>
+                  <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-4 gap-6 mb-8">
+                    {stats.map(stat => (
+                      <Card key={stat.title}><CardContent className="p-6">
+                          <p className="text-sm text-text-muted">{stat.title}</p>
+                          <p className="text-2xl font-bold">{stat.value}</p>
+                      </CardContent></Card>
+                    ))}
+                  </div>
+                  <div ref={mapRef}><WaterQualityMap data={results} selectedLocation={selectedLocation} /></div>
+                  <ResultTable data={results} onShowOnMap={handleShowOnMap} onShowPrediction={isPredictionAllowed ? handleShowPrediction : null} />
+                  <div className="flex justify-center mt-8">
+                    <button onClick={handleDownloadReport} disabled={isDownloading} className="bg-accent-blue text-primary-dark px-8 py-4 rounded-lg font-semibold">
+                      {isDownloading ? 'Generating...' : <><Download /><span>Download PDF Report</span></>}
+                    </button>
+                  </div>
+                </>
+              )}
 
-                        {/* 🔑 Pass the new handler and the permission flag */}
-                        <ResultTable 
-                            data={results} 
-                            onShowOnMap={handleShowOnMap} 
-                            onShowPrediction={isPredictionAllowed ? handleShowPrediction : null}
-                        />
+              {currentView === 'hotspots' && <HotspotsPage />}
+              
+              {currentView === 'anomalies' && <AnomaliesPage role={role} />}
 
-                        <div className="flex justify-center mt-8">
-                          <button
-                            onClick={handleDownloadReport}
-                            disabled={isDownloading}
-                            className="bg-accent-blue text-primary-dark px-8 py-4 rounded-lg font-semibold flex items-center space-x-3 shadow-lg hover:bg-sky-400/80 transition-all hover:scale-105 disabled:opacity-50 disabled:cursor-not-allowed"
-                          >
-                            {isDownloading ? (
-                              <>
-                                <div className="animate-spin rounded-full h-5 w-5 border-2 border-primary-dark border-t-transparent"></div>
-                                <span>Generating Report...</span>
-                              </>
-                            ) : (
-                              <>
-                                <Download className="h-5 w-5" />
-                                <span>Download PDF Report</span>
-                              </>
-                            )}
-                          </button>
-                        </div>
-                    </>
-                )}
-              </>
-            ) : (
-              <div className="flex flex-col items-center justify-center py-20 text-center text-text-muted">
-                <FileText className="h-20 w-20 mb-4" />
-                <p className="text-xl font-medium">No data to display. Please {isUploadAllowed ? 'upload a CSV file' : 'ask a researcher/guest to upload data'}.</p>
-                <p className="text-sm mt-2">The dashboard will populate with analysis results after a successful upload.</p>
-              </div>
-            )
+              {currentView === 'prediction' && predictionLocation && (
+                <>
+                  <button onClick={handleBackToMainDashboard} className="flex items-center space-x-1 mb-4">
+                    <ArrowLeft className="h-4 w-4" /><span>Back to Dashboard</span>
+                  </button>
+                  <PredictionChart location={predictionLocation} onBack={handleBackToMainDashboard} />
+                </>
+              )}
+            </>
           ) : (
-            <div className="flex flex-col items-center justify-center py-20 text-center text-text-muted">
-              <p className="text-lg font-medium">Click "Retrieve My Results" to view the latest analysis.</p>
-            </div>
+            <div className="text-center py-20 text-text-muted">Click "Retrieve Results" to view data.</div>
           )}
         </main>
-        <footer>
-          <Footer/>
-        </footer>
+        <Footer />
       </div>
     </div>
   );
 };
+
+const TabButton = ({ icon: Icon, label, activeView, targetView, onClick }) => (
+  <button
+    onClick={onClick}
+    className={`flex items-center space-x-2 px-4 py-2 text-sm font-semibold rounded-lg transition-colors ${
+      activeView === targetView ? 'bg-accent-blue text-primary-dark' : 'text-text-muted hover:bg-secondary-dark'
+    }`}
+  >
+    <Icon className="h-4 w-4" />
+    <span>{label}</span>
+  </button>
+);
 
 export default Dashboard;
