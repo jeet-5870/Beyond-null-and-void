@@ -1,3 +1,4 @@
+// backend/app.js
 import express from "express";
 import cors from "cors";
 import dotenv from 'dotenv';
@@ -9,6 +10,7 @@ import standardRoutes from "./routes/standardRoutes.js";
 import authRoutes from "./routes/authRoutes.js";
 import leaderboardRoutes from "./routes/leaderboardRoutes.js";
 import feedbackRoutes from "./routes/feedbackRoutes.js";
+import predictionRoutes from "./routes/predictionRoutes.js"; // 🔑 NEW IMPORT
 import errorHandler from "./middleware/errorHandler.js";
 import authMiddleware from "./middleware/authMiddleware.js";
 import { initPostgresSchema } from './db/initSchema.js';
@@ -31,6 +33,7 @@ app.use('/map-data', authMiddleware, mapRoutes);
 app.use('/api/samples', authMiddleware, resultRoutes);
 app.use('/api/report', authMiddleware, reportRoutes);
 app.use('/api/standards', authMiddleware, standardRoutes);
+app.use('/api/prediction', authMiddleware, predictionRoutes); // 🔑 NEW PROTECTED ROUTE
 
 app.use(errorHandler);
 

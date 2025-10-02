@@ -1,8 +1,9 @@
+// frontend/src/components/resultTable.jsx
 import React from 'react';
-import { MapPin } from 'lucide-react';
+import { MapPin, Zap } from 'lucide-react'; // 🔑 Import Zap
 import { Card, CardHeader, CardContent } from './card.jsx';
 
-function ResultTable({ data, onShowOnMap }) {
+function ResultTable({ data, onShowOnMap, onShowPrediction }) { // 🔑 Accept onShowPrediction prop
   const getClassificationBadge = (classification) => {
     // 泊 UPDATED colors for dark theme
     const colors = {
@@ -122,15 +123,28 @@ function ResultTable({ data, onShowOnMap }) {
                   <td className="px-6 py-4 whitespace-nowrap">
                     {getClusterBadge(item.cluster_id)}
                   </td>
-                  <td className="px-6 py-4 whitespace-nowrap">
-                    {onShowOnMap && (
-                      <button 
-                        onClick={() => onShowOnMap(item)}
-                        className="text-accent-blue hover:underline text-sm font-semibold"
-                      >
-                        Show on Map
-                      </button>
-                    )}
+                  <td className="px-6 py-4 whitespace-nowrap text-sm font-semibold space-x-4">
+                    <div className="flex items-center space-x-4">
+                      {onShowOnMap && (
+                        <button 
+                          onClick={() => onShowOnMap(item)}
+                          className="text-accent-blue hover:underline text-sm font-semibold flex items-center space-x-1"
+                        >
+                          <MapPin className="h-4 w-4"/>
+                          <span>Map</span>
+                        </button>
+                      )}
+                      {onShowPrediction && ( // 🔑 Conditional Prediction Button
+                        <button 
+                          onClick={() => onShowPrediction(item)}
+                          className="text-success hover:underline text-sm font-semibold flex items-center space-x-1"
+                          title="View Future Pollution Prediction"
+                        >
+                          <Zap className="h-4 w-4"/>
+                          <span>Predict</span>
+                        </button>
+                      )}
+                    </div>
                   </td>
                 </tr>
               ))}

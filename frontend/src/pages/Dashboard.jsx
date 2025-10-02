@@ -4,7 +4,7 @@ import { useNavigate } from 'react-router-dom';
 import {
   Download, Droplets, MapPin, TrendingUp,
   FileText, CheckCircle, AlertCircle, Eye, EyeOff,
-  Menu, X, Home, LogOut, UploadCloud, Bell, Slash 
+  Menu, X, Home, LogOut, UploadCloud, Bell, Slash, ArrowLeft // 🔑 Import ArrowLeft
 } from 'lucide-react';
 import API from '../api.js';
 import UploadForm from '../components/uploadForm.jsx';
@@ -14,6 +14,7 @@ import SafetyBadge from '../components/safetyBadge.jsx';
 import { Card, CardContent, CardHeader } from '../components/card.jsx';
 import WaterQualityMap from '../components/waterQualityMap.jsx';
 import Footer from '../components/footer.jsx';
+import PredictionChart from '../components/predictionChart.jsx'; // 🔑 NEW IMPORT
 
 const Dashboard = () => {
   const [results, setResults] = useState([]);
@@ -30,6 +31,10 @@ const Dashboard = () => {
   const navigate = useNavigate();
   const mapRef = useRef(null);
   const alertButtonRef = useRef(null);
+
+  // 🔑 NEW STATES FOR GATED FEATURES
+  const [currentView, setCurrentView] = useState('results'); // 'results', 'prediction'
+  const [predictionLocation, setPredictionLocation] = useState(null); // Location for prediction
 
   useEffect(() => {
     const token = localStorage.getItem('token');
@@ -66,6 +71,9 @@ const Dashboard = () => {
 
   // Logic to determine upload permission (Guest and Researcher can upload)
   const isUploadAllowed = role !== 'ngo'; 
+  
+  // 🔑 NEW: Logic to determine prediction permission
+  const isPredictionAllowed = role === 'researcher' || role === 'ngo'; // 🔑 Gating logic
 
   const getUploadDescription = () => {
     if (role === 'researcher') {
@@ -95,6 +103,7 @@ const Dashboard = () => {
       const res = await API.get('/api/samples'); 
       setResults(res.data);
       setShowResults(true);
+      setCurrentView('results'); // Reset view on new fetch
     } catch (err) {
       console.error('Error fetching results:', err);
       setError('Failed to load data. Please check the backend connection.');
@@ -166,6 +175,21 @@ const Dashboard = () => {
     }
   };
 
+  // 🔑 NEW: Handler to switch to prediction view
+  const handleShowPrediction = (location) => {
+    // Only proceed if prediction is allowed
+    if (isPredictionAllowed) {
+        setPredictionLocation(location.location); // Location name is used for the API call
+        setCurrentView('prediction');
+    }
+  };
+  
+  const handleBackToResults = () => {
+      setCurrentView('results');
+      setPredictionLocation(null);
+  };
+
+
   const stats = [
     {
       title: 'Total Locations',
@@ -199,14 +223,6 @@ const Dashboard = () => {
     },
   ];
   
-  // 泊 REMOVED: Calculation for safeCitiesData is removed
-  /*
-  const safeCitiesData = results
-    .filter(city => city.classification === 'Safe')
-    .sort((a, b) => a.hei - b.hei)
-    .slice(0, 10);
-  */
-
   return (
     <div className="min-h-screen bg-primary-dark">
       <header className="bg-secondary-dark shadow-lg fixed w-full z-50 border-b border-gray-700">
@@ -373,49 +389,71 @@ const Dashboard = () => {
           ) : showResults ? (
             results.length > 0 ? (
               <>
-                <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-4 gap-6 mb-8">
-                  {stats.map((stat, index) => (
-                    <Card key={index} className="hover:shadow-xl transition-shadow">
-                      <CardContent className="p-6">
-                        <div className="flex items-center justify-between">
-                          <div>
-                            <p className="text-sm font-medium text-text-muted mb-1">{stat.title}</p>
-                            <p className="text-2xl font-bold text-text-light">{stat.value}</p>
-                          </div>
-                          <div className={`p-3 rounded-full bg-primary-dark ${stat.color}`}>
-                            <stat.icon className="h-6 w-6" />
-                          </div>
+                {currentView === 'prediction' && predictionLocation && isPredictionAllowed ? (
+                    // 🔑 Prediction View for Researcher/NGO
+                    <>
+                        <button 
+                            onClick={handleBackToResults} 
+                            className="flex items-center space-x-1 px-4 py-2 mb-4 text-sm font-semibold rounded-lg text-text-light bg-secondary-dark hover:bg-primary-dark transition-colors border border-gray-700"
+                        >
+                            <ArrowLeft className="h-4 w-4" />
+                            <span>Back to Results</span>
+                        </button>
+                        <PredictionChart location={predictionLocation} onBack={handleBackToResults} />
+                    </>
+                ) : (
+                    // 🔑 Default Results View
+                    <>
+                        <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-4 gap-6 mb-8">
+                            {stats.map((stat, index) => (
+                                <Card key={index} className="hover:shadow-xl transition-shadow">
+                                  <CardContent className="p-6">
+                                    <div className="flex items-center justify-between">
+                                      <div>
+                                        <p className="text-sm font-medium text-text-muted mb-1">{stat.title}</p>
+                                        <p className="text-2xl font-bold text-text-light">{stat.value}</p>
+                                      </div>
+                                      <div className={`p-3 rounded-full bg-primary-dark ${stat.color}`}>
+                                        <stat.icon className="h-6 w-6" />
+                                      </div>
+                                    </div>
+                                  </CardContent>
+                                </Card>
+                            ))}
                         </div>
-                      </CardContent>
-                    </Card>
-                  ))}
-                </div>
-                
-                <div ref={mapRef}>
-                  <WaterQualityMap data={results} selectedLocation={selectedLocation} />
-                </div>
+                        
+                        <div ref={mapRef}>
+                            <WaterQualityMap data={results} selectedLocation={selectedLocation} />
+                        </div>
 
-                <ResultTable data={results} onShowOnMap={handleShowOnMap} />
+                        {/* 🔑 Pass the new handler and the permission flag */}
+                        <ResultTable 
+                            data={results} 
+                            onShowOnMap={handleShowOnMap} 
+                            onShowPrediction={isPredictionAllowed ? handleShowPrediction : null}
+                        />
 
-                <div className="flex justify-center mt-8">
-                  <button
-                    onClick={handleDownloadReport}
-                    disabled={isDownloading}
-                    className="bg-accent-blue text-primary-dark px-8 py-4 rounded-lg font-semibold flex items-center space-x-3 shadow-lg hover:bg-sky-400/80 transition-all hover:scale-105 disabled:opacity-50 disabled:cursor-not-allowed"
-                  >
-                    {isDownloading ? (
-                      <>
-                        <div className="animate-spin rounded-full h-5 w-5 border-2 border-primary-dark border-t-transparent"></div>
-                        <span>Generating Report...</span>
-                      </>
-                    ) : (
-                      <>
-                        <Download className="h-5 w-5" />
-                        <span>Download PDF Report</span>
-                      </>
-                    )}
-                  </button>
-                </div>
+                        <div className="flex justify-center mt-8">
+                          <button
+                            onClick={handleDownloadReport}
+                            disabled={isDownloading}
+                            className="bg-accent-blue text-primary-dark px-8 py-4 rounded-lg font-semibold flex items-center space-x-3 shadow-lg hover:bg-sky-400/80 transition-all hover:scale-105 disabled:opacity-50 disabled:cursor-not-allowed"
+                          >
+                            {isDownloading ? (
+                              <>
+                                <div className="animate-spin rounded-full h-5 w-5 border-2 border-primary-dark border-t-transparent"></div>
+                                <span>Generating Report...</span>
+                              </>
+                            ) : (
+                              <>
+                                <Download className="h-5 w-5" />
+                                <span>Download PDF Report</span>
+                              </>
+                            )}
+                          </button>
+                        </div>
+                    </>
+                )}
               </>
             ) : (
               <div className="flex flex-col items-center justify-center py-20 text-center text-text-muted">
