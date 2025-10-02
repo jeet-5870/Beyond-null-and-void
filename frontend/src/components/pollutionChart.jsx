@@ -3,6 +3,30 @@ import { TrendingUp, ArrowLeft } from 'lucide-react';
 import { Card, CardHeader, CardContent } from './card.jsx';
 import API from '../api.js';
 
+// 🔑 NEW IMPORTS for Charting
+import { Line } from 'react-chartjs-2';
+import {
+  Chart as ChartJS,
+  CategoryScale,
+  LinearScale,
+  PointElement,
+  LineElement,
+  Title,
+  Tooltip,
+  Legend,
+} from 'chart.js';
+
+// Register Chart.js components
+ChartJS.register(
+  CategoryScale,
+  LinearScale,
+  PointElement,
+  LineElement,
+  Title,
+  Tooltip,
+  Legend
+);
+
 const PollutionTimeline = ({ city, onBack }) => {
   const [selectedTimeframe, setSelectedTimeframe] = useState('1m');
   const [timelineData, setTimelineData] = useState([]);
@@ -36,6 +60,70 @@ const PollutionTimeline = ({ city, onBack }) => {
     if (percentageChange < -5) return `Worsened by ${Math.abs(percentageChange).toFixed(2)}% (HPI Increased)`;
     return 'No significant change';
   };
+  
+  // 🔑 NEW: Chart data configuration
+  const chartData = {
+    labels: timelineData.map(item => new Date(item.date).toLocaleDateString()),
+    datasets: [
+      {
+        label: 'HPI (Heavy Metal Pollution Index)',
+        data: timelineData.map(item => item.hpi),
+        borderColor: '#38bdf8', // accent-blue
+        backgroundColor: 'rgba(56, 189, 248, 0.2)',
+        borderWidth: 2,
+        tension: 0.4,
+        pointRadius: 3,
+        pointBackgroundColor: '#38bdf8',
+      },
+    ],
+  };
+
+  // 🔑 NEW: Chart options configuration
+  const chartOptions = {
+    responsive: true,
+    maintainAspectRatio: false,
+    plugins: {
+      legend: {
+        labels: {
+          color: '#f1f5f9', // text-light
+        }
+      },
+      title: {
+        display: true,
+        text: `HPI Trend for ${city}`,
+        color: '#94a3b8', // text-muted
+      },
+    },
+    scales: {
+      x: {
+        title: {
+          display: true,
+          text: 'Date',
+          color: '#94a3b8',
+        },
+        ticks: {
+          color: '#94a3b8',
+        },
+        grid: {
+          color: '#1e293b', // secondary-dark border
+        }
+      },
+      y: {
+        title: {
+          display: true,
+          text: 'HPI Score',
+          color: '#94a3b8',
+        },
+        ticks: {
+          color: '#94a3b8',
+        },
+        grid: {
+          color: '#1e293b',
+        }
+      },
+    },
+  };
+
 
   return (
     <Card className="mb-8">
@@ -73,10 +161,15 @@ const PollutionTimeline = ({ city, onBack }) => {
           <div className="w-full h-64 flex items-center justify-center text-danger">
             <p>{error}</p>
           </div>
+        ) : timelineData.length === 0 ? (
+           <div className="w-full h-64 flex items-center justify-center text-text-muted">
+            <p>No timeline data available for the selected period.</p>
+          </div>
         ) : (
           <>
-            <div className="w-full h-64 bg-primary-dark rounded-lg flex items-center justify-center text-accent-blue font-mono border border-gray-700">
-              [Placeholder for Interactive Chart of HPI over time]
+            <div className="w-full h-64 bg-primary-dark rounded-lg flex items-center justify-center text-accent-blue font-mono border border-gray-700 p-4">
+              {/* 🔑 IMPLEMENTATION: Render the Line Chart */}
+              <Line data={chartData} options={chartOptions} />
             </div>
             <div className="mt-4 text-center">
               {/* 泊 UPDATED color based on performance */}

@@ -291,6 +291,7 @@ const Dashboard = () => {
                                 </p>
                                 <span className="text-xs text-text-muted mt-1 block">
                                     {alert.location} - {new Date(alert.timestamp).toLocaleTimeString()}
+                                
                                 </span>
                               </div>
                             </div>

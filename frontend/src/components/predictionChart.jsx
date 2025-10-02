@@ -3,6 +3,31 @@ import { Zap, CornerUpRight, AlertTriangle, CheckCircle, ArrowLeft } from 'lucid
 import { Card, CardHeader, CardContent } from './card.jsx';
 import API from '../api.js';
 
+// 🔑 NEW IMPORTS for Charting
+import { Line } from 'react-chartjs-2';
+import {
+  Chart as ChartJS,
+  CategoryScale,
+  LinearScale,
+  PointElement,
+  LineElement,
+  Title,
+  Tooltip,
+  Legend,
+} from 'chart.js';
+
+// Register Chart.js components (included here for completeness)
+ChartJS.register(
+  CategoryScale,
+  LinearScale,
+  PointElement,
+  LineElement,
+  Title,
+  Tooltip,
+  Legend
+);
+
+
 const PredictionChart = ({ location, onBack }) => {
   const [predictionData, setPredictionData] = useState([]);
   const [isLoading, setIsLoading] = useState(false);
@@ -47,6 +72,69 @@ const PredictionChart = ({ location, onBack }) => {
   };
   
   const status = getPredictionStatus();
+  
+  // 🔑 NEW: Chart data configuration
+  const chartData = {
+    labels: predictionData.map(item => new Date(item.date).toLocaleDateString()),
+    datasets: [
+      {
+        label: 'Predicted HPI (Heavy Metal Pollution Index)',
+        data: predictionData.map(item => item.hpi),
+        borderColor: '#10b981', // success color
+        backgroundColor: 'rgba(16, 185, 129, 0.2)',
+        borderWidth: 2,
+        tension: 0.4,
+        pointRadius: 5,
+        pointBackgroundColor: '#10b981',
+      },
+    ],
+  };
+
+  // 🔑 NEW: Chart options configuration
+  const chartOptions = {
+    responsive: true,
+    maintainAspectRatio: false,
+    plugins: {
+      legend: {
+        labels: {
+          color: '#f1f5f9', // text-light
+        }
+      },
+      title: {
+        display: true,
+        text: `Predicted HPI for ${location} (Next 7 Days)`,
+        color: '#94a3b8', // text-muted
+      },
+    },
+    scales: {
+      x: {
+        title: {
+          display: true,
+          text: 'Date',
+          color: '#94a3b8',
+        },
+        ticks: {
+          color: '#94a3b8',
+        },
+        grid: {
+          color: '#1e293b', // secondary-dark border
+        }
+      },
+      y: {
+        title: {
+          display: true,
+          text: 'HPI Score',
+          color: '#94a3b8',
+        },
+        ticks: {
+          color: '#94a3b8',
+        },
+        grid: {
+          color: '#1e293b',
+        }
+      },
+    },
+  };
 
   return (
     <Card className="mb-8">
@@ -68,10 +156,15 @@ const PredictionChart = ({ location, onBack }) => {
           <div className="w-full h-64 flex items-center justify-center text-danger">
             <p>{error}</p>
           </div>
+        ) : predictionData.length === 0 ? (
+           <div className="w-full h-64 flex items-center justify-center text-text-muted">
+            <p>Prediction data could not be generated.</p>
+          </div>
         ) : (
           <>
-            <div className="w-full h-64 bg-primary-dark rounded-lg flex items-center justify-center text-accent-blue font-mono border border-gray-700">
-              [Placeholder for Interactive Chart of Predicted HPI over time]
+            <div className="w-full h-64 bg-primary-dark rounded-lg flex items-center justify-center text-accent-blue font-mono border border-gray-700 p-4">
+               {/* 🔑 IMPLEMENTATION: Render the Line Chart */}
+              <Line data={chartData} options={chartOptions} />
             </div>
             <div className="mt-4 text-center">
               <p className="text-lg font-semibold text-text-light flex items-center justify-center space-x-2">
