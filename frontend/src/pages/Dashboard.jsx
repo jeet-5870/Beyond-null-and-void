@@ -4,7 +4,7 @@ import { useNavigate } from 'react-router-dom';
 import {
   Download, Droplets, MapPin, TrendingUp,
   FileText, CheckCircle, AlertCircle, Eye, EyeOff,
-  Menu, X, Home, LogOut, UploadCloud, Bell, Slash, ArrowLeft // 🔑 Import ArrowLeft
+  Menu, X, Home, LogOut, UploadCloud, Bell, Slash, ArrowLeft 
 } from 'lucide-react';
 import API from '../api.js';
 import UploadForm from '../components/uploadForm.jsx';
@@ -14,7 +14,7 @@ import SafetyBadge from '../components/safetyBadge.jsx';
 import { Card, CardContent, CardHeader } from '../components/card.jsx';
 import WaterQualityMap from '../components/waterQualityMap.jsx';
 import Footer from '../components/footer.jsx';
-import PredictionChart from '../components/predictionChart.jsx'; // 🔑 NEW IMPORT
+import PredictionChart from '../components/predictionChart.jsx'; 
 
 const Dashboard = () => {
   const [results, setResults] = useState([]);
@@ -117,21 +117,26 @@ const Dashboard = () => {
     showResults ? setShowResults(false) : fetchResults();
   };
 
-  // 泊 Updated to correctly process the backend's response containing 'alerts'
+  // 🔑 MODIFIED: Only process and notify for alerts if the role is not 'guest'
   const handleUploadComplete = (response) => {
     if (response && response.alerts && response.alerts.length > 0) {
-      const newAlerts = response.alerts.map(alert => ({
-        ...alert,
-        id: Date.now() + Math.random(),
-        read: false,
-      }));
-      
-      const updatedAlerts = [...newAlerts, ...alerts];
-      setAlerts(updatedAlerts);
-      localStorage.setItem('alerts', JSON.stringify(updatedAlerts));
-      
-      // Notify the user about the critical alert in the main error area
-      setError(`CRITICAL ALERT: ${newAlerts.length} highly polluted sample(s) detected. Check notifications for details.`);
+      if (role !== 'guest') {
+        const newAlerts = response.alerts.map(alert => ({
+          ...alert,
+          id: Date.now() + Math.random(),
+          read: false,
+        }));
+        
+        const updatedAlerts = [...newAlerts, ...alerts];
+        setAlerts(updatedAlerts);
+        localStorage.setItem('alerts', JSON.stringify(updatedAlerts));
+        
+        // Notify the user about the critical alert in the main error area
+        setError(`CRITICAL ALERT: ${newAlerts.length} highly polluted sample(s) detected. Check notifications for details.`);
+      } else {
+         // Provide a generic alert for guest users without mentioning the notification system
+         setError(`ATTENTION: ${response.alerts.length} highly polluted sample(s) detected. Please check the result table for details.`);
+      }
     }
     // Automatically fetch new data upon successful upload
     fetchResults();
@@ -238,71 +243,73 @@ const Dashboard = () => {
           </div>
           
           <div className="flex items-center space-x-4">
-             {/* Notification Bell System */}
-            <div className="relative" ref={alertButtonRef}>
-              <button
-                onClick={() => setIsAlertsOpen(!isAlertsOpen)}
-                className="p-2 rounded-full text-text-light hover:text-danger hover:bg-primary-dark transition-colors focus:outline-none focus:ring-2 focus:ring-accent-blue"
-                aria-label="View notifications"
-              >
-                <Bell className="h-6 w-6" />
-                {unreadAlertCount > 0 && (
-                  <span className="absolute top-0 right-0 block h-3 w-3 rounded-full ring-2 ring-secondary-dark bg-danger text-white text-xs font-bold leading-none transform translate-x-1/2 -translate-y-1/2 flex items-center justify-center">
-                    {/* Display unread count (max 9 for small badge) */}
-                    {unreadAlertCount > 9 ? '9+' : unreadAlertCount}
-                  </span>
-                )}
-              </button>
-              
-              {isAlertsOpen && (
-                <Card className="absolute right-0 mt-3 w-80 max-w-xs origin-top-right shadow-2xl z-50 p-0">
-                  <CardHeader className="flex justify-between items-center">
-                    <h4 className="text-lg font-bold text-text-light">Alerts ({unreadAlertCount} unread)</h4>
-                    <button 
-                       onClick={() => setAlerts(alerts.map(a => ({...a, read: true})))}
-                       className="text-xs text-accent-blue hover:underline disabled:opacity-50"
-                       disabled={unreadAlertCount === 0}
-                    >
-                        Mark All Read
-                    </button>
-                  </CardHeader>
-                  <CardContent className="p-0 max-h-96 overflow-y-auto">
-                    {alerts.length === 0 ? (
-                      <div className="p-4 text-center text-text-muted">
-                        <Slash className="h-5 w-5 mx-auto mb-1" />
-                        No recent alerts.
-                      </div>
-                    ) : (
-                      <ul className="divide-y divide-gray-700">
-                        {alerts.map(alert => (
-                          <li 
-                            key={alert.id} 
-                            className={`p-3 transition-colors ${alert.read ? 'bg-secondary-dark/50' : 'bg-secondary-dark hover:bg-primary-dark border-l-4 border-danger'}`}
-                            onClick={() => !alert.read && handleMarkAsRead(alert.id)}
-                          >
-                            <div className="flex items-start space-x-2">
-                              <AlertCircle className={`h-4 w-4 mt-0.5 ${alert.read ? 'text-text-muted' : 'text-danger'}`} />
-                              <div className="flex-1">
-                                <p className={`text-sm font-semibold ${alert.read ? 'text-text-muted' : 'text-danger'}`}>
-                                    Critical Pollution Alert
-                                </p>
-                                <p className={`text-xs ${alert.read ? 'text-text-muted' : 'text-text-light'}`}>
-                                    {alert.message}
-                                </p>
-                                <span className="text-xs text-text-muted mt-1 block">
-                                    {alert.location} - {new Date(alert.timestamp).toLocaleTimeString()}
-                                
-                                </span>
+             {/* Notification Bell System (Only for non-guest roles) */}
+            {role !== 'guest' && (
+              <div className="relative" ref={alertButtonRef}>
+                <button
+                  onClick={() => setIsAlertsOpen(!isAlertsOpen)}
+                  className="p-2 rounded-full text-text-light hover:text-danger hover:bg-primary-dark transition-colors focus:outline-none focus:ring-2 focus:ring-accent-blue"
+                  aria-label="View notifications"
+                >
+                  <Bell className="h-6 w-6" />
+                  {unreadAlertCount > 0 && (
+                    <span className="absolute top-0 right-0 block h-3 w-3 rounded-full ring-2 ring-secondary-dark bg-danger text-white text-xs font-bold leading-none transform translate-x-1/2 -translate-y-1/2 flex items-center justify-center">
+                      {/* Display unread count (max 9 for small badge) */}
+                      {unreadAlertCount > 9 ? '9+' : unreadAlertCount}
+                    </span>
+                  )}
+                </button>
+                
+                {isAlertsOpen && (
+                  <Card className="absolute right-0 mt-3 w-80 max-w-xs origin-top-right shadow-2xl z-50 p-0">
+                    <CardHeader className="flex justify-between items-center">
+                      <h4 className="text-lg font-bold text-text-light">Alerts ({unreadAlertCount} unread)</h4>
+                      <button 
+                         onClick={() => setAlerts(alerts.map(a => ({...a, read: true})))}
+                         className="text-xs text-accent-blue hover:underline disabled:opacity-50"
+                         disabled={unreadAlertCount === 0}
+                      >
+                          Mark All Read
+                      </button>
+                    </CardHeader>
+                    <CardContent className="p-0 max-h-96 overflow-y-auto">
+                      {alerts.length === 0 ? (
+                        <div className="p-4 text-center text-text-muted">
+                          <Slash className="h-5 w-5 mx-auto mb-1" />
+                          No recent alerts.
+                        </div>
+                      ) : (
+                        <ul className="divide-y divide-gray-700">
+                          {alerts.map(alert => (
+                            <li 
+                              key={alert.id} 
+                              className={`p-3 transition-colors ${alert.read ? 'bg-secondary-dark/50' : 'bg-secondary-dark hover:bg-primary-dark border-l-4 border-4 border-danger'}`}
+                              onClick={() => !alert.read && handleMarkAsRead(alert.id)}
+                            >
+                              <div className="flex items-start space-x-2">
+                                <AlertCircle className={`h-4 w-4 mt-0.5 ${alert.read ? 'text-text-muted' : 'text-danger'}`} />
+                                <div className="flex-1">
+                                  <p className={`text-sm font-semibold ${alert.read ? 'text-text-muted' : 'text-danger'}`}>
+                                      Critical Pollution Alert
+                                  </p>
+                                  <p className={`text-xs ${alert.read ? 'text-text-muted' : 'text-text-light'}`}>
+                                      {alert.message}
+                                  </p>
+                                  <span className="text-xs text-text-muted mt-1 block">
+                                      {alert.location} - {new Date(alert.timestamp).toLocaleTimeString()}
+                                  
+                                  </span>
+                                </div>
                               </div>
-                            </div>
-                          </li>
-                        ))}
-                      </ul>
-                    )}
-                  </CardContent>
-                </Card>
-              )}
-            </div>
+                            </li>
+                          ))}
+                        </ul>
+                      )}
+                    </CardContent>
+                  </Card>
+                )}
+              </div>
+            )}
             
             {/* Nav Menu Button */}
             <div className="relative">
