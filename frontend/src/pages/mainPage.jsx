@@ -158,7 +158,7 @@ const MainPage = () => {
     ? top10MostPolluted[0].pollutionIndex.toFixed(1) 
     : 'N/A';
   
-  // 🔑 FIX: Corrected typo from top10LeastPollleted to top10LeastPolluted
+  // FIX: Corrected typo in variable name usage.
   const bestCityHPI = top10LeastPolluted.length > 0 && top10LeastPolluted[0].pollutionIndex != null
     ? top10LeastPolluted[0].pollutionIndex.toFixed(1) 
     : 'N/A';
