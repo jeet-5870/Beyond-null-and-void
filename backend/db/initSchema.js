@@ -2,8 +2,21 @@ import db from './db.js';
 
 export const initPostgresSchema = async () => {
   try {
-    // ❌ REMOVED: ALTER TABLE users (was failing if users table didn't exist)
-    // ✅ FIX: Create users table first, with all required columns
+    // 🔑 FIX: Add DROP TABLE IF EXISTS CASCADE to ensure the schema is always up-to-date,
+    // especially for tables that received new columns like pollution_indices.
+    // CASCADE ensures dependent tables (like metal_concentrations) are dropped first.
+    await db.query(`
+      DROP TABLE IF EXISTS feedback CASCADE;
+      DROP TABLE IF EXISTS pollution_classifications CASCADE;
+      DROP TABLE IF EXISTS login_logs CASCADE;
+      DROP TABLE IF EXISTS pollution_indices CASCADE;
+      DROP TABLE IF EXISTS metal_concentrations CASCADE;
+      DROP TABLE IF EXISTS samples CASCADE;
+      DROP TABLE IF EXISTS locations CASCADE;
+      DROP TABLE IF EXISTS metal_standards CASCADE;
+      DROP TABLE IF EXISTS users CASCADE;
+    `);
+
 
     await db.query(`
       CREATE TABLE IF NOT EXISTS locations (
