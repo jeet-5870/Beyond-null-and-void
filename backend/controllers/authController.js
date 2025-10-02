@@ -21,7 +21,7 @@ const sendOtpAndRespond = async (userId, identifier, isEmail, res) => {
   const otp = generateOtp();
   const expiresAt = new Date(Date.now() + 5 * 60 * 1000); // OTP valid for 5 minutes
 
-  // 🔑 Mask the identifier in the console log for security
+  // 泊 Mask the identifier in the console log for security
   const maskedIdentifier = isEmail 
     ? identifier.replace(/^(.{2})[^@]+/, '$1***') 
     : identifier.substring(0, 3) + '***' + identifier.substring(identifier.length - 2);
@@ -96,7 +96,7 @@ export const passwordAuth = async (req, res, next) => {
     let user;
 
     if (mode === 'signup') {
-      // 🔑 SIGNUP LOGIC: Create user, then enforce OTP verification.
+      // 泊 SIGNUP LOGIC: Create user, then enforce OTP verification.
       const existingUser = await db.query(`SELECT * FROM users WHERE ${identifierField} = $1`, [identifier]);
       if (existingUser.rows.length > 0) {
         return res.status(409).json({ error: `${identifierField} already registered.` });
@@ -117,7 +117,7 @@ export const passwordAuth = async (req, res, next) => {
       return sendOtpAndRespond(user.user_id, identifier, isEmail, res);
 
     } else { // Login mode
-      // 🔑 LOGIN LOGIC: Only password required.
+      // 泊 LOGIN LOGIC: Only password required.
       const userRes = await db.query(`SELECT * FROM users WHERE ${identifierField} = $1`, [identifier]);
       user = userRes.rows[0];
 
@@ -147,12 +147,12 @@ export const passwordAuth = async (req, res, next) => {
 
 // 3. Handles OTP verification (Step 2)
 export const verifyOtp = async (req, res, next) => {
-  const { identifier, otp, newPassword } = req.body; // 🔑 UPDATED: Accept newPassword
+  const { identifier, otp, newPassword } = req.body; // 泊 UPDATED: Accept newPassword
   if (!identifier || !otp) {
     return res.status(400).json({ error: 'Identifier and OTP are required.' });
   }
   
-  // 🔑 NEW: Validate new password length if provided (for reset flow)
+  // 泊 NEW: Validate new password length if provided (for reset flow)
   if (newPassword && newPassword.length < 6) { 
       return res.status(400).json({ error: 'New password must be at least 6 characters long.' });
   }
@@ -175,7 +175,7 @@ export const verifyOtp = async (req, res, next) => {
     let paramIndex = 2;
 
     if (newPassword) {
-        // 🔑 NEW: If newPassword is provided (forgot password flow), update the password hash
+        // 泊 NEW: If newPassword is provided (forgot password flow), update the password hash
         const password_hash = await bcrypt.hash(newPassword, 10);
         updateQuery += `, password_hash = $${paramIndex}`;
         updateParams.unshift(password_hash); // Put hash at the front of params

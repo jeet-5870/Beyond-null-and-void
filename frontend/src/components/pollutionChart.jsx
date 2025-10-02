@@ -39,7 +39,8 @@ const PollutionTimeline = ({ city, onBack }) => {
 
   return (
     <Card className="mb-8">
-      <CardHeader className="flex flex-col sm:flex-row justify-between items-start sm:items-center">
+      {/* 🔑 IMPROVEMENT: Changed 'sm:flex-row' to 'xs:flex-row' for consistency with custom breakpoint */}
+      <CardHeader className="flex flex-col xs:flex-row justify-between items-start xs:items-center">
         <div className="flex items-center space-x-2">
           <button onClick={onBack} className="p-2 rounded-full hover:bg-primary-dark transition-colors">
             <ArrowLeft className="h-5 w-5 text-text-muted" />

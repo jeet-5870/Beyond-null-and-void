@@ -7,6 +7,11 @@ function UploadForm({ onUploadComplete, uploadType }) {
   const [message, setMessage] = useState('');
   const [isUploading, setIsUploading] = useState(false);
   const fileInputRef = useRef();
+  
+  // 🔑 FIX: Define formTitle based on uploadType
+  const formTitle = uploadType === 'standards' 
+    ? 'Upload Metal Standards' 
+    : 'Upload New Sample Data'; 
 
   useEffect(() => {
     if (fileInputRef.current) {

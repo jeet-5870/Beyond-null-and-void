@@ -15,7 +15,7 @@ export const ComplaintForm = () => {
     }
     
     try {
-      // 🔑 Sending feedback requires authentication if we want to associate it with a user.
+      // 泊 Sending feedback requires authentication if we want to associate it with a user.
       // Assuming the API endpoint will use the JWT token (if present) to log the userId.
       await API.post('/api/feedback', { feedback });
       setMessage('Thank you! Your complaint/feedback has been submitted.');
@@ -58,7 +58,7 @@ export const ComplaintForm = () => {
   );
 };
 
-// 🔑 NEW PROP: userSpecific (boolean) to control which endpoint is called
+// 泊 NEW PROP: userSpecific (boolean) to control which endpoint is called
 export const FeedbackList = ({ userSpecific = false }) => { 
   const [feedbackList, setFeedbackList] = useState([]);
   const [isLoading, setIsLoading] = useState(true);
@@ -67,7 +67,7 @@ export const FeedbackList = ({ userSpecific = false }) => {
     const fetchFeedback = async () => {
       setIsLoading(true);
       try {
-        // 🔑 Determine which API endpoint to call based on the prop
+        // 泊 Determine which API endpoint to call based on the prop
         // The endpoint /api/feedback/user/feedback is protected and fetches user-specific feedback.
         const endpoint = userSpecific ? '/api/feedback/user/feedback' : '/api/feedback';
         
@@ -87,7 +87,7 @@ export const FeedbackList = ({ userSpecific = false }) => {
     fetchFeedback();
   }, [userSpecific]);
 
-  // 🔑 CHANGE: Update title to 'My Complaints' when userSpecific is true
+  // 泊 CHANGE: Update title to 'My Complaints' when userSpecific is true
   const title = userSpecific ? 'My Complaints' : 'Recent Community Feedback';
   const iconColor = userSpecific ? 'text-accent-blue' : 'text-success';
   const emptyMessage = userSpecific 

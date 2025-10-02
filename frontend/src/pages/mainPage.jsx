@@ -165,7 +165,8 @@ const MainPage = () => {
   
   const summaryMetrics = [
     {
-      title: 'Current Average HPI (Sampled)', 
+      // 🔑 FIX: Changed title to reflect the calculation is only for the fetched top 10 polluted cities
+      title: 'Average HPI of Top 10 Polluted', 
       value: averageHPI, 
       icon: TrendingUp, 
       color: 'text-accent-blue' 
