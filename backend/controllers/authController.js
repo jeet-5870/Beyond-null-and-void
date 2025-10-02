@@ -3,6 +3,17 @@
 import bcrypt from 'bcrypt';
 import jwt from 'jsonwebtoken';
 import db from '../db/db.js';
+import axios from 'axios';
+import nodemailer from 'nodemailer'; // 🔑 NEW: Import the nodemailer library
+
+// 🔑 NEW: Initialize Nodemailer transporter
+const transporter = nodemailer.createTransport({
+  service: 'gmail',
+  auth: {
+    user: process.env.GMAIL_USER,
+    pass: process.env.GMAIL_APP_PASSWORD,
+  },
+});
 
 // Helper function to generate a 6-digit OTP
 const generateOtp = () => Math.floor(100000 + Math.random() * 900000).toString();
@@ -16,18 +27,65 @@ const createToken = (user) => {
   );
 };
 
-// Sends OTP and updates user record
+// 🔑 MODIFIED: Sends OTP via Email or "SMS" through Nodemailer
 const sendOtpAndRespond = async (userId, identifier, isEmail, res) => {
   const otp = generateOtp();
   const expiresAt = new Date(Date.now() + 5 * 60 * 1000); // OTP valid for 5 minutes
 
-  // 泊 Mask the identifier in the console log for security
-  const maskedIdentifier = isEmail 
-    ? identifier.replace(/^(.{2})[^@]+/, '$1***') 
-    : identifier.substring(0, 3) + '***' + identifier.substring(identifier.length - 2);
+  if (isEmail && process.env.SENDGRID_API_KEY) {
+    // --- Email Sending Logic (SendGrid) ---
+    const emailData = {
+      personalizations: [{ to: [{ email: identifier }] }],
+      from: { email: process.env.SENDER_EMAIL },
+      subject: 'Your Groundwater Analyzer Verification Code',
+      content: [
+        {
+          type: 'text/plain',
+          value: `Your verification code is: ${otp}. It is valid for 5 minutes.`,
+        },
+      ],
+    };
 
-  // In a real app, this simulates sending email/SMS
-  console.log(`[AUTH] Sending OTP: ${otp} to ${maskedIdentifier}. Valid until ${expiresAt.toLocaleTimeString()}.`);
+    try {
+      await axios.post('https://api.sendgrid.com/v3/mail/send', emailData, {
+        headers: {
+          Authorization: `Bearer ${process.env.SENDGRID_API_KEY}`,
+          'Content-Type': 'application/json',
+        },
+      });
+      console.log(`[AUTH] Successfully sent OTP email to ${identifier}`);
+    } catch (error) {
+      console.error('[AUTH] Error sending OTP email via SendGrid:', error.response?.data);
+      console.log(`[AUTH] SIMULATED OTP for ${identifier}: ${otp}`);
+    }
+  } else if (!isEmail && process.env.GMAIL_USER) {
+    // --- 🔑 START: "SMS" via Email Logic (Nodemailer) ---
+    
+    // NOTE: This is a limitation. We need to guess the carrier gateway.
+    // For this example, we'll assume a common Indian carrier like Jio.
+    // A production app would need a more robust way to determine this.
+    const smsGatewayAddress = `${identifier}@jio.com`; 
+
+    const mailOptions = {
+        from: process.env.GMAIL_USER,
+        to: smsGatewayAddress,
+        subject: 'Verification Code',
+        text: `Your Groundwater Analyzer verification code is: ${otp}`
+    };
+
+    try {
+        await transporter.sendMail(mailOptions);
+        console.log(`[AUTH] Successfully sent OTP "SMS" to ${identifier}`);
+    } catch (error) {
+        console.error('[AUTH] Error sending OTP via Nodemailer:', error);
+        console.log(`[AUTH] SIMULATED OTP for ${identifier}: ${otp}`);
+    }
+    // --- 🔑 END: "SMS" via Email Logic ---
+    
+  } else {
+    // Fallback to simulation if API keys are missing
+    console.log(`[AUTH] API keys not set. SIMULATED OTP for ${identifier}: ${otp}`);
+  }
 
   await db.query(
     'UPDATE users SET reset_token = $1, reset_token_expires = $2 WHERE user_id = $3',
@@ -166,22 +224,25 @@ export const verifyOtp = async (req, res, next) => {
 
     if (!user || user.reset_token !== otp || new Date() > new Date(user.reset_token_expires)) {
       // Clear token/expiry to prevent brute force/reuse
-      await db.query('UPDATE users SET reset_token = NULL, reset_token_expires = NULL WHERE user_id = $1', [user.user_id]);
+      if (user) {
+        await db.query('UPDATE users SET reset_token = NULL, reset_token_expires = NULL WHERE user_id = $1', [user.user_id]);
+      }
       return res.status(401).json({ error: 'Invalid or expired OTP.' });
     }
 
     let updateQuery = 'UPDATE users SET reset_token = NULL, reset_token_expires = NULL';
-    let updateParams = [user.user_id];
-    let paramIndex = 2;
+    let updateParams = [];
+    let paramIndex = 1;
 
     if (newPassword) {
         // 泊 NEW: If newPassword is provided (forgot password flow), update the password hash
         const password_hash = await bcrypt.hash(newPassword, 10);
-        updateQuery += `, password_hash = $${paramIndex}`;
-        updateParams.unshift(password_hash); // Put hash at the front of params
+        updateQuery += `, password_hash = $${paramIndex++}`;
+        updateParams.push(password_hash);
     }
     
-    updateQuery += ` WHERE user_id = $${updateParams.length}`; // user_id is always the last parameter
+    updateQuery += ` WHERE user_id = $${paramIndex}`;
+    updateParams.push(user.user_id);
 
     // Success: Clear OTP fields and log the user in (and reset password if applicable)
     await db.query(updateQuery, updateParams);
