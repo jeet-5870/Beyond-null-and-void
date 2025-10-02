@@ -2,36 +2,65 @@
 import db from './db.js';
 import bcrypt from 'bcrypt';
 
+const initialSamples = [
+    {
+        location: 'Etawah', lat: 26.777, lng: 78.997,
+        metals: [
+            { metal_name: 'Pb', concentration: 0.12 },
+            { metal_name: 'Cd', concentration: 0.03 },
+            { metal_name: 'As', concentration: 0.05 }
+        ],
+        // Pre-calculated simple indices for initial data visibility (HPI/HEI approximate)
+        hpi: 200.0, 
+        hei: 23.0, 
+        pli: 4.8,
+        mpi: 0.04
+    },
+    {
+        location: 'Kanpur', lat: 26.4499, lng: 80.3319,
+        metals: [
+            { metal_name: 'Pb', concentration: 0.08 },
+            { metal_name: 'Cd', concentration: 0.02 },
+            { metal_name: 'As', concentration: 0.04 }
+        ],
+        hpi: 150.0, 
+        hei: 15.9,
+        pli: 3.5,
+        mpi: 0.02
+    }
+];
+
 export const seedDatabase = async () => {
   try {
-    // Check if users table is empty before seeding
+    const passwordHash = await bcrypt.hash('password', 10);
+    let researcherUserId;
+    
+    // 1. Seed Users (if empty)
     const userCountRes = await db.query('SELECT COUNT(*) FROM users');
     if (userCountRes.rows[0].count === '0') {
       console.log('Seeding default users...');
-      const passwordHash = await bcrypt.hash('password', 10);
       
-      // 1. Default Researcher (Email, with Password)
-      await db.query(
+      const resAdmin = await db.query(
         `INSERT INTO users (fullname, email, phone, password_hash, role)
-         VALUES ('Researcher Admin', 'admin@example.com', NULL, $1, 'researcher')`,
+         VALUES ('Researcher Admin', 'admin@example.com', NULL, $1, 'researcher') RETURNING user_id`,
         [passwordHash]
       );
-      
-      // 2. Default Guest (Phone, with Password)
-       await db.query(
+      researcherUserId = resAdmin.rows[0].user_id;
+
+      await db.query(
         `INSERT INTO users (fullname, email, phone, password_hash, role)
          VALUES ('Guest User', NULL, '9991234567', $1, 'guest')`,
         [passwordHash]
       );
-
       console.log('✅ Default users seeded.');
     } else {
-      console.log('Default users already exist. Skipping seeding.');
+      researcherUserId = (await db.query("SELECT user_id FROM users WHERE email='admin@example.com'")).rows[0]?.user_id;
+      console.log('Default users already exist. Skipping user seeding.');
     }
 
-    // Check if standards table is empty before seeding
-    const res = await db.query('SELECT COUNT(*) FROM metal_standards');
-    if (res.rows[0].count === '0') {
+    // 2. Seed Metal Standards (if empty)
+    const standardsCountRes = await db.query('SELECT COUNT(*) FROM metal_standards');
+    if (standardsCountRes.rows[0].count === '0') {
       console.log('Seeding metal standards...');
       await db.query(`
         INSERT INTO metal_standards (metal_name, mac_ppm, standard_ppm) VALUES
@@ -44,8 +73,52 @@ export const seedDatabase = async () => {
       `);
       console.log('✅ Metal standards seeded.');
     } else {
-      console.log('Metal standards already exist. Skipping seeding.');
+      console.log('Metal standards already exist. Skipping standard seeding.');
     }
+
+    // 3. Seed Sample Data (if no samples exist) - FIXES N/A ON MAIN PAGE
+    const sampleCountRes = await db.query('SELECT COUNT(*) FROM samples');
+    if (sampleCountRes.rows[0].count === '0' && researcherUserId) {
+        console.log('Seeding initial sample data...');
+        for (const sample of initialSamples) {
+            // Insert Location
+            let locRes = await db.query(
+                'INSERT INTO locations (name, latitude, longitude, district, state) VALUES ($1, $2, $3, $4, $5) RETURNING location_id',
+                [sample.location, sample.lat, sample.lng, sample.location, 'Uttar Pradesh']
+            );
+            const location_id = locRes.rows[0].location_id;
+
+            // Insert Sample
+            const sampleRes = await db.query(
+                `INSERT INTO samples (location_id, sample_date, source_type, notes, user_id)
+                 VALUES ($1, $2, $3, $4, $5) RETURNING sample_id`,
+                [location_id, new Date().toISOString(), 'Groundwater', 'Initial Seed', researcherUserId]
+            );
+            const sample_id = sampleRes.rows[0].sample_id;
+            
+            // Insert Concentrations
+            for(const metal of sample.metals) {
+                await db.query(
+                    'INSERT INTO metal_concentrations (sample_id, metal_name, concentration_ppm) VALUES ($1, $2, $3)',
+                    [sample_id, metal.metal_name, metal.concentration]
+                );
+            }
+
+            // Insert Indices (with hardcoded values for simplicity)
+            const is_anomaly = (sample.hei >= 50);
+            const cluster_id = (sample.location === 'Etawah') ? 1 : 2;
+
+            await db.query(
+                `INSERT INTO pollution_indices (sample_id, hpi, hei, pli, mpi, is_anomaly, cluster_id)
+                 VALUES ($1, $2, $3, $4, $5, $6, $7)`,
+                [sample_id, sample.hpi, sample.hei, sample.pli, sample.mpi, is_anomaly, cluster_id]
+            );
+        }
+        console.log('✅ Initial sample data seeded.');
+    } else {
+        console.log('Initial sample data already exists. Skipping sample seeding.');
+    }
+
   } catch (err) {
     console.error('❌ Database seeding failed:', err.message);
   }

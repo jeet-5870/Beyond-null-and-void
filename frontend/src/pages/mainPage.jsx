@@ -5,7 +5,7 @@ import PollutionLeaderboard from '../components/pollutionChart.jsx';
 import PartnersBoard from './partnersBoard.jsx';
 import BlogSection, { ComplaintForm, FeedbackList } from './blogSection.jsx';
 import API from '../api.js';
-import Footer from '../components/footer.jsx'; // 🔑 FIX: Corrected import extension from .js to .jsx
+import Footer from '../components/footer.jsx'; // FIX: Corrected import extension
 
 const Navbar = () => {
   const navigate = useNavigate();
@@ -147,26 +147,24 @@ const MainPage = () => {
     fetchLeaderboard();
   }, []);
 
-  // 🔑 FIX: Added || 0 to protect the reduce function from null/undefined values
+  // Robust Calculation to prevent crashes and display 'N/A' safely
   const totalPollutionIndex = leaderboardData.reduce((sum, city) => sum + (city.pollutionIndex || 0), 0);
   const averageHPI = leaderboardData.length > 0 ? (totalPollutionIndex / leaderboardData.length).toFixed(1) : 'N/A';
   
   const top10MostPolluted = leaderboardData; 
   const top10LeastPolluted = reversedLeaderboardData; 
 
-  // 🔑 FIX: Use != null (checks for both null and undefined) to safely access .toFixed(1)
   const worstCityHPI = top10MostPolluted.length > 0 && top10MostPolluted[0].pollutionIndex != null
     ? top10MostPolluted[0].pollutionIndex.toFixed(1) 
     : 'N/A';
   
-  // 🔑 FIX: Use != null (checks for both null and undefined) to safely access .toFixed(1)
-  const bestCityHPI = top10LeastPolluted.length > 0 && top10LeastPolluted[0].pollutionIndex != null
+  const bestCityHPI = top10LeastPollleted.length > 0 && top10LeastPolluted[0].pollutionIndex != null
     ? top10LeastPolluted[0].pollutionIndex.toFixed(1) 
     : 'N/A';
   
   const summaryMetrics = [
     {
-      title: 'Current Average HPI (Top 10)', 
+      title: 'Current Average HPI (Sampled)', 
       value: averageHPI, 
       icon: TrendingUp, 
       color: 'text-accent-blue' 

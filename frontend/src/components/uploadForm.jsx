@@ -36,6 +36,7 @@ function UploadForm({ onUploadComplete, uploadType }) {
     formData.append('file', file);
     setIsUploading(true);
 
+    // This determines the correct backend route: /api/standards or /upload
     const endpoint = uploadType === 'standards' ? '/api/standards' : '/upload';
 
     try {
@@ -45,8 +46,9 @@ function UploadForm({ onUploadComplete, uploadType }) {
       setMessage(res.data.message || 'Upload successful');
       setFile(null);
       fileInputRef.current.value = null;
-      if (onUploadComplete) onUploadComplete();
+      if (onUploadComplete) onUploadComplete(res.data); // Passing res.data for alerts
     } catch (err) {
+      // FIX: This captures the specific backend error message, e.g., "No metal standards found"
       const errorMsg = err.response?.data?.error || 'Upload failed';
       setMessage(errorMsg);
       console.error('❌ Upload error:', err);
@@ -55,8 +57,7 @@ function UploadForm({ onUploadComplete, uploadType }) {
     }
   };
   
-  const messageColor = message.includes('failed') ? 'text-danger' : 'text-success';
-  const formTitle = uploadType === 'standards' ? 'Upload Metal Standards CSV' : 'Upload Groundwater Samples CSV';
+const messageColor = (message.includes('failed') || message.includes('No metal standards found')) ? 'text-danger' : 'text-success';
 
   return (
     // 🔑 UPDATED colors for dark theme

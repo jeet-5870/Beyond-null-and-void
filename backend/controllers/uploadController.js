@@ -65,7 +65,7 @@ export default async function handleUpload(req, res, next) {
         .on('error', reject);
     });
     
-    // 🔑 FIX: Moved the standards query outside the transaction block (before BEGIN)
+    // 🔑 IMPORTANT: This query relies on the metal_standards table being seeded/populated.
     const { rows: standardsRows } = await db.query('SELECT metal_name, mac_ppm, standard_ppm FROM metal_standards');
     const metalStandards = {};
     standardsRows.forEach(row => {

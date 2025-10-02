@@ -108,7 +108,7 @@ const Dashboard = () => {
     showResults ? setShowResults(false) : fetchResults();
   };
 
-  // 🔑 Updated to correctly process the backend's response containing 'alerts'
+  // 泊 Updated to correctly process the backend's response containing 'alerts'
   const handleUploadComplete = (response) => {
     if (response && response.alerts && response.alerts.length > 0) {
       const newAlerts = response.alerts.map(alert => ({
@@ -199,7 +199,7 @@ const Dashboard = () => {
     },
   ];
   
-  // 🔑 REMOVED: Calculation for safeCitiesData is removed
+  // 泊 REMOVED: Calculation for safeCitiesData is removed
   /*
   const safeCitiesData = results
     .filter(city => city.classification === 'Safe')
