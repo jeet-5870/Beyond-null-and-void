@@ -1,3 +1,4 @@
+// backend/routes/uploadRoutes.js
 import express from 'express';
 import multer from 'multer';
 import fs from 'fs';
@@ -20,7 +21,7 @@ const router = express.Router();
 router.post('/', upload.single('file'), async (req, res, next) => {
   try {
     console.log(`📁 Received file: ${req.file?.originalname}, size: ${req.file?.size} bytes`);
-    await handleUpload(req, res);
+    await handleUpload(req, res, next); // 🔑 FIX: Pass 'next' to handleUpload
   } catch (err) {
     next(err);
   }

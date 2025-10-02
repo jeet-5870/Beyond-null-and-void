@@ -6,7 +6,6 @@ import db from '../db/db.js';
  * Mocks a machine learning prediction model by fetching the latest HPI
  * and extrapolating a future trend over the next 7 days.
  */
-// 🔑 FIX: Removed 'export const' to prepare for default export
 const getFuturePrediction = async (req, res, next) => {
   const { location } = req.params;
 
