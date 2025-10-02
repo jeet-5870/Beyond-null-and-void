@@ -5,7 +5,7 @@ import PollutionLeaderboard from '../components/pollutionChart.jsx';
 import PartnersBoard from './partnersBoard.jsx';
 import BlogSection, { ComplaintForm, FeedbackList } from './blogSection.jsx';
 import API from '../api.js';
-import Footer from '../components/footer.jsx'; // FIX: Corrected import extension
+import Footer from '../components/footer.jsx'; // Corrected import extension
 
 const Navbar = () => {
   const navigate = useNavigate();
@@ -158,7 +158,8 @@ const MainPage = () => {
     ? top10MostPolluted[0].pollutionIndex.toFixed(1) 
     : 'N/A';
   
-  const bestCityHPI = top10LeastPollleted.length > 0 && top10LeastPolluted[0].pollutionIndex != null
+  // 🔑 FIX: Corrected typo from top10LeastPollleted to top10LeastPolluted
+  const bestCityHPI = top10LeastPolluted.length > 0 && top10LeastPolluted[0].pollutionIndex != null
     ? top10LeastPolluted[0].pollutionIndex.toFixed(1) 
     : 'N/A';
   
