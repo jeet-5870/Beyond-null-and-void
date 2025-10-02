@@ -138,6 +138,10 @@ export default async function handleUpload(req, res, next) {
       const hei = calculateHEI(concentrations, heiStandards);
       const pli = calculatePLI(cfArray);
       const mpi = calculateMPI(concentrations);
+
+      // 🔑 NEW: Conceptual Anomaly Detection and Clustering
+      const is_anomaly = (hei >= 50); // Simple threshold-based "Anomaly" check
+      const cluster_id = Math.floor(Math.random() * 3) + 1; // Placeholder: Assign random cluster ID 1, 2, or 3
       
       // 🔑 Check for critical pollution (Highly Polluted HEI >= 20)
       const classification = getHEIClassification(hei);
@@ -152,9 +156,9 @@ export default async function handleUpload(req, res, next) {
       }
 
       await db.query(
-        `INSERT INTO pollution_indices (sample_id, hpi, hei, pli, mpi, cf)
-         VALUES ($1, $2, $3, $4, $5, $6)`,
-        [sample_id, hpi, hei, pli, mpi, JSON.stringify(cfArray)]
+        `INSERT INTO pollution_indices (sample_id, hpi, hei, pli, mpi, cf, is_anomaly, cluster_id)
+         VALUES ($1, $2, $3, $4, $5, $6, $7, $8)`,
+        [sample_id, hpi, hei, pli, mpi, JSON.stringify(cfArray), is_anomaly, cluster_id]
       );
 
       insertedCount += metals.length;

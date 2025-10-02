@@ -4,7 +4,7 @@ import { Card, CardHeader, CardContent } from './card.jsx';
 
 function ResultTable({ data, onShowOnMap }) {
   const getClassificationBadge = (classification) => {
-    // 🔑 UPDATED colors for dark theme
+    // 泊 UPDATED colors for dark theme
     const colors = {
       'Safe': 'bg-success/20 text-success',
       'Polluted': 'bg-warning/20 text-warning',
@@ -18,22 +18,52 @@ function ResultTable({ data, onShowOnMap }) {
     );
   };
 
+  // 🔑 NEW: Anomaly Badge
+  const getAnomalyBadge = (isAnomaly) => {
+    if (!isAnomaly) return null;
+    return (
+      <span className="inline-flex px-3 py-1 rounded-full text-xs font-semibold bg-danger/20 text-danger border border-danger/50">
+        ANOMALY
+      </span>
+    );
+  };
+
+  // 🔑 NEW: Cluster ID Badge
+  const getClusterBadge = (clusterId) => {
+    if (!clusterId) return null;
+    
+    // Assign colors based on cluster ID (modulo for rotation)
+    let color;
+    switch(clusterId % 3) {
+      case 1: color = 'bg-accent-blue/20 text-accent-blue'; break;
+      case 2: color = 'bg-warning/20 text-warning'; break;
+      case 0: // Case 3
+      default: color = 'bg-success/20 text-success'; break;
+    }
+    
+    return (
+      <span className={`inline-flex px-3 py-1 rounded-full text-xs font-semibold ${color}`}>
+        Cluster {clusterId}
+      </span>
+    );
+  };
+
   return (
     <Card className="mb-8">
       <CardHeader>
         <div className="flex items-center justify-between">
           <div className="flex items-center space-x-2">
-            <h3 className="text-lg font-semibold text-text-light">Detailed Results</h3> {/* 🔑 Text color */}
+            <h3 className="text-lg font-semibold text-text-light">Detailed Results</h3> {/* 泊 Text color */}
           </div>
-          <span className="text-sm text-text-muted">{data.length} locations analyzed</span> {/* 🔑 Text color */}
+          <span className="text-sm text-text-muted">{data.length} locations analyzed</span> {/* 泊 Text color */}
         </div>
       </CardHeader>
       <CardContent className="p-0">
         <div className="overflow-x-auto">
           <table className="w-full">
-            <thead className="bg-primary-dark border-b border-gray-700"> {/* 🔑 Header colors */}
+            <thead className="bg-primary-dark border-b border-gray-700"> {/* 泊 Header colors */}
               <tr>
-                <th className="px-6 py-4 text-left text-xs font-semibold text-text-muted uppercase tracking-wider"> {/* 🔑 Text color */}
+                <th className="px-6 py-4 text-left text-xs font-semibold text-text-muted uppercase tracking-wider"> {/* 泊 Text color */}
                   Location
                 </th>
                 <th className="px-6 py-4 text-left text-xs font-semibold text-text-muted uppercase tracking-wider">
@@ -52,11 +82,17 @@ function ResultTable({ data, onShowOnMap }) {
                   Classification
                 </th>
                 <th className="px-6 py-4 text-left text-xs font-semibold text-text-muted uppercase tracking-wider">
+                  Anomaly
+                </th>
+                <th className="px-6 py-4 text-left text-xs font-semibold text-text-muted uppercase tracking-wider">
+                  Cluster ID
+                </th>
+                <th className="px-6 py-4 text-left text-xs font-semibold text-text-muted uppercase tracking-wider">
                   Actions
                 </th>
               </tr>
             </thead>
-            <tbody className="bg-secondary-dark divide-y divide-gray-700"> {/* 🔑 Body colors */}
+            <tbody className="bg-secondary-dark divide-y divide-gray-700"> {/* 泊 Body colors */}
               {data.map((item, index) => (
                 <tr key={item.location} className={index % 2 === 0 ? 'bg-secondary-dark' : 'bg-primary-dark/70'}>
                   <td className="px-6 py-4 whitespace-nowrap">
@@ -79,6 +115,12 @@ function ResultTable({ data, onShowOnMap }) {
                   </td>
                   <td className="px-6 py-4 whitespace-nowrap">
                     {getClassificationBadge(item.classification)}
+                  </td>
+                  <td className="px-6 py-4 whitespace-nowrap">
+                    {getAnomalyBadge(item.is_anomaly)}
+                  </td>
+                  <td className="px-6 py-4 whitespace-nowrap">
+                    {getClusterBadge(item.cluster_id)}
                   </td>
                   <td className="px-6 py-4 whitespace-nowrap">
                     {onShowOnMap && (

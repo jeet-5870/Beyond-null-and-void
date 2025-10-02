@@ -186,6 +186,12 @@ const Dashboard = () => {
       color: 'text-danger',
     },
     {
+      title: 'Anomalous Samples', // 🔑 NEW STAT
+      value: results.filter((r) => r.is_anomaly).length,
+      icon: Slash, // Using Slash for anomaly
+      color: 'text-danger',
+    },
+    {
       title: 'Average HPI',
       value: results.length ? (results.reduce((sum, r) => sum + r.hpi, 0) / results.length).toFixed(1) : '0.0',
       icon: TrendingUp,

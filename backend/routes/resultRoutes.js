@@ -25,7 +25,9 @@ const getUserSamples = (req, res, next) => {
         pi.hei,
         pi.pli,
         pi.mpi,
-        pi.cf
+        pi.cf,
+        pi.is_anomaly,
+        pi.cluster_id
       FROM pollution_indices pi
       JOIN samples s ON pi.sample_id = s.sample_id
       JOIN locations l ON s.location_id = l.location_id
@@ -44,7 +46,9 @@ const getUserSamples = (req, res, next) => {
         pi.hei,
         pi.pli,
         pi.mpi,
-        pi.cf
+        pi.cf,
+        pi.is_anomaly,
+        pi.cluster_id
       FROM pollution_indices pi
       JOIN samples s ON pi.sample_id = s.sample_id
       JOIN locations l ON s.location_id = l.location_id

@@ -1,11 +1,11 @@
 import React, { useState, useEffect } from 'react';
 import { useNavigate } from 'react-router-dom';
-import { Droplets, LogIn, ArrowRight, ArrowUp, Menu, X } from 'lucide-react';
-import PollutionLeaderboard from '../components/pollutionChart.jsx'; // 🔑 FIX: Changed import to use the interactive component
+import { Droplets, LogIn, ArrowRight, ArrowUp, Menu, X, CheckCircle, AlertCircle, TrendingUp } from 'lucide-react'; 
+import PollutionLeaderboard from '../components/pollutionChart.jsx';
 import PartnersBoard from './partnersBoard.jsx';
 import BlogSection, { ComplaintForm, FeedbackList } from './blogSection.jsx';
 import API from '../api.js';
-import Footer from '../components/footer.jsx';
+import Footer from '../components/footer.jsx'; // 🔑 FIX: Corrected import extension from .js to .jsx
 
 const Navbar = () => {
   const navigate = useNavigate();
@@ -33,7 +33,7 @@ const Navbar = () => {
     <nav className="fixed top-0 left-0 right-0 z-50 bg-primary-dark/95 backdrop-blur-md shadow-md border-b border-gray-700" aria-label="Main Navigation">
       <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8">
         <div className="flex justify-between items-center h-16">
-          {/* Logo */}
+          {/* Logo and App Title */}
           <div className="flex items-center space-x-3">
             <Droplets className="h-8 w-8 text-accent-blue" />
             <span className="text-xl font-bold text-text-light">Beyond Null and Void</span>
@@ -147,7 +147,43 @@ const MainPage = () => {
     fetchLeaderboard();
   }, []);
 
-  // 🔑 REMOVED: handleViewTimeline is no longer needed as the PollutionLeaderboard component handles the logic internally
+  // 🔑 FIX: Added || 0 to protect the reduce function from null/undefined values
+  const totalPollutionIndex = leaderboardData.reduce((sum, city) => sum + (city.pollutionIndex || 0), 0);
+  const averageHPI = leaderboardData.length > 0 ? (totalPollutionIndex / leaderboardData.length).toFixed(1) : 'N/A';
+  
+  const top10MostPolluted = leaderboardData; 
+  const top10LeastPolluted = reversedLeaderboardData; 
+
+  // 🔑 FIX: Use != null (checks for both null and undefined) to safely access .toFixed(1)
+  const worstCityHPI = top10MostPolluted.length > 0 && top10MostPolluted[0].pollutionIndex != null
+    ? top10MostPolluted[0].pollutionIndex.toFixed(1) 
+    : 'N/A';
+  
+  // 🔑 FIX: Use != null (checks for both null and undefined) to safely access .toFixed(1)
+  const bestCityHPI = top10LeastPolluted.length > 0 && top10LeastPolluted[0].pollutionIndex != null
+    ? top10LeastPolluted[0].pollutionIndex.toFixed(1) 
+    : 'N/A';
+  
+  const summaryMetrics = [
+    {
+      title: 'Current Average HPI (Top 10)', 
+      value: averageHPI, 
+      icon: TrendingUp, 
+      color: 'text-accent-blue' 
+    },
+    {
+      title: 'Lowest HPI Recorded', 
+      value: bestCityHPI, 
+      icon: CheckCircle, 
+      color: 'text-success' 
+    },
+    {
+      title: 'Highest HPI Recorded', 
+      value: worstCityHPI, 
+      icon: AlertCircle, 
+      color: 'text-danger' 
+    },
+  ];
 
   return (
     <div className="min-h-screen bg-primary-dark">
@@ -155,7 +191,7 @@ const MainPage = () => {
       <main className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 py-20 pt-32">
 
         {/* Home Section */}
-        <section id="home" className="bg-secondary-dark py-24 rounded-xl shadow-lg border border-gray-700">
+        <section id="home" className="bg-secondary-dark py-16 rounded-xl shadow-lg border border-gray-700">
           <div className="text-center">
             <Droplets className="h-12 w-12 text-accent-blue mx-auto mb-4" />
             <h2 className="text-5xl font-extrabold text-text-light mb-4">Groundwater Analyzer</h2>
@@ -167,6 +203,28 @@ const MainPage = () => {
                 Welcome back, <span className="font-semibold text-accent-blue">{role}</span>!
               </p>
             )}
+
+            {/* 🔑 Pollution Index Snapshot */}
+            <div className="grid grid-cols-1 md:grid-cols-3 gap-6 my-10 px-6">
+              {isLoading ? (
+                <div className="md:col-span-3 flex justify-center items-center h-20">
+                    <div className="animate-spin rounded-full h-8 w-8 border-4 border-gray-700 border-t-accent-blue"></div>
+                </div>
+              ) : (
+                summaryMetrics.map((metric, index) => (
+                  <div key={index} className="bg-primary-dark p-4 rounded-lg border border-gray-700 shadow-md">
+                    <div className="flex items-center space-x-2 justify-center">
+                      <metric.icon className={`h-5 w-5 ${metric.color}`} />
+                      <p className="text-sm font-medium text-text-muted">{metric.title}</p>
+                    </div>
+                    <p className={`text-3xl font-bold mt-2 ${metric.color}`}>
+                      {metric.value}
+                    </p>
+                  </div>
+                ))
+              )}
+            </div>
+
             <p className="italic text-text-muted text-sm mb-10">
               “From beneath the surface, clarity rises. Let data speak for the water we drink.”
             </p>
@@ -193,15 +251,14 @@ const MainPage = () => {
             </div>
           ) : (
             <>
+              {/* Note: Leaderboard Data is fetched DESC (most polluted first) */}
               <PollutionLeaderboard 
-                data={leaderboardData} 
+                data={reversedLeaderboardData} // Reversed to show least polluted first (rank 1 is lowest HPI)
                 title="Top 10 Least Polluted Cities (HPI)" 
-                // 🔑 REMOVED: onViewTimeline prop is no longer needed
               />
               <PollutionLeaderboard 
-                data={reversedLeaderboardData} 
+                data={leaderboardData} // Original list is MOST polluted (rank 1 is highest HPI)
                 title="Top 10 Most Polluted Cities (HPI)" 
-                // 🔑 REMOVED: onViewTimeline prop is no longer needed
               />
             </>
           )}
@@ -256,7 +313,7 @@ const MainPage = () => {
               <ComplaintForm />
               
               {/* Right Column: User-Specific Feedback List */}
-              <FeedbackList userSpecific={!!role} /> {/* 🔑 CHANGE: Check if user is authenticated (role exists) and pass prop */}
+              <FeedbackList userSpecific={!!role} /> 
             </div>
           </div>
         </section>

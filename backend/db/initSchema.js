@@ -54,6 +54,8 @@ export const initPostgresSchema = async () => {
         pli REAL,
         mpi REAL,
         cf JSONB,
+        is_anomaly BOOLEAN DEFAULT FALSE,
+        cluster_id INTEGER,
         computed_on TIMESTAMP DEFAULT CURRENT_TIMESTAMP
       );
 
