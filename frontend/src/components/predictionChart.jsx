@@ -1,9 +1,7 @@
-import React, { useState, useEffect } from 'react';
+import React, { useState, useEffect, useContext } from 'react';
 import { Zap, CornerUpRight, AlertTriangle, CheckCircle, ArrowLeft } from 'lucide-react';
 import { Card, CardHeader, CardContent } from './card.jsx';
 import API from '../api.js';
-
-// 🔑 NEW IMPORTS for Charting
 import { Line } from 'react-chartjs-2';
 import {
   Chart as ChartJS,
@@ -15,8 +13,8 @@ import {
   Tooltip,
   Legend,
 } from 'chart.js';
+import { ThemeContext } from '../context/ThemeContext.jsx';
 
-// Register Chart.js components (included here for completeness)
 ChartJS.register(
   CategoryScale,
   LinearScale,
@@ -27,18 +25,17 @@ ChartJS.register(
   Legend
 );
 
-
 const PredictionChart = ({ location, onBack }) => {
   const [predictionData, setPredictionData] = useState([]);
   const [isLoading, setIsLoading] = useState(false);
   const [error, setError] = useState(null);
+  const { theme } = useContext(ThemeContext);
 
   useEffect(() => {
     const fetchPredictionData = async () => {
       setIsLoading(true);
       setError(null);
       try {
-        // Fetch prediction data from the new protected endpoint
         const res = await API.get(`/api/prediction/${location}`);
         setPredictionData(res.data);
       } catch (err) {
@@ -52,12 +49,11 @@ const PredictionChart = ({ location, onBack }) => {
   }, [location]);
 
   const getPredictionStatus = () => {
-    if (predictionData.length === 0) return { text: 'No Data', color: 'text-text-muted', icon: CornerUpRight };
+    if (predictionData.length === 0) return { text: 'No Data', color: 'text-gray-500 dark:text-text-muted', icon: CornerUpRight };
     
     const initialHPI = predictionData[0]?.hpi || 0;
     const finalHPI = predictionData[predictionData.length - 1]?.hpi || 0;
     
-    // Check for a significant increase (e.g., > 5% or crossing 200 HPI threshold)
     const hpiThreshold = 200;
     const percentageIncrease = ((finalHPI - initialHPI) / initialHPI) * 100;
 
@@ -73,7 +69,6 @@ const PredictionChart = ({ location, onBack }) => {
   
   const status = getPredictionStatus();
   
-  // 🔑 NEW: Chart data configuration
   const chartData = {
     labels: predictionData.map(item => new Date(item.date).toLocaleDateString()),
     datasets: [
@@ -90,20 +85,24 @@ const PredictionChart = ({ location, onBack }) => {
     ],
   };
 
-  // 🔑 NEW: Chart options configuration
+  const isDark = theme === 'dark';
+  const textColor = isDark ? '#94a3b8' : '#6b7280';
+  const gridColor = isDark ? '#1e293b' : '#e5e7eb';
+  const titleColor = isDark ? '#f1f5f9' : '#1f2937';
+
   const chartOptions = {
     responsive: true,
     maintainAspectRatio: false,
     plugins: {
       legend: {
         labels: {
-          color: '#f1f5f9', // text-light
+          color: titleColor,
         }
       },
       title: {
         display: true,
         text: `Predicted HPI for ${location} (Next 7 Days)`,
-        color: '#94a3b8', // text-muted
+        color: textColor,
       },
     },
     scales: {
@@ -111,67 +110,66 @@ const PredictionChart = ({ location, onBack }) => {
         title: {
           display: true,
           text: 'Date',
-          color: '#94a3b8',
+          color: textColor,
         },
         ticks: {
-          color: '#94a3b8',
+          color: textColor,
         },
         grid: {
-          color: '#1e293b', // secondary-dark border
+          color: gridColor,
         }
       },
       y: {
         title: {
           display: true,
           text: 'HPI Score',
-          color: '#94a3b8',
+          color: textColor,
         },
         ticks: {
-          color: '#94a3b8',
+          color: textColor,
         },
         grid: {
-          color: '#1e293b',
+          color: gridColor,
         }
       },
     },
   };
 
   return (
-    <Card className="mb-8">
+    <Card>
       <CardHeader className="flex flex-col xs:flex-row justify-between items-start xs:items-center">
         <div className="flex items-center space-x-2">
-          <button onClick={onBack} className="p-2 rounded-full hover:bg-primary-dark transition-colors">
-            <ArrowLeft className="h-5 w-5 text-text-muted" />
+          <button onClick={onBack} className="p-2 rounded-full hover:bg-gray-100 dark:hover:bg-primary-dark transition-colors">
+            <ArrowLeft className="h-5 w-5 text-gray-600 dark:text-text-muted" />
           </button>
           <Zap className="h-5 w-5 text-accent-blue" />
-          <h3 className="text-xl font-bold text-text-light">{location} - Future Prediction (7 Days)</h3>
+          <h3 className="text-xl font-bold text-gray-800 dark:text-text-light">{location} - Future Prediction (7 Days)</h3>
         </div>
       </CardHeader>
       <CardContent>
         {isLoading ? (
-          <div className="w-full h-64 flex items-center justify-center text-text-muted">
-            <span className="animate-spin h-8 w-8 rounded-full border-4 border-gray-700 border-t-accent-blue"></span>
+          <div className="w-full h-64 flex items-center justify-center text-gray-600 dark:text-text-muted">
+            <span className="animate-spin h-8 w-8 rounded-full border-4 border-gray-300 dark:border-gray-700 border-t-accent-blue"></span>
           </div>
         ) : error ? (
           <div className="w-full h-64 flex items-center justify-center text-danger">
             <p>{error}</p>
           </div>
         ) : predictionData.length === 0 ? (
-           <div className="w-full h-64 flex items-center justify-center text-text-muted">
+           <div className="w-full h-64 flex items-center justify-center text-gray-600 dark:text-text-muted">
             <p>Prediction data could not be generated.</p>
           </div>
         ) : (
           <>
-            <div className="w-full h-64 bg-primary-dark rounded-lg flex items-center justify-center text-accent-blue font-mono border border-gray-700 p-4">
-               {/* 🔑 IMPLEMENTATION: Render the Line Chart */}
+            <div className="w-full h-64 bg-gray-50 dark:bg-primary-dark rounded-lg flex items-center justify-center text-accent-blue font-mono border border-gray-200 dark:border-gray-700 p-4">
               <Line data={chartData} options={chartOptions} />
             </div>
             <div className="mt-4 text-center">
-              <p className="text-lg font-semibold text-text-light flex items-center justify-center space-x-2">
+              <p className="text-lg font-semibold text-gray-800 dark:text-text-light flex items-center justify-center space-x-2">
                 <status.icon className={`h-5 w-5 ${status.color}`} />
                 <span className={status.color}>Prediction Status: {status.text}</span>
               </p>
-              <p className="text-sm text-text-muted mt-1">
+              <p className="text-sm text-gray-600 dark:text-text-muted mt-1">
                 This is an ML-generated prediction for the next 7 days, accessible only to Researchers and NGOs.
               </p>
             </div>

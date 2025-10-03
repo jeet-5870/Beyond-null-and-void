@@ -1,50 +1,88 @@
-// backend/controllers/reportController.js
-
 import db from '../db/db.js';
 import PDFDocument from 'pdfkit';
-import { getHPIClassification, getHEIClassification } from '../utils/classification.js';
+import { getHEIClassification } from '../utils/classification.js';
+
+// --- Helper function to draw a pie chart ---
+function drawPieChart(doc, data, x, y, radius) {
+  doc.fontSize(14).font('Helvetica-Bold').text('Site Classification Overview', x, y - 20);
+
+  let startAngle = 0;
+  const total = data.reduce((sum, item) => sum + item.count, 0);
+  if (total === 0) {
+    doc.fontSize(10).font('Helvetica').text('No data available for chart.', x, y + 40);
+    return;
+  }
+
+  const legendX = x + radius + 30;
+  let legendY = y;
+
+  data.forEach(item => {
+    const sliceAngle = (item.count / total) * 360;
+    const endAngle = startAngle + sliceAngle;
+
+    doc.save()
+       .moveTo(x, y)
+       .arc(x, y, radius, startAngle, endAngle, false)
+       .lineTo(x, y)
+       .fill(item.color);
+    doc.restore();
+
+    // Draw Legend
+    doc.rect(legendX, legendY, 10, 10).fill(item.color);
+    doc.fontSize(10).font('Helvetica').fillColor('#000').text(`${item.label} (${item.count})`, legendX + 20, legendY);
+    legendY += 20;
+    
+    startAngle = endAngle;
+  });
+}
+
+// --- Helper function to draw a bar chart ---
+function drawBarChart(doc, data, x, y, width, height) {
+  doc.fontSize(14).font('Helvetica-Bold').text('Top 5 Polluted Locations (by HEI)', x, y - 20);
+
+  const barWidth = width / data.length / 2;
+  const maxVal = Math.max(...data.map(item => item.value));
+  if (maxVal === 0 || data.length === 0) {
+    doc.fontSize(10).font('Helvetica').text('No data available for chart.', x, y + 40);
+    return;
+  }
+  
+  doc.fontSize(8).fillColor('#555');
+
+  data.forEach((item, i) => {
+    const barHeight = (item.value / maxVal) * height;
+    const barX = x + i * (barWidth * 2);
+
+    doc.rect(barX, y + height - barHeight, barWidth, barHeight).fill(item.color);
+    doc.text(item.value.toFixed(2), barX, y + height - barHeight - 12, { width: barWidth, align: 'center' });
+    doc.text(item.label, barX, y + height + 5, { width: barWidth, align: 'center' });
+  });
+}
 
 export default function generateReport(req, res) {
-    const { userId, role } = req.user; // 🔑 Get role from the authenticated request
-    const doc = new PDFDocument({
-        // Set document default to dark theme friendly (white text on dark background)
-        bufferPages: true,
-        font: 'Helvetica',
-        size: 'A4',
-        margin: 50
-    });
-    const filename = `groundwater_report_${new Date().toISOString()}.pdf`;
+    const { userId, role } = req.user;
+    const doc = new PDFDocument({ size: 'A4', margin: 50 });
 
     res.setHeader('Content-Type', 'application/pdf');
-    res.setHeader('Content-Disposition', `attachment; filename="${filename}"`);
-
+    res.setHeader('Content-Disposition', `attachment; filename="groundwater_report_${new Date().toISOString()}.pdf"`);
     doc.pipe(res);
 
-    // --- Define Dark Theme Colors (Based on tailwind.config.js) ---
+    // --- Light Theme Colors ---
     const COLORS = {
-        PRIMARY_DARK: '#0f172a',
-        SECONDARY_DARK: '#1e293b',
-        ACCENT_BLUE: '#38bdf8',
-        TEXT_LIGHT: '#f1f5f9',
-        TEXT_MUTED: '#94a3b8',
-        SUCCESS: '#10b981',
-        WARNING: '#f59e0b',
-        DANGER: '#ef4444',
+        PRIMARY: '#FFFFFF',
+        SECONDARY: '#F3F4F6', // Light Gray
+        ACCENT: '#38BDF8',   // Sky Blue
+        TEXT_DARK: '#1F2937', // Dark Gray
+        TEXT_MUTED: '#6B7280', // Medium Gray
+        SUCCESS: '#10B981',
+        WARNING: '#F59E0B',
+        DANGER: '#EF4444',
     };
-    
-    doc.on('pageAdded', () => {
-        doc.fillColor(COLORS.PRIMARY_DARK).rect(0, 0, doc.page.width, doc.page.height).fill();
-    });
-    doc.fillColor(COLORS.PRIMARY_DARK).rect(0, 0, doc.page.width, doc.page.height).fill();
 
-    // 🔑 NEW LOGIC: Determine query based on role
     let query;
     let params;
-    let reportScope;
-
-    // 🔑 FIX: NGO, Researcher, and GUEST get Global data
+    // ... (Query logic based on role remains the same)
     if (role === 'ngo' || role === 'researcher' || role === 'guest') {
-        // Global Data for NGO, Researcher, and Guest
         query = `
             SELECT l.name AS location, pi.hpi, pi.hei, pi.pli, pi.mpi
             FROM pollution_indices pi
@@ -52,16 +90,7 @@ export default function generateReport(req, res) {
             JOIN locations l ON s.location_id = l.location_id
         `;
         params = [];
-        
-        if (role === 'guest') {
-            reportScope = 'Global Data Analysis (Guest View)';
-        } else if (role === 'researcher') {
-            reportScope = 'Global Data Analysis (Researcher Scope)';
-        } else {
-            reportScope = 'Global Data Analysis (NGO Scope)';
-        }
     } else {
-        // Fallback for any other role (local)
          query = `
             SELECT l.name AS location, pi.hpi, pi.hei, pi.pli, pi.mpi
             FROM pollution_indices pi
@@ -70,7 +99,6 @@ export default function generateReport(req, res) {
             WHERE s.user_id = $1
         `;
         params = [userId];
-        reportScope = 'User Data Analysis (Local)';
     }
     
     db.query(query, params)
@@ -78,147 +106,115 @@ export default function generateReport(req, res) {
         const rows = result.rows;
 
         // --- 1. HEADER SECTION ---
-        doc.fillColor(COLORS.SECONDARY_DARK)
-           .rect(0, 0, doc.page.width, 100) // Dark strip for header
-           .fill();
-
-        doc.fillColor(COLORS.ACCENT_BLUE)
+        doc.rect(0, 0, doc.page.width, 100).fill(COLORS.SECONDARY);
+        doc.fillColor(COLORS.ACCENT)
            .fontSize(28)
            .font('Helvetica-Bold')
-           .text('GROUNDWATER INSIGHTS REPORT', 50, 40, { align: 'left' });
-
+           .text('Groundwater Insights Report', 50, 40);
         doc.fillColor(COLORS.TEXT_MUTED)
            .fontSize(10)
            .font('Helvetica')
-           .text(`Generated on: ${new Date().toLocaleDateString('en-US')} | Scope: ${reportScope}`, 50, 75, { align: 'left' });
-        
-        // Horizontal Line Separator
-        doc.fillColor(COLORS.ACCENT_BLUE).rect(50, 95, doc.page.width - 100, 1).fill(); 
+           .text(`Generated on: ${new Date().toLocaleDateString('en-US')}`, 50, 75);
+        doc.moveTo(50, 95).lineTo(doc.page.width - 50, 95).stroke(COLORS.ACCENT);
 
-        let currentY = 120; // Starting point for content
+        let currentY = 140;
 
-        // --- 2. DATA PROCESSING ---
-        const grouped = rows.reduce((acc, row) => {
-            if (!acc[row.location]) acc[row.location] = { hpi: 0, hei: 0, pli: 0, mpi: 0, count: 0 };
-            acc[row.location].hpi += row.hpi;
-            acc[row.location].hei += row.hei;
-            acc[row.location].pli += row.pli;
-            acc[row.location].mpi += row.mpi;
-            acc[row.location].count += 1;
-            return acc;
-        }, {});
-
-        // --- 3. LOCATION BLOCKS ---
-        const contentStartX = 50;
-        const contentWidth = doc.page.width - contentStartX * 2;
-        const locationBlockHeight = 110; 
-        const gutter = 20;
-        
-        Object.entries(grouped).forEach(([location, vals]) => {
-            const hpi = (vals.hpi / vals.count).toFixed(2);
-            const hei = (vals.hei / vals.count).toFixed(2);
-            const pli = (vals.pli / vals.count).toFixed(2);
-            const mpi = (vals.mpi / vals.count).toFixed(2);
-            
-            const heiClassification = getHEIClassification(hei);
-            
-            let classificationColor;
-            if (heiClassification === 'Safe') classificationColor = COLORS.SUCCESS;
-            else if (heiClassification === 'Polluted') classificationColor = COLORS.WARNING;
-            else classificationColor = COLORS.DANGER; // Highly Polluted
-
-            // Check if a new page is needed
-            if (currentY + locationBlockHeight > doc.page.height - 50) {
-                doc.addPage();
-                currentY = 50; // Restart below the top margin
-            }
-
-            // --- LOCATION BLOCK START ---
-            
-            // Draw Block Background (Secondary Dark)
-            doc.fillColor(COLORS.SECONDARY_DARK)
-               .roundedRect(contentStartX, currentY, contentWidth, locationBlockHeight, 8)
-               .fill();
-               
-            // Left Column (Location Title and Samples Count)
-            const leftX = contentStartX + 15;
-            doc.fillColor(COLORS.TEXT_LIGHT)
-               .fontSize(16)
-               .font('Helvetica-Bold')
-               .text(location, leftX, currentY + 15);
-            
-            doc.fillColor(COLORS.TEXT_MUTED)
-               .fontSize(10)
-               .font('Helvetica')
-               .text(`Samples Analyzed: ${vals.count}`, leftX, currentY + 38);
-
-            // Right Column (Classification)
-            const rightX = contentStartX + contentWidth - 175;
-            const badgeY = currentY + 15;
-            
-            // Classification Title
-            doc.fillColor(COLORS.TEXT_MUTED)
-               .fontSize(9)
-               .text('POLLUTION CLASSIFICATION (HEI)', rightX, badgeY);
-
-            // Classification Value/Badge
-            doc.fillColor(classificationColor)
-               .roundedRect(rightX, badgeY + 12, 160, 20, 4)
-               .fill();
-
-            doc.fillColor(COLORS.PRIMARY_DARK) 
-               .fontSize(11)
-               .font('Helvetica-Bold')
-               .text(heiClassification.toUpperCase(), rightX, badgeY + 18, {
-                    width: 160,
-                    align: 'center'
-                });
-
-            // --- INDEX METRICS TABLE (2x2 Grid) ---
-            const indices = [
-                { label: 'HPI', value: hpi, color: COLORS.TEXT_LIGHT },
-                { label: 'PLI', value: pli, color: COLORS.TEXT_LIGHT },
-                { label: 'HEI', value: hei, color: classificationColor },
-                { label: 'MPI', value: mpi, color: COLORS.TEXT_LIGHT },
-            ];
-
-            const cellWidth = (contentWidth - 2 * gutter) / 4;
-            let indexY = currentY + 68;
-
-            indices.forEach((index, i) => {
-                const col = i % 2;
-                const row = Math.floor(i / 2);
-                const x = leftX + col * (cellWidth + gutter) - (col === 1 ? 5 : 0);
-                const y = indexY + row * 20;
-
-                doc.fillColor(COLORS.TEXT_MUTED)
-                   .fontSize(9)
-                   .text(index.label, x, y);
-
-                doc.fillColor(index.color)
-                   .fontSize(12)
-                   .font('Helvetica-Bold')
-                   .text(index.value, x, y + 10);
-            });
-            
-            // --- LOCATION BLOCK END ---
-            currentY += locationBlockHeight + gutter;
+        // --- 2. DATA PROCESSING & SUMMARY ---
+        const grouped = {};
+        rows.forEach(row => {
+            if (!grouped[row.location]) grouped[row.location] = { hpi: 0, hei: 0, pli: 0, mpi: 0, count: 0 };
+            grouped[row.location].hpi += row.hpi;
+            grouped[row.location].hei += row.hei;
+            grouped[row.location].pli += row.pli;
+            grouped[row.location].mpi += row.mpi;
+            grouped[row.location].count += 1;
         });
 
-        // --- 4. FOOTER ---
-        doc.fillColor(COLORS.TEXT_MUTED)
-           .fontSize(8)
-           .font('Helvetica')
-           .text('A Smart India Hackathon Initiative | Disclaimer: Report based on user data. Consult certified lab results for regulatory use.', contentStartX, doc.page.height - 40, {
-               width: contentWidth,
-               align: 'center'
-           });
+        const locationsData = Object.entries(grouped).map(([location, vals]) => {
+            const avgHei = vals.hei / vals.count;
+            return {
+                location,
+                hpi: (vals.hpi / vals.count).toFixed(2),
+                hei: avgHei.toFixed(2),
+                pli: (vals.pli / vals.count).toFixed(2),
+                mpi: (vals.mpi / vals.count).toFixed(2),
+                count: vals.count,
+                classification: getHEIClassification(avgHei),
+            };
+        });
+
+        let safeCount = 0, pollutedCount = 0, highlyPollutedCount = 0;
+        locationsData.forEach(loc => {
+            if (loc.classification === 'Safe') safeCount++;
+            else if (loc.classification === 'Polluted') pollutedCount++;
+            else highlyPollutedCount++;
+        });
+
+        // --- 3. SUMMARY PAGE (CHARTS) ---
+        doc.fontSize(18).font('Helvetica-Bold').fillColor(COLORS.TEXT_DARK).text('Report Summary', 50, currentY);
+        currentY += 30;
+
+        doc.fontSize(12).font('Helvetica').text(`Total Locations Analyzed: ${locationsData.length}`, 50, currentY);
+        currentY += 40;
+
+        const pieData = [
+            { label: 'Safe', count: safeCount, color: COLORS.SUCCESS },
+            { label: 'Polluted', count: pollutedCount, color: COLORS.WARNING },
+            { label: 'Highly Polluted', count: highlyPollutedCount, color: COLORS.DANGER },
+        ];
+        drawPieChart(doc, pieData, 120, currentY + 50, 50);
+
+        const topPolluted = [...locationsData].sort((a, b) => b.hei - a.hei).slice(0, 5);
+        const barData = topPolluted.map(loc => ({ label: loc.location, value: parseFloat(loc.hei), color: COLORS.DANGER }));
+        drawBarChart(doc, barData, 300, currentY, 250, 100);
+
+        currentY += 180;
+        doc.moveTo(50, currentY).lineTo(doc.page.width - 50, currentY).stroke('#ddd');
+        
+        // --- 4. DETAILED BREAKDOWN ---
+        doc.addPage();
+        doc.fontSize(18).font('Helvetica-Bold').fillColor(COLORS.TEXT_DARK).text('Detailed Location Analysis', 50, 50);
+        currentY = 80;
+
+        locationsData.forEach(loc => {
+            let classificationColor;
+            if (loc.classification === 'Safe') classificationColor = COLORS.SUCCESS;
+            else if (loc.classification === 'Polluted') classificationColor = COLORS.WARNING;
+            else classificationColor = COLORS.DANGER;
+
+            if (currentY + 130 > doc.page.height - 50) {
+                doc.addPage();
+                currentY = 50;
+            }
+
+            doc.rect(50, currentY, doc.page.width - 100, 110).fill(COLORS.SECONDARY);
+            doc.fontSize(16).font('Helvetica-Bold').fillColor(COLORS.TEXT_DARK).text(loc.location, 65, currentY + 15);
+            doc.fontSize(10).font('Helvetica').fillColor(COLORS.TEXT_MUTED).text(`Samples Analyzed: ${loc.count}`, 65, currentY + 38);
+
+            doc.fillColor(classificationColor).roundedRect(doc.page.width - 225, currentY + 27, 160, 20, 4).fill();
+            doc.fillColor('#FFF').fontSize(11).font('Helvetica-Bold').text(loc.classification.toUpperCase(), doc.page.width - 225, currentY + 33, { width: 160, align: 'center' });
+
+            const indices = [
+                { label: 'HPI', value: loc.hpi },
+                { label: 'HEI', value: loc.hei },
+                { label: 'PLI', value: loc.pli },
+                { label: 'MPI', value: loc.mpi },
+            ];
+            
+            indices.forEach((index, i) => {
+                const x = 65 + i * 110;
+                doc.fontSize(9).fillColor(COLORS.TEXT_MUTED).text(index.label, x, currentY + 70);
+                doc.fontSize(12).font('Helvetica-Bold').fillColor(COLORS.TEXT_DARK).text(index.value, x, currentY + 82);
+            });
+            
+            currentY += 130;
+        });
 
         doc.end();
     })
     .catch(err => {
         console.error('❌ DB query failed:', err.message);
-        res.status(500).json({ error: 'Failed to generate report' });
         doc.end();
+        res.status(500).json({ error: 'Failed to generate report' });
     });
 }

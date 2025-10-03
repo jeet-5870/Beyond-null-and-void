@@ -1,11 +1,11 @@
 import db from '../db/db.js';
 
 export const getLeaderboardData = async (req, res, next) => {
-  const { page = 1, limit = 10 } = req.query;
+  const { page = 1, limit = 10, sort = 'desc' } = req.query; // Add sort parameter, default to desc
   const offset = (page - 1) * limit;
+  const sortOrder = sort === 'asc' ? 'ASC' : 'DESC'; // Sanitize sort order
 
   try {
-    // Query for the leaderboard (most polluted cities)
     const leaderboardQuery = `
       WITH latest_samples AS (
         SELECT DISTINCT ON (location_id)
@@ -21,12 +21,11 @@ export const getLeaderboardData = async (req, res, next) => {
       JOIN latest_samples ls ON pi.sample_id = ls.sample_id
       JOIN locations l ON ls.location_id = l.location_id
       GROUP BY l.name
-      ORDER BY "pollutionIndex" DESC
+      ORDER BY "pollutionIndex" ${sortOrder}
       OFFSET $1
       LIMIT $2;
     `;
 
-    // Query for global statistics (average, min, max HPI)
     const statsQuery = `
       SELECT
         AVG(pi.hpi) AS "averageHPI",
@@ -46,7 +45,7 @@ export const getLeaderboardData = async (req, res, next) => {
       cities: leaderboardRes.rows,
       totalPages: Math.ceil(totalCount / limit),
       currentPage: parseInt(page),
-      stats: statsRes.rows[0] // Add stats to the response
+      stats: statsRes.rows[0]
     });
   } catch (err) {
     next(err);

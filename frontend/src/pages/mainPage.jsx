@@ -8,6 +8,7 @@ import API from '../api.js';
 import Footer from '../components/footer.jsx';
 import { ThemeContext } from '../context/ThemeContext.jsx';
 
+// Navbar component remains the same...
 const Navbar = () => {
   const navigate = useNavigate();
   const [isLoggedIn, setIsLoggedIn] = useState(false);
@@ -121,9 +122,10 @@ const Navbar = () => {
   );
 };
 
+
 const MainPage = () => {
-  const [leaderboardData, setLeaderboardData] = useState([]);
-  const [reversedLeaderboardData, setReversedLeaderboardData] = useState([]);
+  const [mostPollutedData, setMostPollutedData] = useState([]);
+  const [leastPollutedData, setLeastPollutedData] = useState([]); // New state for least polluted
   const [summaryMetrics, setSummaryMetrics] = useState([]);
   const [isLoading, setIsLoading] = useState(true);
   const [error, setError] = useState(null);
@@ -133,18 +135,24 @@ const MainPage = () => {
   const [featuredCity, setFeaturedCity] = useState(null);
 
   useEffect(() => {
-    const fetchLeaderboard = async () => {
+    const fetchAllLeaderboards = async () => {
       setIsLoading(true);
       setError(null);
       try {
-        const res = await API.get('/api/leaderboard?page=1&limit=10');
-        const { cities, stats } = res.data;
+        // Fetch both leaderboards in parallel
+        const [mostPollutedRes, leastPollutedRes] = await Promise.all([
+          API.get('/api/leaderboard?page=1&limit=10&sort=desc'),
+          API.get('/api/leaderboard?page=1&limit=10&sort=asc')
+        ]);
 
-        setLeaderboardData(cities);
-        setReversedLeaderboardData([...cities].reverse());
+        const { cities: mostPollutedCities, stats } = mostPollutedRes.data;
+        const { cities: leastPollutedCities } = leastPollutedRes.data;
 
-        if (cities.length > 0) {
-          setFeaturedCity(cities[0].city);
+        setMostPollutedData(mostPollutedCities);
+        setLeastPollutedData(leastPollutedCities);
+        
+        if (mostPollutedCities.length > 0) {
+          setFeaturedCity(mostPollutedCities[0].city);
         }
 
         const newSummaryMetrics = [
@@ -176,7 +184,7 @@ const MainPage = () => {
         setIsLoading(false);
       }
     };
-    fetchLeaderboard();
+    fetchAllLeaderboards();
   }, []);
 
   if (showTimeline && featuredCity) {
@@ -195,6 +203,7 @@ const MainPage = () => {
     <div className="min-h-screen bg-gray-50 dark:bg-primary-dark">
       <Navbar />
       <main className="mx-auto px-4 sm:px-6 lg:px-8 py-20 pt-32">
+        {/* Home Section is unchanged */}
         <section id="home" className="bg-white dark:bg-secondary-dark py-16 rounded-xl shadow-lg border border-gray-200 dark:border-gray-700">
           <div className="text-center">
             <Droplets className="h-12 w-12 text-accent-blue mx-auto mb-4" />
@@ -211,7 +220,7 @@ const MainPage = () => {
             <div className="grid grid-cols-1 md:grid-cols-3 gap-6 my-10 px-6">
               {isLoading ? (
                 <div className="md:col-span-3 flex justify-center items-center h-20">
-                  <div className="animate-spin rounded-full h-8 w-8 border-4 border-gray-300 dark:border-gray-700 border-t-accent-blue"></div>
+                    <div className="animate-spin rounded-full h-8 w-8 border-4 border-gray-300 dark:border-gray-700 border-t-accent-blue"></div>
                 </div>
               ) : (
                 summaryMetrics.map((metric, index) => (
@@ -229,7 +238,7 @@ const MainPage = () => {
             <div className="flex justify-center space-x-4">
               <a href="#leaderboard" className="px-6 py-3 bg-sky-500 dark:bg-accent-blue text-white dark:text-primary-dark rounded-lg font-medium hover:bg-sky-600 dark:hover:bg-sky-400/80 transition">View Rankings</a>
               {featuredCity && (
-                <button
+                <button 
                   onClick={() => setShowTimeline(true)}
                   className="px-6 py-3 bg-transparent text-accent-blue rounded-lg font-medium hover:bg-sky-100 dark:hover:bg-accent-blue/20 border border-accent-blue transition flex items-center space-x-2"
                 >
@@ -241,6 +250,7 @@ const MainPage = () => {
           </div>
         </section>
 
+
         <section id="leaderboard" className="grid grid-cols-1 lg:grid-cols-2 gap-8 mt-16">
           {isLoading ? (
             <div className="lg:col-span-2 flex items-center justify-center py-20">
@@ -250,24 +260,25 @@ const MainPage = () => {
             <div className="lg:col-span-2 bg-red-100 dark:bg-danger/20 text-danger p-4 rounded-md text-center">
               <p>{error}</p>
             </div>
-          ) : leaderboardData.length === 0 ? (
+          ) : (mostPollutedData.length === 0 && leastPollutedData.length === 0) ? (
             <div className="lg:col-span-2 text-center text-gray-600 dark:text-text-muted">
               No data available at the moment.
             </div>
           ) : (
             <>
-              <PollutionLeaderboard
-                data={reversedLeaderboardData}
-                title="Top 10 Least Polluted Cities (HPI)"
+              <PollutionLeaderboard 
+                data={leastPollutedData}
+                title="Top 10 Least Polluted Cities (HPI)" 
               />
-              <PollutionLeaderboard
-                data={leaderboardData}
-                title="Top 10 Most Polluted Cities (HPI)"
+              <PollutionLeaderboard 
+                data={mostPollutedData}
+                title="Top 10 Most Polluted Cities (HPI)" 
               />
             </>
           )}
         </section>
 
+        {/* Features, Partners, and Complaint sections remain the same */}
         <section id="features" className="py-24 border-t border-gray-200 dark:border-gray-700">
           <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8">
             <h2 className="text-4xl font-extrabold text-gray-800 dark:text-text-light text-center mb-6">Actionable Insights & Platform Tools</h2>
@@ -276,12 +287,12 @@ const MainPage = () => {
             </p>
             <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-10">
               {[
-                { title: '🧪 Comprehensive Indexing', desc: 'Real-time calculation of HPI, HEI, PLI, and MPI for all submitted samples.' },
-                { title: '📍 Location Heatmaps', desc: 'Geospatial visualization of pollution levels to pinpoint affected areas quickly.' },
-                { title: '📈 Timeline Analysis', desc: 'Track historical performance and trends for any monitored city over time.' },
-                { title: '📄 PDF Report Generation', desc: 'Authenticated users can download comprehensive water quality PDF reports for their data.' },
-                { title: '🔐 Secure Role Dashboards', desc: 'Dedicated dashboards ensure data privacy and relevant tools for NGOs and Researchers.' },
-                { title: '📤 Bulk CSV Submission', desc: 'Seamless portal for researchers and partners to upload large water sample datasets.' },
+                { title: 'Comprehensive Indexing', desc: 'Real-time calculation of HPI, HEI, PLI, and MPI for all submitted samples.' },
+                { title: 'Location Heatmaps', desc: 'Geospatial visualization of pollution levels to pinpoint affected areas quickly.' },
+                { title: 'Timeline Analysis', desc: 'Track historical performance and trends for any monitored city over time.' },
+                { title: 'PDF Report Generation', desc: 'Authenticated users can download comprehensive water quality PDF reports for their data.' },
+                { title: 'Secure Role Dashboards', desc: 'Dedicated dashboards ensure data privacy and relevant tools for NGOs and Researchers.' },
+                { title: 'Bulk CSV Submission', desc: 'Seamless portal for researchers and partners to upload large water sample datasets.' },
               ].map((feature, idx) => (
                 <div key={idx} className="bg-white dark:bg-secondary-dark p-6 rounded-lg shadow hover:shadow-md transition border border-gray-200 dark:border-gray-700">
                   <h3 className="text-xl font-semibold text-accent-blue mb-2">{feature.title}</h3>
@@ -310,7 +321,7 @@ const MainPage = () => {
             </p>
             <div className="grid grid-cols-1 lg:grid-cols-2 gap-8">
               <ComplaintForm />
-              <FeedbackList userSpecific={!!role} />
+              <FeedbackList userSpecific={!!role} /> 
             </div>
           </div>
         </section>
@@ -323,7 +334,7 @@ const MainPage = () => {
       >
         <ArrowUp className="h-5 w-5" />
       </button>
-
+      
       <Footer />
     </div>
   );
