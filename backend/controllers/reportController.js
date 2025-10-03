@@ -4,59 +4,61 @@ import { getHEIClassification } from '../utils/classification.js';
 
 // --- Helper function to draw a pie chart ---
 function drawPieChart(doc, data, x, y, radius) {
-  doc.fontSize(14).font('Helvetica-Bold').text('Site Classification Overview', x, y - 20);
+    doc.fontSize(14).font('Helvetica-Bold').text('Site Classification Overview', x, y - radius - 40);
 
-  let startAngle = 0;
-  const total = data.reduce((sum, item) => sum + item.count, 0);
-  if (total === 0) {
-    doc.fontSize(10).font('Helvetica').text('No data available for chart.', x, y + 40);
-    return;
-  }
+    let startAngle = 0;
+    const total = data.reduce((sum, item) => sum + item.count, 0);
+    if (total === 0) {
+        doc.fontSize(10).font('Helvetica').text('No data available for chart.', x, y);
+        return;
+    }
 
-  const legendX = x + radius + 30;
-  let legendY = y;
+    const legendX = x + radius + 40;
+    let legendY = y - radius / 2;
 
-  data.forEach(item => {
-    const sliceAngle = (item.count / total) * 360;
-    const endAngle = startAngle + sliceAngle;
+    data.forEach(item => {
+        const sliceAngle = (item.count / total) * 360;
+        const endAngle = startAngle + sliceAngle;
 
-    doc.save()
-       .moveTo(x, y)
-       .arc(x, y, radius, startAngle, endAngle, false)
-       .lineTo(x, y)
-       .fill(item.color);
-    doc.restore();
+        doc.save()
+           .moveTo(x, y)
+           .arc(x, y, radius, startAngle, endAngle, false)
+           .lineTo(x, y)
+           .fill(item.color);
+        doc.restore();
+        
+        // Draw Legend
+        doc.rect(legendX, legendY, 10, 10).fill(item.color);
+        doc.fontSize(10).font('Helvetica').fillColor('#000').text(`${item.label} (${item.count})`, legendX + 20, legendY);
+        legendY += 20;
 
-    // Draw Legend
-    doc.rect(legendX, legendY, 10, 10).fill(item.color);
-    doc.fontSize(10).font('Helvetica').fillColor('#000').text(`${item.label} (${item.count})`, legendX + 20, legendY);
-    legendY += 20;
-    
-    startAngle = endAngle;
-  });
+        startAngle = endAngle;
+    });
 }
 
 // --- Helper function to draw a bar chart ---
 function drawBarChart(doc, data, x, y, width, height) {
-  doc.fontSize(14).font('Helvetica-Bold').text('Top 5 Polluted Locations (by HEI)', x, y - 20);
+    doc.fontSize(14).font('Helvetica-Bold').text('Top 5 Polluted Locations (by HEI)', x, y - 40);
 
-  const barWidth = width / data.length / 2;
-  const maxVal = Math.max(...data.map(item => item.value));
-  if (maxVal === 0 || data.length === 0) {
-    doc.fontSize(10).font('Helvetica').text('No data available for chart.', x, y + 40);
-    return;
-  }
-  
-  doc.fontSize(8).fillColor('#555');
+    if (data.length === 0) {
+        doc.fontSize(10).font('Helvetica').text('No data available for chart.', x, y);
+        return;
+    }
 
-  data.forEach((item, i) => {
-    const barHeight = (item.value / maxVal) * height;
-    const barX = x + i * (barWidth * 2);
+    const barSpacing = 20;
+    const barWidth = (width - (barSpacing * (data.length - 1))) / data.length;
+    const maxVal = Math.max(...data.map(item => item.value), 0);
+    
+    doc.fontSize(8).fillColor('#555');
 
-    doc.rect(barX, y + height - barHeight, barWidth, barHeight).fill(item.color);
-    doc.text(item.value.toFixed(2), barX, y + height - barHeight - 12, { width: barWidth, align: 'center' });
-    doc.text(item.label, barX, y + height + 5, { width: barWidth, align: 'center' });
-  });
+    data.forEach((item, i) => {
+        const barHeight = maxVal > 0 ? (item.value / maxVal) * height : 0;
+        const barX = x + i * (barWidth + barSpacing);
+
+        doc.rect(barX, y + height - barHeight, barWidth, barHeight).fill(item.color);
+        doc.fillColor('#000').text(item.value.toFixed(2), barX, y + height - barHeight - 12, { width: barWidth, align: 'center' });
+        doc.text(item.label, barX - 10, y + height + 5, { width: barWidth + 20, align: 'center' });
+    });
 }
 
 export default function generateReport(req, res) {
@@ -81,7 +83,7 @@ export default function generateReport(req, res) {
 
     let query;
     let params;
-    // ... (Query logic based on role remains the same)
+    
     if (role === 'ngo' || role === 'researcher' || role === 'guest') {
         query = `
             SELECT l.name AS location, pi.hpi, pi.hei, pi.pli, pi.mpi
@@ -155,26 +157,23 @@ export default function generateReport(req, res) {
         currentY += 30;
 
         doc.fontSize(12).font('Helvetica').text(`Total Locations Analyzed: ${locationsData.length}`, 50, currentY);
-        currentY += 40;
+        currentY += 80;
 
         const pieData = [
             { label: 'Safe', count: safeCount, color: COLORS.SUCCESS },
             { label: 'Polluted', count: pollutedCount, color: COLORS.WARNING },
             { label: 'Highly Polluted', count: highlyPollutedCount, color: COLORS.DANGER },
         ];
-        drawPieChart(doc, pieData, 120, currentY + 50, 50);
+        drawPieChart(doc, pieData, 120, currentY, 60);
 
         const topPolluted = [...locationsData].sort((a, b) => b.hei - a.hei).slice(0, 5);
         const barData = topPolluted.map(loc => ({ label: loc.location, value: parseFloat(loc.hei), color: COLORS.DANGER }));
-        drawBarChart(doc, barData, 300, currentY, 250, 100);
-
-        currentY += 180;
-        doc.moveTo(50, currentY).lineTo(doc.page.width - 50, currentY).stroke('#ddd');
+        drawBarChart(doc, barData, 300, currentY, 250, 120);
         
         // --- 4. DETAILED BREAKDOWN ---
         doc.addPage();
         doc.fontSize(18).font('Helvetica-Bold').fillColor(COLORS.TEXT_DARK).text('Detailed Location Analysis', 50, 50);
-        currentY = 80;
+        currentY = 100;
 
         locationsData.forEach(loc => {
             let classificationColor;
@@ -182,17 +181,19 @@ export default function generateReport(req, res) {
             else if (loc.classification === 'Polluted') classificationColor = COLORS.WARNING;
             else classificationColor = COLORS.DANGER;
 
-            if (currentY + 130 > doc.page.height - 50) {
+            if (currentY + 120 > doc.page.height - 50) {
                 doc.addPage();
-                currentY = 50;
+                doc.fontSize(18).font('Helvetica-Bold').fillColor(COLORS.TEXT_DARK).text('Detailed Location Analysis (continued)', 50, 50);
+                currentY = 100;
             }
 
-            doc.rect(50, currentY, doc.page.width - 100, 110).fill(COLORS.SECONDARY);
+            doc.roundedRect(50, currentY, doc.page.width - 100, 100, 5).fill(COLORS.SECONDARY);
+            
             doc.fontSize(16).font('Helvetica-Bold').fillColor(COLORS.TEXT_DARK).text(loc.location, 65, currentY + 15);
             doc.fontSize(10).font('Helvetica').fillColor(COLORS.TEXT_MUTED).text(`Samples Analyzed: ${loc.count}`, 65, currentY + 38);
 
-            doc.fillColor(classificationColor).roundedRect(doc.page.width - 225, currentY + 27, 160, 20, 4).fill();
-            doc.fillColor('#FFF').fontSize(11).font('Helvetica-Bold').text(loc.classification.toUpperCase(), doc.page.width - 225, currentY + 33, { width: 160, align: 'center' });
+            doc.fillColor(classificationColor).roundedRect(doc.page.width - 225, currentY + 15, 160, 25, 5).fill();
+            doc.fillColor('#FFF').fontSize(11).font('Helvetica-Bold').text(loc.classification.toUpperCase(), doc.page.width - 225, currentY + 22, { width: 160, align: 'center' });
 
             const indices = [
                 { label: 'HPI', value: loc.hpi },
@@ -202,12 +203,12 @@ export default function generateReport(req, res) {
             ];
             
             indices.forEach((index, i) => {
-                const x = 65 + i * 110;
-                doc.fontSize(9).fillColor(COLORS.TEXT_MUTED).text(index.label, x, currentY + 70);
-                doc.fontSize(12).font('Helvetica-Bold').fillColor(COLORS.TEXT_DARK).text(index.value, x, currentY + 82);
+                const x = 70 + i * 120;
+                doc.fontSize(10).fillColor(COLORS.TEXT_MUTED).text(index.label, x, currentY + 60);
+                doc.fontSize(14).font('Helvetica-Bold').fillColor(COLORS.TEXT_DARK).text(index.value, x, currentY + 75);
             });
             
-            currentY += 130;
+            currentY += 120;
         });
 
         doc.end();
