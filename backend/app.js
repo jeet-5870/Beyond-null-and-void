@@ -9,8 +9,8 @@ import standardRoutes from "./routes/standardRoutes.js";
 import authRoutes from "./routes/authRoutes.js";
 import leaderboardRoutes from "./routes/leaderboardRoutes.js";
 import feedbackRoutes from "./routes/feedbackRoutes.js";
-import predictionRoutes from "./routes/predictionRoutes.js"; // 🔑 NEW IMPORT
-import analysisRoutes from "./routes/analysisRoutes.js"; // 🔑 NEW IMPORT
+import predictionRoutes from "./routes/predictionRoutes.js"; 
+import analysisRoutes from "./routes/analysisRoutes.js"; 
 import errorHandler from "./middleware/errorHandler.js";
 import authMiddleware from "./middleware/authMiddleware.js";
 import { initPostgresSchema } from './db/initSchema.js';
@@ -22,27 +22,23 @@ const app = express();
 app.use(cors());
 app.use(express.json());
 
-// 🔐 Public routes
+// Public routes
 app.use('/api/auth', authRoutes);
 app.use('/api/leaderboard', leaderboardRoutes);
 app.use('/api/feedback', feedbackRoutes);
-app.use('/api/auth', authRoutes);
 
-// 🔒 Protected routes (authMiddleware applied inline)
+// Protected routes
 app.use('/upload', authMiddleware, uploadRoutes);
 app.use('/map-data', authMiddleware, mapRoutes);
 app.use('/api/samples', authMiddleware, resultRoutes);
 app.use('/api/report', authMiddleware, reportRoutes);
 app.use('/api/standards', authMiddleware, standardRoutes);
-app.use('/api/prediction', authMiddleware, predictionRoutes); // 🔑 NEW PROTECTED ROUTE
-app.use('/api/standards', authMiddleware, standardRoutes);
 app.use('/api/prediction', authMiddleware, predictionRoutes);
-app.use('/api/analysis', authMiddleware, analysisRoutes); // 🔑 NEW PROTECTED ROUTE
-
+app.use('/api/analysis', authMiddleware, analysisRoutes);
 
 app.use(errorHandler);
 
-// 🩺 Health check
+// Health check
 app.get('/', (req, res) => {
   res.send("👋 Welcome to Beyond Null and Void.\nThis server powers groundwater insights.");
 });
@@ -57,7 +53,6 @@ app.listen(PORT, async () => {
   console.log(`🚀 Server is live on port ${PORT}`);
 
   try {
-    // ✅ FIXED ORDER: Schema must be initialized before seeding
     await initPostgresSchema();
     await seedDatabase();
   } catch (err) {

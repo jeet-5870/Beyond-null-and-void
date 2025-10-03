@@ -4,7 +4,7 @@ import { useNavigate } from 'react-router-dom';
 import {
   Download, Droplets, MapPin, TrendingUp, BarChart2,
   FileText, CheckCircle, AlertCircle, Eye, EyeOff,
-  Menu, X, Home, LogOut, UploadCloud, Bell, Slash, ArrowLeft 
+  Menu, X, Home, LogOut, UploadCloud, Bell, Slash, ArrowLeft, AlertTriangle
 } from 'lucide-react'; // 🔑 Added BarChart2 for new tab
 import API from '../api.js';
 import UploadForm from '../components/uploadForm.jsx';
