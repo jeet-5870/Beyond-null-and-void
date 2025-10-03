@@ -3,7 +3,6 @@ import { TrendingUp, ArrowLeft } from 'lucide-react';
 import { Card, CardHeader, CardContent } from './card.jsx';
 import API from '../api.js';
 
-// 🔑 NEW IMPORTS for Charting
 import { Line } from 'react-chartjs-2';
 import {
   Chart as ChartJS,
@@ -16,7 +15,6 @@ import {
   Legend,
 } from 'chart.js';
 
-// Register Chart.js components
 ChartJS.register(
   CategoryScale,
   LinearScale,
@@ -27,7 +25,8 @@ ChartJS.register(
   Legend
 );
 
-const PollutionTimeline = ({ city, onBack }) => {
+// Add the 'export' keyword here
+export const PollutionTimeline = ({ city, onBack }) => {
   const [selectedTimeframe, setSelectedTimeframe] = useState('1m');
   const [timelineData, setTimelineData] = useState([]);
   const [isLoading, setIsLoading] = useState(false);
@@ -51,7 +50,7 @@ const PollutionTimeline = ({ city, onBack }) => {
   }, [city, selectedTimeframe]);
 
   const getBestPerformance = () => {
-    if (timelineData.length < 2) return null;
+    if (timelineData.length < 2) return 'No significant change';
     const initialHPI = timelineData[0]?.hpi || 0;
     const finalHPI = timelineData[timelineData.length - 1]?.hpi || 0;
     const percentageChange = ((initialHPI - finalHPI) / initialHPI) * 100;
@@ -60,8 +59,7 @@ const PollutionTimeline = ({ city, onBack }) => {
     if (percentageChange < -5) return `Worsened by ${Math.abs(percentageChange).toFixed(2)}% (HPI Increased)`;
     return 'No significant change';
   };
-  
-  // 🔑 NEW: Chart data configuration
+
   const chartData = {
     labels: timelineData.map(item => new Date(item.date).toLocaleDateString()),
     datasets: [
@@ -78,7 +76,6 @@ const PollutionTimeline = ({ city, onBack }) => {
     ],
   };
 
-  // 🔑 NEW: Chart options configuration
   const chartOptions = {
     responsive: true,
     maintainAspectRatio: false,
@@ -124,15 +121,15 @@ const PollutionTimeline = ({ city, onBack }) => {
     },
   };
 
-
   return (
     <Card className="mb-8">
-      {/* 🔑 IMPROVEMENT: Changed 'sm:flex-row' to 'xs:flex-row' for consistency with custom breakpoint */}
       <CardHeader className="flex flex-col xs:flex-row justify-between items-start xs:items-center">
         <div className="flex items-center space-x-2">
-          <button onClick={onBack} className="p-2 rounded-full hover:bg-primary-dark transition-colors">
-            <ArrowLeft className="h-5 w-5 text-text-muted" />
-          </button>
+          {onBack && (
+            <button onClick={onBack} className="p-2 rounded-full hover:bg-primary-dark transition-colors">
+              <ArrowLeft className="h-5 w-5 text-text-muted" />
+            </button>
+          )}
           <h3 className="text-xl font-bold text-text-light">{city} - Timeline</h3>
         </div>
         <div className="mt-4 sm:mt-0 flex items-center space-x-4">
@@ -141,7 +138,6 @@ const PollutionTimeline = ({ city, onBack }) => {
             id="timeframe"
             value={selectedTimeframe}
             onChange={(e) => setSelectedTimeframe(e.target.value)}
-            // 泊 UPDATED input styles for dark theme
             className="rounded-lg border border-gray-600 bg-secondary-dark text-text-light p-2 text-sm focus:outline-none focus:ring-2 focus:ring-accent-blue"
           >
             <option value="7d">Last 7 days</option>
@@ -168,11 +164,9 @@ const PollutionTimeline = ({ city, onBack }) => {
         ) : (
           <>
             <div className="w-full h-64 bg-primary-dark rounded-lg flex items-center justify-center text-accent-blue font-mono border border-gray-700 p-4">
-              {/* 🔑 IMPLEMENTATION: Render the Line Chart */}
               <Line data={chartData} options={chartOptions} />
             </div>
             <div className="mt-4 text-center">
-              {/* 泊 UPDATED color based on performance */}
               <p className="text-lg font-semibold text-text-light">Performance: 
                 <span className={getBestPerformance().includes('Improved') ? 'text-success' : getBestPerformance().includes('Worsened') ? 'text-danger' : 'text-text-muted'}>
                   {` ${getBestPerformance()}`}
@@ -190,18 +184,11 @@ const PollutionTimeline = ({ city, onBack }) => {
 };
 
 const PollutionLeaderboard = ({ data, title }) => {
-  // 🔑 FIX: Removed pagination states (page, totalPages, citiesPerPage) 
-  // as this component is now used exclusively with pre-fetched data (top/bottom 10).
   const [showTimeline, setShowTimeline] = useState(false);
   const [selectedCity, setSelectedCity] = useState(null);
-  const [leaderboardData, setLeaderboardData] = useState([]); // State now only holds the prop data
   
-  // 🔑 FIX: Simplified useEffect to just use the incoming data prop
   useEffect(() => {
-    if (data && data.length > 0) {
-        setLeaderboardData(data);
-    } 
-    // Removed API fetching logic as it's handled in mainPage.jsx now
+    // This logic is now handled in mainPage.jsx
   }, [data]); 
 
   const handleViewTimeline = (city) => {
@@ -218,9 +205,6 @@ const PollutionLeaderboard = ({ data, title }) => {
     return <PollutionTimeline city={selectedCity} onBack={handleBackToLeaderboard} />;
   }
 
-  // Determine which data to render based on props
-  const displayedData = leaderboardData;
-
   return (
     <Card className="mb-8">
       <CardHeader>
@@ -233,7 +217,7 @@ const PollutionLeaderboard = ({ data, title }) => {
         <div className="overflow-x-auto">
           <table className="w-full text-left">
             <thead>
-              <tr className="border-b border-gray-700 bg-primary-dark"> {/* 泊 Table header colors */}
+              <tr className="border-b border-gray-700 bg-primary-dark">
                 <th className="py-2 px-4 text-text-muted">Rank</th>
                 <th className="py-2 px-4 text-text-muted">City</th>
                 <th className="py-2 px-4 text-text-muted">Pollution Index</th>
@@ -241,9 +225,9 @@ const PollutionLeaderboard = ({ data, title }) => {
               </tr>
             </thead>
             <tbody>
-              {displayedData.map((city, index) => (
+              {data.map((city, index) => (
                 <tr key={city.city} className="border-b border-gray-700 last:border-b-0 odd:bg-secondary-dark even:bg-primary-dark/70">
-                  <td className="py-2 px-4 text-text-light font-medium">{index + 1}</td> {/* 🔑 FIX: Simplified Rank */}
+                  <td className="py-2 px-4 text-text-light font-medium">{index + 1}</td>
                   <td className="py-2 px-4 text-text-light">{city.city}</td>
                   <td className="py-2 px-4 text-text-light font-mono">{city.pollutionIndex ? city.pollutionIndex.toFixed(1) : 'N/A'}</td>
                   <td className="py-2 px-4">
@@ -259,7 +243,6 @@ const PollutionLeaderboard = ({ data, title }) => {
             </tbody>
           </table>
         </div>
-        {/* 🔑 FIX: Removed Pagination Controls */}
       </CardContent>
     </Card>
   );

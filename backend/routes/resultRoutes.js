@@ -6,17 +6,21 @@ import { getHEIClassification } from '../utils/classification.js';
 
 const router = express.Router();
 
-// New controller logic for fetching user-specific samples
-const getUserSamples = (req, res, next) => {
-  const { userId, role } = req.user; // Get userId and role from the authenticated request
+const getUserSamples = async (req, res, next) => {
+  const { userId, role } = req.user;
 
   let query;
   let params = [];
   
-  // 🔑 FIX: NGO, Researcher, AND GUEST now retrieve Global data (All Samples)
+  // The logic to show global vs. user-specific data is correct.
+  // The main query inside is what needs to be changed.
   if (role === 'ngo' || role === 'researcher' || role === 'guest') {
-    // Global Data: Retrieve ALL samples for NGOs, Researchers, and Guests
     query = `
+      WITH latest_samples AS (
+        SELECT DISTINCT ON (location_id) 
+          * FROM samples 
+        ORDER BY location_id, sample_date DESC
+      )
       SELECT
         l.name AS location,
         l.latitude AS lat,
@@ -29,15 +33,20 @@ const getUserSamples = (req, res, next) => {
         pi.is_anomaly,
         pi.cluster_id
       FROM pollution_indices pi
-      JOIN samples s ON pi.sample_id = s.sample_id
+      JOIN latest_samples s ON pi.sample_id = s.sample_id
       JOIN locations l ON s.location_id = l.location_id
       ORDER BY l.name;
     `;
-    // No parameters needed for global query
-    params = []; 
+    params = [];
   } else {
-    // Fallback: This block is now unreachable with current defined roles.
+    // This block handles other potential roles and is now also fixed
     query = `
+      WITH latest_samples AS (
+        SELECT DISTINCT ON (location_id) 
+          * FROM samples 
+        WHERE user_id = $1
+        ORDER BY location_id, sample_date DESC
+      )
       SELECT
         l.name AS location,
         l.latitude AS lat,
@@ -50,29 +59,25 @@ const getUserSamples = (req, res, next) => {
         pi.is_anomaly,
         pi.cluster_id
       FROM pollution_indices pi
-      JOIN samples s ON pi.sample_id = s.sample_id
+      JOIN latest_samples s ON pi.sample_id = s.sample_id
       JOIN locations l ON s.location_id = l.location_id
-      WHERE s.user_id = $1 -- Filter results by the authenticated user's ID
       ORDER BY l.name;
     `;
     params = [userId];
   }
 
-  db.query(query, params)
-    .then(result => {
-      // Add classification before sending to frontend
-      const classifiedResults = result.rows.map(item => ({
-        ...item,
-        classification: getHEIClassification(item.hei),
-      }));
-      res.json(classifiedResults);
-    })
-    .catch(err => {
-      next(err);
-    });
+  try {
+    const result = await db.query(query, params);
+    const classifiedResults = result.rows.map(item => ({
+      ...item,
+      classification: getHEIClassification(item.hei),
+    }));
+    res.json(classifiedResults);
+  } catch (err) {
+    next(err);
+  }
 };
 
-// 🔑 Use the new controller function
 router.get('/', getUserSamples);
 
 export default router;

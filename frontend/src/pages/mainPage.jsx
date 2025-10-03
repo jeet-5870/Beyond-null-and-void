@@ -1,11 +1,11 @@
 import React, { useState, useEffect } from 'react';
 import { useNavigate } from 'react-router-dom';
-import { Droplets, LogIn, ArrowRight, ArrowUp, Menu, X, CheckCircle, AlertCircle, TrendingUp } from 'lucide-react'; 
-import PollutionLeaderboard from '../components/pollutionChart.jsx';
+import { Droplets, LogIn, ArrowRight, ArrowUp, Menu, X, CheckCircle, AlertCircle, TrendingUp, LineChart } from 'lucide-react'; 
+import PollutionLeaderboard, { PollutionTimeline } from '../components/pollutionChart.jsx';
 import PartnersBoard from './partnersBoard.jsx';
 import BlogSection, { ComplaintForm, FeedbackList } from './blogSection.jsx';
 import API from '../api.js';
-import Footer from '../components/footer.jsx'; // Corrected import extension
+import Footer from '../components/footer.jsx';
 
 const Navbar = () => {
   const navigate = useNavigate();
@@ -129,6 +129,9 @@ const MainPage = () => {
   const [error, setError] = useState(null);
   const role = localStorage.getItem('role');
 
+  const [showTimeline, setShowTimeline] = useState(false);
+  const [featuredCity, setFeaturedCity] = useState(null);
+
   useEffect(() => {
     const fetchLeaderboard = async () => {
       setIsLoading(true);
@@ -139,8 +142,11 @@ const MainPage = () => {
 
         setLeaderboardData(cities);
         setReversedLeaderboardData([...cities].reverse());
+        
+        if (cities.length > 0) {
+          setFeaturedCity(cities[0].city);
+        }
 
-        // Use the new global stats from the API
         const newSummaryMetrics = [
           {
             title: 'Global Average HPI',
@@ -173,60 +179,22 @@ const MainPage = () => {
     fetchLeaderboard();
   }, []);
 
-  // Robust Calculation to prevent crashes and display 'N/A' safely
-  const totalPollutionIndex = leaderboardData.reduce((sum, city) => sum + (city.pollutionIndex || 0), 0);
-  const averageHPI = leaderboardData.length > 0 ? (totalPollutionIndex / leaderboardData.length).toFixed(1) : 'N/A';
-  
-  const top10MostPolluted = leaderboardData; 
-  const top10LeastPolluted = reversedLeaderboardData; 
-
-  const worstCityHPI = top10MostPolluted.length > 0 && top10MostPolluted[0].pollutionIndex != null
-    ? top10MostPolluted[0].pollutionIndex.toFixed(1) 
-    : 'N/A';
-  
-  // FIX: Corrected typo in variable name usage.
-  const bestCityHPI = top10LeastPolluted.length > 0 && top10LeastPolluted[0].pollutionIndex != null
-    ? top10LeastPolluted[0].pollutionIndex.toFixed(1) 
-    : 'N/A';
-  // c
-  // c
-  // c
-  // c
-  // COMMENTED HERE
-  // c
-  // c
-  
-  // c
-  // c
-
-  // const summaryMetrics = [
-  //   {
-  //     // 🔑 FIX: Changed title to reflect the calculation is only for the fetched top 10 polluted cities
-  //     title: 'Average HPI of Top 10 Polluted', 
-  //     value: averageHPI, 
-  //     icon: TrendingUp, 
-  //     color: 'text-accent-blue' 
-  //   },
-  //   {
-  //     title: 'Lowest HPI Recorded', 
-  //     value: bestCityHPI, 
-  //     icon: CheckCircle, 
-  //     color: 'text-success' 
-  //   },
-  //   {
-  //     title: 'Highest HPI Recorded', 
-  //     value: worstCityHPI, 
-  //     icon: AlertCircle, 
-  //     color: 'text-danger' 
-  //   },
-  // ];
+  if (showTimeline && featuredCity) {
+    return (
+      <div className="min-h-screen bg-primary-dark">
+        <Navbar />
+        <main className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 py-20 pt-32">
+          <PollutionTimeline city={featuredCity} onBack={() => setShowTimeline(false)} />
+        </main>
+        <Footer />
+      </div>
+    );
+  }
 
   return (
     <div className="min-h-screen bg-primary-dark">
       <Navbar />
       <main className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 py-20 pt-32">
-
-        {/* Home Section */}
         <section id="home" className="bg-secondary-dark py-16 rounded-xl shadow-lg border border-gray-700">
           <div className="text-center">
             <Droplets className="h-12 w-12 text-accent-blue mx-auto mb-4" />
@@ -240,38 +208,39 @@ const MainPage = () => {
               </p>
             )}
 
-            {/* 🔑 Pollution Index Snapshot */}
             <div className="grid grid-cols-1 md:grid-cols-3 gap-6 my-10 px-6">
               {isLoading ? (
                 <div className="md:col-span-3 flex justify-center items-center h-20">
                     <div className="animate-spin rounded-full h-8 w-8 border-4 border-gray-700 border-t-accent-blue"></div>
                 </div>
               ) : (
-                  summaryMetrics.map((metric, index) => (
+                summaryMetrics.map((metric, index) => (
                   <div key={index} className="bg-primary-dark p-4 rounded-lg border border-gray-700 shadow-md">
-                  <div className="flex items-center space-x-2 justify-center">
-                    <metric.icon className={`h-5 w-5 ${metric.color}`} />
-                    <p className="text-sm font-medium text-text-muted">{metric.title}</p>
-                  </div>
-                    <p className={`text-3xl font-bold mt-2 ${metric.color}`}>
-                      {metric.value}
-                    </p>
+                    <div className="flex items-center space-x-2 justify-center">
+                      <metric.icon className={`h-5 w-5 ${metric.color}`} />
+                      <p className="text-sm font-medium text-text-muted">{metric.title}</p>
+                    </div>
+                    <p className={`text-3xl font-bold mt-2 ${metric.color}`}>{metric.value}</p>
                   </div>
                 ))
               )}
             </div>
-
-            <p className="italic text-text-muted text-sm mb-10">
-              “From beneath the surface, clarity rises. Let data speak for the water we drink.”
-            </p>
+            
             <div className="flex justify-center space-x-4">
-              <a href="#leaderboard" className="px-6 py-3 bg-accent-blue text-primary-dark rounded-lg font-medium hover:bg-sky-400/80 transition">View Pollution Rankings</a>
-              <a href="#complaint" className="px-6 py-3 bg-primary-dark text-text-light rounded-lg font-medium hover:bg-secondary-dark border border-gray-600 transition">Raise a Concern</a>
+              <a href="#leaderboard" className="px-6 py-3 bg-accent-blue text-primary-dark rounded-lg font-medium hover:bg-sky-400/80 transition">View Rankings</a>
+              {featuredCity && (
+                <button 
+                  onClick={() => setShowTimeline(true)}
+                  className="px-6 py-3 bg-transparent text-accent-blue rounded-lg font-medium hover:bg-accent-blue/20 border border-accent-blue transition flex items-center space-x-2"
+                >
+                  <LineChart className="h-5 w-5" />
+                  <span>View Trend for {featuredCity}</span>
+                </button>
+              )}
             </div>
           </div>
         </section>
 
-        {/* Leaderboard Section */}
         <section id="leaderboard" className="grid grid-cols-1 lg:grid-cols-2 gap-8 mt-16">
           {isLoading ? (
             <div className="lg:col-span-2 flex items-center justify-center py-20">
@@ -287,20 +256,18 @@ const MainPage = () => {
             </div>
           ) : (
             <>
-              {/* Note: Leaderboard Data is fetched DESC (most polluted first) */}
               <PollutionLeaderboard 
-                data={reversedLeaderboardData} // Reversed to show least polluted first (rank 1 is lowest HPI)
+                data={reversedLeaderboardData}
                 title="Top 10 Least Polluted Cities (HPI)" 
               />
               <PollutionLeaderboard 
-                data={leaderboardData} // Original list is MOST polluted (rank 1 is highest HPI)
+                data={leaderboardData}
                 title="Top 10 Most Polluted Cities (HPI)" 
               />
             </>
           )}
         </section>
 
-        {/* App Functionality Section - UPDATED CONTENT */}
         <section id="features" className="bg-primary-dark py-24 border-t border-gray-700">
           <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8">
             <h2 className="text-4xl font-extrabold text-text-light text-center mb-6">Actionable Insights & Platform Tools</h2>
@@ -325,7 +292,6 @@ const MainPage = () => {
           </div>
         </section>
 
-        {/* Partners Section */}
         <section id="partners" className="bg-primary-dark py-20 border-t border-gray-700">
           <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8">
             <h2 className="text-3xl font-bold text-text-light text-center mb-6">Our Partners</h2>
@@ -336,26 +302,20 @@ const MainPage = () => {
           </div>
         </section>
 
-        {/* Complaint Section */}
         <section id="complaint" className="bg-primary-dark py-20 border-t border-gray-700">
           <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8">
             <h2 className="text-3xl font-bold text-text-light text-center mb-6">Community Voice</h2>
             <p className="text-center text-text-muted mb-10 max-w-2xl mx-auto">
               Submit a concern or see what others are reporting to monitor local issues in real-time.
             </p>
-            {/* Grid container for side-by-side layout */}
             <div className="grid grid-cols-1 lg:grid-cols-2 gap-8">
-              {/* Left Column: Complaint Form */}
               <ComplaintForm />
-              
-              {/* Right Column: User-Specific Feedback List */}
               <FeedbackList userSpecific={!!role} /> 
             </div>
           </div>
         </section>
       </main>
 
-      {/* Scroll to Top Button */}
       <button
         onClick={() => window.scrollTo({ top: 0, behavior: 'smooth' })}
         className="fixed bottom-6 right-6 bg-accent-blue text-primary-dark p-3 rounded-full shadow-lg hover:bg-sky-400/80 transition"
@@ -370,6 +330,3 @@ const MainPage = () => {
 };
 
 export default MainPage;
-
-
-// commented on line 192

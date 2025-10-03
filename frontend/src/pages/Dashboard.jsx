@@ -5,18 +5,19 @@ import {
   Download, Droplets, MapPin, TrendingUp, BarChart2,
   FileText, CheckCircle, AlertCircle, Eye, EyeOff,
   Menu, X, Home, LogOut, UploadCloud, Bell, Slash, ArrowLeft, AlertTriangle
-} from 'lucide-react'; // 🔑 Added BarChart2 for new tab
+} from 'lucide-react';
 import API from '../api.js';
 import UploadForm from '../components/uploadForm.jsx';
 import ResultTable from '../components/resultTable.jsx';
 import WaterQualityMap from '../components/waterQualityMap.jsx';
 import Footer from '../components/footer.jsx';
 import PredictionChart from '../components/predictionChart.jsx';
-import HotspotsPage from './HotspotsPage.jsx'; // 🔑 NEW IMPORT
-import AnomaliesPage from './AnomaliesPage.jsx'; // 🔑 NEW IMPORT
+import HotspotsPage from './HotspotsPage.jsx';
+import AnomaliesPage from './AnomaliesPage.jsx';
 import { Card, CardContent, CardHeader } from '../components/card.jsx';
 
 const Dashboard = () => {
+  // ... (all state and other functions remain the same)
   const [results, setResults] = useState([]);
   const [isLoading, setIsLoading] = useState(false);
   const [error, setError] = useState(null);
@@ -32,8 +33,7 @@ const Dashboard = () => {
   const mapRef = useRef(null);
   const alertButtonRef = useRef(null);
 
-  // 🔑 NEW: State to manage the active view/tab
-  const [currentView, setCurrentView] = useState('dashboard'); // 'dashboard', 'hotspots', 'anomalies', 'prediction'
+  const [currentView, setCurrentView] = useState('dashboard');
   const [predictionLocation, setPredictionLocation] = useState(null);
 
   useEffect(() => {
@@ -68,12 +68,6 @@ const Dashboard = () => {
 
   const isUploadAllowed = role !== 'ngo'; 
   const isPredictionAllowed = role === 'researcher' || role === 'ngo';
-
-  const getUploadDescription = () => {
-    if (role === 'researcher') return 'Researcher accounts can upload files for project-wide storage and permanent analysis.';
-    if (role === 'guest') return 'Guest accounts can upload files for personal, private analysis within your session.';
-    return ''; 
-  };
 
   const handleLogout = () => {
     localStorage.removeItem('token');
@@ -128,8 +122,14 @@ const Dashboard = () => {
     localStorage.setItem('alerts', JSON.stringify(updatedAlerts));
   };
   
-  const unreadAlertCount = alerts.filter(a => !a.read).length;
+  const handleMarkAllAsRead = () => {
+    const allReadAlerts = alerts.map(alert => ({ ...alert, read: true }));
+    setAlerts(allReadAlerts);
+    localStorage.setItem('alerts', JSON.stringify(allReadAlerts));
+  };
 
+  const unreadAlertCount = alerts.filter(a => !a.read).length;
+  
   const handleDownloadReport = async () => {
     setIsDownloading(true);
     try {
@@ -169,18 +169,17 @@ const Dashboard = () => {
       setCurrentView('dashboard');
       setPredictionLocation(null);
   };
-
   const stats = [
     { title: 'Total Locations', value: results.length, icon: MapPin, color: 'text-accent-blue' },
     { title: 'Safe Sites', value: results.filter(r => r.classification === 'Safe').length, icon: CheckCircle, color: 'text-success' },
     { title: 'Polluted Sites', value: results.filter(r => r.classification === 'Polluted' || r.classification === 'Highly Polluted').length, icon: AlertCircle, color: 'text-danger' },
     { title: 'Anomalous Samples', value: results.filter(r => r.is_anomaly).length, icon: Slash, color: 'text-danger' },
   ];
-  
+
   return (
     <div className="min-h-screen bg-primary-dark">
       <header className="bg-secondary-dark shadow-lg fixed w-full z-50 border-b border-gray-700">
-        <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 py-4 flex items-center justify-between">
+        <div className="px-4 sm:px-6 lg:px-8 py-4 flex items-center justify-between">
           <div className="flex items-center space-x-3">
             <Droplets className="h-10 w-10 text-accent-blue" />
             <div>
@@ -206,9 +205,46 @@ const Dashboard = () => {
                 
                 {isAlertsOpen && (
                   <Card className="absolute right-0 mt-3 w-80 max-w-xs z-50 p-0">
-                    <CardHeader><h4>Alerts</h4></CardHeader>
-                    <CardContent>
-                      {alerts.length === 0 ? <p>No recent alerts.</p> : <ul>{alerts.map(a => <li key={a.id}>{a.message}</li>)}</ul>}
+                    <CardHeader className="flex justify-between items-center">
+                      <h4 className="text-lg font-semibold text-text-light">Alerts</h4>
+                      {unreadAlertCount > 0 && (
+                        <button
+                          onClick={handleMarkAllAsRead}
+                          className="text-xs text-accent-blue hover:underline"
+                        >
+                          Mark all as read
+                        </button>
+                      )}
+                    </CardHeader>
+                    <CardContent className="max-h-80 overflow-y-auto">
+                      {alerts.length === 0 ? (
+                        <p className="text-text-muted text-center py-4">No recent alerts.</p>
+                      ) : (
+                        <ul className="divide-y divide-gray-700">
+                          {alerts.map(alert => (
+                            <li key={alert.id} className={`py-3 ${alert.read ? 'opacity-50' : ''}`}>
+                              <div className="flex items-start space-x-3">
+                                <AlertTriangle className="h-5 w-5 text-danger mt-1" />
+                                <div className="flex-1">
+                                  <p className="text-sm font-medium text-text-light">{alert.message}</p>
+                                  <p className="text-xs text-text-muted mt-1">
+                                    {new Date(alert.timestamp).toLocaleString()}
+                                  </p>
+                                </div>
+                                {!alert.read && (
+                                  <button 
+                                    onClick={() => handleMarkAsRead(alert.id)}
+                                    className="p-1 rounded-full hover:bg-primary-dark"
+                                    title="Mark as read"
+                                  >
+                                    <CheckCircle className="h-4 w-4 text-gray-500 hover:text-success" />
+                                  </button>
+                                )}
+                              </div>
+                            </li>
+                          ))}
+                        </ul>
+                      )}
                     </CardContent>
                   </Card>
                 )}
@@ -219,10 +255,11 @@ const Dashboard = () => {
               <button onClick={() => setIsNavOpen(!isNavOpen)} className="p-2 rounded-lg hover:bg-primary-dark">
                 {isNavOpen ? <X className="h-6 w-6 text-text-light" /> : <Menu className="h-6 w-6 text-text-light" />}
               </button>
-              {isNavOpen && (
-                <div className="absolute right-0 mt-2 w-48 bg-secondary-dark border border-gray-700 rounded-lg shadow-lg py-2 z-50">
-                  <div className="px-4 py-2 text-sm text-text-light border-b border-gray-700">Hi, {fullname}!</div>
-                  <button onClick={handleGoToMainPage} className="w-full text-left flex items-center space-x-2 px-4 py-2 text-sm hover:bg-primary-dark"><Home/><span>Main Page</span></button>
+                {isNavOpen && (
+                  <div className="absolute right-0 mt-2 w-48 bg-secondary-dark border border-gray-700 rounded-lg shadow-lg py-2 z-50">
+                    <div className="px-4 py-2 text-sm text-text-light border-b border-gray-700">Hi, {fullname}!</div>
+                    {/* This button navigates to the main page */}
+                  <button onClick={handleGoToMainPage} className="w-full text-left flex items-center space-x-2 px-4 py-2 text-sm text-text-light hover:bg-primary-dark"><Home/><span>Main Page</span></button>
                   <button onClick={handleLogout} className="w-full text-left flex items-center space-x-2 px-4 py-2 text-sm text-danger hover:bg-primary-dark"><LogOut/><span>Logout</span></button>
                 </div>
               )}
@@ -244,7 +281,7 @@ const Dashboard = () => {
             {showResults ? <><EyeOff className="h-4 w-4" /><span>Hide Results</span></> : <><Eye className="h-4 w-4" /><span>Retrieve Results</span></>}
           </button>
         </nav>
-        <main className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 py-8">
+        <main className="px-4 sm:px-6 lg:px-8 py-8">
           
           {isUploadAllowed ? (
             <UploadForm onUploadComplete={handleUploadComplete} uploadType="samples" />
@@ -265,17 +302,33 @@ const Dashboard = () => {
                 <>
                   <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-4 gap-6 mb-8">
                     {stats.map(stat => (
-                      <Card key={stat.title}><CardContent className="p-6">
-                          <p className="text-sm text-text-muted">{stat.title}</p>
-                          <p className="text-2xl font-bold">{stat.value}</p>
-                      </CardContent></Card>
+                      <Card key={stat.title}>
+                        <CardContent className="p-6">
+                          <div className="flex items-center justify-between">
+                            <p className="text-sm font-medium text-text-muted">{stat.title}</p>
+                            <stat.icon className={`h-6 w-6 ${stat.color}`} />
+                          </div>
+                          <p className={`text-3xl font-bold mt-2 ${stat.color}`}>{stat.value}</p>
+                        </CardContent>
+                      </Card>
                     ))}
                   </div>
                   <div ref={mapRef}><WaterQualityMap data={results} selectedLocation={selectedLocation} /></div>
                   <ResultTable data={results} onShowOnMap={handleShowOnMap} onShowPrediction={isPredictionAllowed ? handleShowPrediction : null} />
                   <div className="flex justify-center mt-8">
-                    <button onClick={handleDownloadReport} disabled={isDownloading} className="bg-accent-blue text-primary-dark px-8 py-4 rounded-lg font-semibold">
-                      {isDownloading ? 'Generating...' : <><Download /><span>Download PDF Report</span></>}
+                    <button 
+                      onClick={handleDownloadReport} 
+                      disabled={isDownloading} 
+                      className="flex items-center justify-center space-x-2 bg-accent-blue text-primary-dark px-8 py-4 rounded-lg font-semibold"
+                    >
+                      {isDownloading ? (
+                        'Generating...'
+                      ) : (
+                        <>
+                          <Download className="h-5 w-5" />
+                          <span>Download PDF Report</span>
+                        </>
+                      )}
                     </button>
                   </div>
                 </>
@@ -303,7 +356,6 @@ const Dashboard = () => {
     </div>
   );
 };
-
 const TabButton = ({ icon: Icon, label, activeView, targetView, onClick }) => (
   <button
     onClick={onClick}
@@ -315,5 +367,6 @@ const TabButton = ({ icon: Icon, label, activeView, targetView, onClick }) => (
     <span>{label}</span>
   </button>
 );
+
 
 export default Dashboard;
