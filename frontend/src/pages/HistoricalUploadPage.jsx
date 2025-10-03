@@ -1,5 +1,3 @@
-// frontend/src/pages/HistoricalUploadPage.jsx
-
 import React, { useState, useRef } from 'react';
 import { useNavigate } from 'react-router-dom';
 import { Card, CardHeader, CardContent } from '../components/card.jsx';
@@ -14,12 +12,25 @@ const HistoricalUploadPage = () => {
   const fileInputRef = useRef();
   const navigate = useNavigate();
 
+  // Get today's date in YYYY-MM-DD format to set the maximum allowed date
+  const today = new Date().toISOString().split('T')[0];
+
   const handleSubmit = async (e) => {
     e.preventDefault();
     if (!file || !date) {
       setMessage('Please select both a file and a date.');
       return;
     }
+
+    // Explicitly check if the selected date is in the past
+    const selectedDate = new Date(date);
+    const currentDate = new Date(today);
+
+    if (selectedDate >= currentDate) {
+      setMessage('Please select a date in the past.');
+      return;
+    }
+
     if (!file.name.endsWith('.csv')) {
       setMessage('Only CSV files are allowed');
       return;
@@ -49,7 +60,7 @@ const HistoricalUploadPage = () => {
     }
   };
 
-  const messageColor = message.includes('failed') ? 'text-danger' : 'text-success';
+  const messageColor = message.includes('failed') || message.includes('Please select a date in the past') ? 'text-danger' : 'text-success';
 
   return (
     <div className="min-h-screen bg-primary-dark flex flex-col items-center justify-center p-4">
@@ -85,6 +96,7 @@ const HistoricalUploadPage = () => {
                 value={date}
                 onChange={(e) => setDate(e.target.value)}
                 required
+                max={today} // This prevents selection of future dates
                 className="block w-full px-3 py-2 border border-gray-600 bg-secondary-dark text-text-light rounded-md focus:ring-accent-blue focus:border-accent-blue"
               />
             </div>
