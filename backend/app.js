@@ -26,9 +26,10 @@ app.use(express.json());
 app.use('/api/auth', authRoutes);
 app.use('/api/leaderboard', leaderboardRoutes);
 app.use('/api/feedback', feedbackRoutes);
+app.use('/api/upload', uploadRoutes); // Use the upload routes here
 
-// Protected routes
-app.use('/upload', authMiddleware, uploadRoutes);
+// Protected routes (The '/api/upload' base path is now public, but the POST '/' route within it is protected by middleware)
+// No changes needed here for other routes
 app.use('/map-data', authMiddleware, mapRoutes);
 app.use('/api/samples', authMiddleware, resultRoutes);
 app.use('/api/report', authMiddleware, reportRoutes);

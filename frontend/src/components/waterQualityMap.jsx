@@ -57,7 +57,7 @@ const WaterQualityMap = ({ data, selectedLocation }) => {
       <MapContainer 
         center={center} 
         zoom={6} 
-        style={{ height: "500px", width: "100%", borderRadius: "12px" }}
+        style={{ height: "500px", width: "100%", borderRadius: "12px", zIndex: 0 }}
       >
         <TileLayer
           attribution='&copy; <a href="https://www.openstreetmap.org/copyright">OpenStreetMap</a> contributors'

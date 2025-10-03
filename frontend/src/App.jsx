@@ -1,16 +1,16 @@
 // frontend/src/App.jsx
 
-import React, { useState, useEffect } from 'react'; // 🔑 Import useEffect
+import React, { useState, useEffect } from 'react';
 import { BrowserRouter as Router, Routes, Route, Navigate } from 'react-router-dom';
 import MainPage from './pages/mainPage.jsx';
 import LoginPage from './pages/LoginPage.jsx';
 import Dashboard from './pages/Dashboard.jsx';
-import { AuthAPI } from './api.js'; // 🔑 Import AuthAPI
+import HistoricalUploadPage from './pages/HistoricalUploadPage.jsx'; // Import the new page
+import { AuthAPI } from './api.js';
 
-// Main application component that sets up routing
 function App() {
   const [isAuthenticated, setIsAuthenticated] = useState(false);
-  const [isCheckingAuth, setIsCheckingAuth] = useState(true); // 🔑 NEW State
+  const [isCheckingAuth, setIsCheckingAuth] = useState(true);
 
   useEffect(() => {
     const checkTokenValidity = async () => {
@@ -22,13 +22,11 @@ function App() {
       }
 
       try {
-        // Use AuthAPI (which includes the base URL and JWT interceptor) to hit the protected endpoint
         await AuthAPI.get('/verify-token', {
              headers: { Authorization: `Bearer ${token}` }
         });
         setIsAuthenticated(true);
       } catch (error) {
-        // If the token is expired or invalid, clear storage
         console.error('Token verification failed:', error);
         localStorage.removeItem('token');
         localStorage.removeItem('role');
@@ -38,13 +36,12 @@ function App() {
       }
     };
     checkTokenValidity();
-  }, []); // Run only on mount
+  }, []);
 
   const handleLogin = (status) => {
     setIsAuthenticated(status);
   };
   
-  // 🔑 NEW: Render a loading screen while checking auth status
   if (isCheckingAuth) {
     return (
         <div className="flex items-center justify-center min-h-screen bg-primary-dark">
@@ -62,6 +59,8 @@ function App() {
           path="/dashboard"
           element={isAuthenticated ? <Dashboard /> : <Navigate to="/login" />}
         />
+        {/* Add the new public route */}
+        <Route path="/historical-upload" element={<HistoricalUploadPage />} />
         <Route path="*" element={<Navigate to="/" />} />
       </Routes>
     </Router>

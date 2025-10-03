@@ -26,14 +26,16 @@ async function sendCriticalAlertsToOfficials(alertData) {
 }
 
 export default async function handleUpload(req, res, next) {
-  const { userId } = req.user;
+  // Use authenticated user if available, otherwise it will be undefined
+  const userId = req.user ? req.user.userId : null;
+  const { date: historicalDate } = req.body; // Get date from request body
   const filePath = req.file?.path;
+
   if (!filePath) return res.status(400).json({ error: 'No file uploaded' });
 
   const rowsByLocation = {};
   const generatedAlerts = []; // Array to hold critical alerts
   
-  // 🔑 Define required CSV headers for samples
   const requiredHeaders = ['location', 'lat', 'lng', 'metal_name', 'concentration'];
 
   try {
@@ -43,11 +45,9 @@ export default async function handleUpload(req, res, next) {
         
       let headersValid = false;
 
-      // Check headers before reading data
       stream.on('headers', (headers) => {
         const missingHeaders = requiredHeaders.filter(header => !headers.includes(header));
         if (missingHeaders.length > 0) {
-          // If headers are missing, destroy the stream and reject the promise.
           stream.destroy(new Error(`Missing required CSV headers: ${missingHeaders.join(', ')}`));
         } else {
           headersValid = true;
@@ -65,7 +65,6 @@ export default async function handleUpload(req, res, next) {
         .on('error', reject);
     });
     
-    // 🔑 IMPORTANT: This query relies on the metal_standards table being seeded/populated.
     const { rows: standardsRows } = await db.query('SELECT metal_name, mac_ppm, standard_ppm FROM metal_standards');
     const metalStandards = {};
     standardsRows.forEach(row => {
@@ -76,7 +75,16 @@ export default async function handleUpload(req, res, next) {
       throw new Error("No metal standards found. Please upload standards first.");
     }
     
-    // Start Transaction
+    // If no user is authenticated (public upload), fetch the default researcher admin ID
+    let finalUserId = userId;
+    if (!finalUserId) {
+      const adminRes = await db.query("SELECT user_id FROM users WHERE email='admin@example.com'");
+      if (adminRes.rows.length === 0) {
+        throw new Error("Default admin user not found for public uploads.");
+      }
+      finalUserId = adminRes.rows[0].user_id;
+    }
+    
     await db.query('BEGIN');
     
     let insertedCount = 0;
@@ -103,10 +111,13 @@ export default async function handleUpload(req, res, next) {
         location_id = insertLoc.rows[0].location_id;
       }
 
+      // Use the historical date if provided, otherwise use the current date
+      const sampleDate = historicalDate ? new Date(historicalDate) : new Date();
+
       const sampleRes = await db.query(
         `INSERT INTO samples (location_id, sample_date, source_type, notes, user_id)
          VALUES ($1, $2, $3, $4, $5) RETURNING sample_id`,
-        [location_id, new Date().toISOString(), 'Groundwater', 'CSV import', userId]
+        [location_id, sampleDate.toISOString(), 'Groundwater', 'CSV import', finalUserId]
       );
       const sample_id = sampleRes.rows[0].sample_id;
 
@@ -139,11 +150,9 @@ export default async function handleUpload(req, res, next) {
       const pli = calculatePLI(cfArray);
       const mpi = calculateMPI(concentrations);
 
-      // 🔑 NEW: Conceptual Anomaly Detection and Clustering
-      const is_anomaly = (hei >= 50); // Simple threshold-based "Anomaly" check
-      const cluster_id = Math.floor(Math.random() * 3) + 1; // Placeholder: Assign random cluster ID 1, 2, or 3
+      const is_anomaly = (hei >= 50);
+      const cluster_id = Math.floor(Math.random() * 3) + 1;
       
-      // 🔑 Check for critical pollution (Highly Polluted HEI >= 20)
       const classification = getHEIClassification(hei);
       if (classification === 'Highly Polluted') {
         generatedAlerts.push({
@@ -167,14 +176,12 @@ export default async function handleUpload(req, res, next) {
     await db.query('COMMIT');
     fs.unlinkSync(filePath);
     
-    // 🔑 1. Send alerts to external server (simulated, non-blocking)
     await sendCriticalAlertsToOfficials(generatedAlerts); 
 
-    // 🔑 2. Return alerts to the frontend for dashboard notification (which replaces the mock)
     res.status(200).json({ 
       message: 'Upload complete', 
       inserted: insertedCount,
-      alerts: generatedAlerts, // Send real alerts back for local display
+      alerts: generatedAlerts,
     });
     
   } catch (err) {

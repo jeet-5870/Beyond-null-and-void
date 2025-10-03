@@ -3,6 +3,7 @@ import express from 'express';
 import multer from 'multer';
 import fs from 'fs';
 import handleUpload from '../controllers/uploadController.js';
+import authMiddleware from '../middleware/authMiddleware.js';
 
 const uploadDir = 'uploads/';
 if (!fs.existsSync(uploadDir)) fs.mkdirSync(uploadDir);
@@ -18,10 +19,21 @@ const upload = multer({
 
 const router = express.Router();
 
-router.post('/', upload.single('file'), async (req, res, next) => {
+// Protected route for standard uploads from the dashboard
+router.post('/', authMiddleware, upload.single('file'), async (req, res, next) => {
   try {
     console.log(`📁 Received file: ${req.file?.originalname}, size: ${req.file?.size} bytes`);
-    await handleUpload(req, res, next); // 🔑 FIX: Pass 'next' to handleUpload
+    await handleUpload(req, res, next);
+  } catch (err) {
+    next(err);
+  }
+});
+
+// New public route for historical uploads
+router.post('/historical', upload.single('file'), async (req, res, next) => {
+  try {
+    console.log(`📁 Received historical file: ${req.file?.originalname}, size: ${req.file?.size} bytes`);
+    await handleUpload(req, res, next);
   } catch (err) {
     next(err);
   }
