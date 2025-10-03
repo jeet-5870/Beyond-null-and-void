@@ -1,4 +1,3 @@
-// frontend/src/components/resultTable.jsx
 import React from 'react';
 import { MapPin, Zap } from 'lucide-react';
 import { Card, CardHeader, CardContent } from './card.jsx';
@@ -12,69 +11,69 @@ function ResultTable({ data, onShowOnMap, onShowPrediction }) {
     };
 
     return (
-      <span className={`inline-flex px-3 py-1 rounded-full text-xs font-semibold ${colors[classification] || 'bg-text-muted/10 text-text-muted'}`}>
+      <span className={`inline-flex px-3 py-1 rounded-full text-xs font-semibold ${colors[classification] || 'bg-gray-100 dark:bg-text-muted/10 text-gray-600 dark:text-text-muted'}`}>
         {classification}
       </span>
     );
   };
 
   return (
-    <Card className="mb-8">
+    <Card>
       <CardHeader>
         <div className="flex items-center justify-between">
           <div className="flex items-center space-x-2">
-            <h3 className="text-lg font-semibold text-text-light">Detailed Results</h3>
+            <h3 className="text-lg font-semibold text-gray-800 dark:text-text-light">Detailed Results</h3>
           </div>
-          <span className="text-sm text-text-muted">{data.length} locations analyzed</span>
+          <span className="text-sm text-gray-600 dark:text-text-muted">{data.length} locations analyzed</span>
         </div>
       </CardHeader>
       <CardContent className="p-0">
         <div className="overflow-x-auto">
           <table className="w-full">
-            <thead className="bg-primary-dark border-b border-gray-700">
+            <thead className="bg-gray-50 dark:bg-primary-dark border-b border-gray-200 dark:border-gray-700">
               <tr>
-                <th className="px-6 py-4 text-left text-xs font-semibold text-text-muted uppercase tracking-wider">
+                <th className="px-6 py-4 text-left text-xs font-semibold text-gray-500 dark:text-text-muted uppercase tracking-wider">
                   Location
                 </th>
-                <th className="px-6 py-4 text-left text-xs font-semibold text-text-muted uppercase tracking-wider">
+                <th className="px-6 py-4 text-left text-xs font-semibold text-gray-500 dark:text-text-muted uppercase tracking-wider">
                   HPI
                 </th>
-                <th className="px-6 py-4 text-left text-xs font-semibold text-text-muted uppercase tracking-wider">
+                <th className="px-6 py-4 text-left text-xs font-semibold text-gray-500 dark:text-text-muted uppercase tracking-wider">
                   PLI
                 </th>
-                <th className="px-6 py-4 text-left text-xs font-semibold text-text-muted uppercase tracking-wider">
+                <th className="px-6 py-4 text-left text-xs font-semibold text-gray-500 dark:text-text-muted uppercase tracking-wider">
                   MPI
                 </th>
-                <th className="px-6 py-4 text-left text-xs font-semibold text-text-muted uppercase tracking-wider">
+                <th className="px-6 py-4 text-left text-xs font-semibold text-gray-500 dark:text-text-muted uppercase tracking-wider">
                   HEI
                 </th>
-                <th className="px-6 py-4 text-left text-xs font-semibold text-text-muted uppercase tracking-wider">
+                <th className="px-6 py-4 text-left text-xs font-semibold text-gray-500 dark:text-text-muted uppercase tracking-wider">
                   Classification
                 </th>
-                <th className="px-6 py-4 text-left text-xs font-semibold text-text-muted uppercase tracking-wider">
+                <th className="px-6 py-4 text-left text-xs font-semibold text-gray-500 dark:text-text-muted uppercase tracking-wider">
                   Actions
                 </th>
               </tr>
             </thead>
-            <tbody className="bg-secondary-dark divide-y divide-gray-700">
+            <tbody className="bg-white dark:bg-secondary-dark divide-y divide-gray-200 dark:divide-gray-700">
               {data.map((item, index) => (
-                <tr key={item.location} className={index % 2 === 0 ? 'bg-secondary-dark' : 'bg-primary-dark/70'}>
+                <tr key={item.location} className="odd:bg-white dark:odd:bg-secondary-dark even:bg-gray-50 dark:even:bg-primary-dark/70">
                   <td className="px-6 py-4 whitespace-nowrap">
                     <div className="flex items-center">
-                      <MapPin className="h-4 w-4 text-text-muted mr-2" />
-                      <span className="font-medium text-text-light">{item.location}</span>
+                      <MapPin className="h-4 w-4 text-gray-500 dark:text-text-muted mr-2" />
+                      <span className="font-medium text-gray-800 dark:text-text-light">{item.location}</span>
                     </div>
                   </td>
-                  <td className="px-6 py-4 whitespace-nowrap text-sm font-mono text-text-light">
+                  <td className="px-6 py-4 whitespace-nowrap text-sm font-mono text-gray-800 dark:text-text-light">
                     {item.hpi?.toFixed(2)}
                   </td>
-                  <td className="px-6 py-4 whitespace-nowrap text-sm font-mono text-text-light">
+                  <td className="px-6 py-4 whitespace-nowrap text-sm font-mono text-gray-800 dark:text-text-light">
                     {item.pli?.toFixed(2)}
                   </td>
-                  <td className="px-6 py-4 whitespace-nowrap text-sm font-mono text-text-light">
+                  <td className="px-6 py-4 whitespace-nowrap text-sm font-mono text-gray-800 dark:text-text-light">
                     {item.mpi?.toFixed(2)}
                   </td>
-                  <td className="px-6 py-4 whitespace-nowrap text-sm font-mono text-text-light">
+                  <td className="px-6 py-4 whitespace-nowrap text-sm font-mono text-gray-800 dark:text-text-light">
                     {item.hei?.toFixed(2)}
                   </td>
                   <td className="px-6 py-4 whitespace-nowrap">

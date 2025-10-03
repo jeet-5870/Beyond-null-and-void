@@ -1,4 +1,3 @@
-// frontend/src/pages/Dashboard.jsx
 import React, { useState, useEffect, useRef } from 'react';
 import { useNavigate } from 'react-router-dom';
 import {
@@ -17,7 +16,6 @@ import AnomaliesPage from './AnomaliesPage.jsx';
 import { Card, CardContent, CardHeader } from '../components/card.jsx';
 
 const Dashboard = () => {
-  // ... (all state and other functions remain the same)
   const [results, setResults] = useState([]);
   const [isLoading, setIsLoading] = useState(false);
   const [error, setError] = useState(null);
@@ -177,14 +175,14 @@ const Dashboard = () => {
   ];
 
   return (
-    <div className="min-h-screen bg-primary-dark">
-      <header className="bg-secondary-dark shadow-lg fixed w-full z-50 border-b border-gray-700">
+    <div className="min-h-screen bg-gray-50 dark:bg-primary-dark text-gray-800 dark:text-text-light">
+      <header className="bg-white dark:bg-secondary-dark shadow-lg fixed w-full z-50 border-b border-gray-200 dark:border-gray-700">
         <div className="px-4 sm:px-6 lg:px-8 py-4 flex items-center justify-between">
           <div className="flex items-center space-x-3">
             <Droplets className="h-10 w-10 text-accent-blue" />
             <div>
-              <h1 className="text-xl sm:text-2xl font-bold text-text-light">Groundwater Analyzer</h1>
-              <p className="text-sm text-text-muted mt-1 hidden sm:block">
+              <h1 className="text-xl sm:text-2xl font-bold text-gray-800 dark:text-text-light">Groundwater Analyzer</h1>
+              <p className="text-sm text-gray-600 dark:text-text-muted mt-1 hidden sm:block">
                 Environmental Monitoring System - <span className="text-accent-blue font-semibold uppercase">{role}</span>
               </p>
             </div>
@@ -195,18 +193,18 @@ const Dashboard = () => {
               <div className="relative" ref={alertButtonRef}>
                 <button
                   onClick={() => setIsAlertsOpen(!isAlertsOpen)}
-                  className="p-2 rounded-full text-text-light hover:text-danger hover:bg-primary-dark transition-colors"
+                  className="p-2 rounded-full text-gray-700 dark:text-text-light hover:text-danger hover:bg-gray-100 dark:hover:bg-primary-dark transition-colors"
                 >
                   <Bell className="h-6 w-6" />
                   {unreadAlertCount > 0 && (
-                    <span className="absolute top-0 right-0 block h-3 w-3 rounded-full ring-2 ring-secondary-dark bg-danger" />
+                    <span className="absolute top-0 right-0 block h-3 w-3 rounded-full ring-2 ring-white dark:ring-secondary-dark bg-danger" />
                   )}
                 </button>
                 
                 {isAlertsOpen && (
                   <Card className="absolute right-0 mt-3 w-80 max-w-xs z-50 p-0">
                     <CardHeader className="flex justify-between items-center">
-                      <h4 className="text-lg font-semibold text-text-light">Alerts</h4>
+                      <h4 className="text-lg font-semibold text-gray-800 dark:text-text-light">Alerts</h4>
                       {unreadAlertCount > 0 && (
                         <button
                           onClick={handleMarkAllAsRead}
@@ -218,23 +216,23 @@ const Dashboard = () => {
                     </CardHeader>
                     <CardContent className="max-h-80 overflow-y-auto">
                       {alerts.length === 0 ? (
-                        <p className="text-text-muted text-center py-4">No recent alerts.</p>
+                        <p className="text-gray-600 dark:text-text-muted text-center py-4">No recent alerts.</p>
                       ) : (
-                        <ul className="divide-y divide-gray-700">
+                        <ul className="divide-y divide-gray-200 dark:divide-gray-700">
                           {alerts.map(alert => (
                             <li key={alert.id} className={`py-3 ${alert.read ? 'opacity-50' : ''}`}>
                               <div className="flex items-start space-x-3">
                                 <AlertTriangle className="h-5 w-5 text-danger mt-1" />
                                 <div className="flex-1">
-                                  <p className="text-sm font-medium text-text-light">{alert.message}</p>
-                                  <p className="text-xs text-text-muted mt-1">
+                                  <p className="text-sm font-medium text-gray-800 dark:text-text-light">{alert.message}</p>
+                                  <p className="text-xs text-gray-500 dark:text-text-muted mt-1">
                                     {new Date(alert.timestamp).toLocaleString()}
                                   </p>
                                 </div>
                                 {!alert.read && (
                                   <button 
                                     onClick={() => handleMarkAsRead(alert.id)}
-                                    className="p-1 rounded-full hover:bg-primary-dark"
+                                    className="p-1 rounded-full hover:bg-gray-100 dark:hover:bg-primary-dark"
                                     title="Mark as read"
                                   >
                                     <CheckCircle className="h-4 w-4 text-gray-500 hover:text-success" />
@@ -252,15 +250,14 @@ const Dashboard = () => {
             )}
             
             <div className="relative">
-              <button onClick={() => setIsNavOpen(!isNavOpen)} className="p-2 rounded-lg hover:bg-primary-dark">
-                {isNavOpen ? <X className="h-6 w-6 text-text-light" /> : <Menu className="h-6 w-6 text-text-light" />}
+              <button onClick={() => setIsNavOpen(!isNavOpen)} className="p-2 rounded-lg hover:bg-gray-100 dark:hover:bg-primary-dark">
+                {isNavOpen ? <X className="h-6 w-6 text-gray-800 dark:text-text-light" /> : <Menu className="h-6 w-6 text-gray-800 dark:text-text-light" />}
               </button>
                 {isNavOpen && (
-                  <div className="absolute right-0 mt-2 w-48 bg-secondary-dark border border-gray-700 rounded-lg shadow-lg py-2 z-50">
-                    <div className="px-4 py-2 text-sm text-text-light border-b border-gray-700">Hi, {fullname}!</div>
-                    {/* This button navigates to the main page */}
-                  <button onClick={handleGoToMainPage} className="w-full text-left flex items-center space-x-2 px-4 py-2 text-sm text-text-light hover:bg-primary-dark"><Home/><span>Main Page</span></button>
-                  <button onClick={handleLogout} className="w-full text-left flex items-center space-x-2 px-4 py-2 text-sm text-danger hover:bg-primary-dark"><LogOut/><span>Logout</span></button>
+                  <div className="absolute right-0 mt-2 w-48 bg-white dark:bg-secondary-dark border border-gray-200 dark:border-gray-700 rounded-lg shadow-lg py-2 z-50">
+                    <div className="px-4 py-2 text-sm text-gray-800 dark:text-text-light border-b border-gray-200 dark:border-gray-700">Hi, {fullname}!</div>
+                  <button onClick={handleGoToMainPage} className="w-full text-left flex items-center space-x-2 px-4 py-2 text-sm text-gray-800 dark:text-text-light hover:bg-gray-100 dark:hover:bg-primary-dark"><Home/><span>Main Page</span></button>
+                  <button onClick={handleLogout} className="w-full text-left flex items-center space-x-2 px-4 py-2 text-sm text-danger hover:bg-red-50 dark:hover:bg-primary-dark"><LogOut/><span>Logout</span></button>
                 </div>
               )}
             </div>
@@ -268,7 +265,7 @@ const Dashboard = () => {
         </div>
       </header>
       <div className="pt-20">
-        <nav className="flex justify-between items-center p-4 bg-primary-dark border-b border-gray-700">
+        <nav className="flex justify-between items-center p-4 bg-gray-50 dark:bg-primary-dark border-b border-gray-200 dark:border-gray-700">
           <div className="flex space-x-2">
             <TabButton icon={BarChart2} label="Dashboard" activeView={currentView} targetView="dashboard" onClick={() => setCurrentView('dashboard')} />
             <TabButton icon={MapPin} label="Hotspots" activeView={currentView} targetView="hotspots" onClick={() => setCurrentView('hotspots')} />
@@ -276,7 +273,7 @@ const Dashboard = () => {
           </div>
           <button
             onClick={handleRetrieveResults}
-            className="flex items-center space-x-2 px-4 py-2 text-sm font-semibold rounded-lg text-accent-blue border border-accent-blue hover:bg-accent-blue/20"
+            className="flex items-center space-x-2 px-4 py-2 text-sm font-semibold rounded-lg text-accent-blue border border-accent-blue hover:bg-sky-100 dark:hover:bg-accent-blue/20"
           >
             {showResults ? <><EyeOff className="h-4 w-4" /><span>Hide Results</span></> : <><Eye className="h-4 w-4" /><span>Retrieve Results</span></>}
           </button>
@@ -286,13 +283,13 @@ const Dashboard = () => {
           {isUploadAllowed ? (
             <UploadForm onUploadComplete={handleUploadComplete} uploadType="samples" />
           ) : (
-            <div className="p-6 bg-secondary-dark rounded-xl text-center mb-8">
+            <div className="p-6 bg-white dark:bg-secondary-dark rounded-xl text-center mb-8">
               <h3 className="text-xl font-bold">Upload Disabled</h3>
               <p>File upload is restricted for {role} accounts.</p>
             </div>
           )}
 
-          {error && <div className="bg-danger/20 text-danger p-4 rounded-md mb-8">{error}</div>}
+          {error && <div className="bg-red-100 dark:bg-danger/20 text-danger p-4 rounded-md mb-8">{error}</div>}
 
           {isLoading ? (
             <div className="text-center py-20">Loading...</div>
@@ -305,7 +302,7 @@ const Dashboard = () => {
                       <Card key={stat.title}>
                         <CardContent className="p-6">
                           <div className="flex items-center justify-between">
-                            <p className="text-sm font-medium text-text-muted">{stat.title}</p>
+                            <p className="text-sm font-medium text-gray-600 dark:text-text-muted">{stat.title}</p>
                             <stat.icon className={`h-6 w-6 ${stat.color}`} />
                           </div>
                           <p className={`text-3xl font-bold mt-2 ${stat.color}`}>{stat.value}</p>
@@ -319,7 +316,7 @@ const Dashboard = () => {
                     <button 
                       onClick={handleDownloadReport} 
                       disabled={isDownloading} 
-                      className="flex items-center justify-center space-x-2 bg-accent-blue text-primary-dark px-8 py-4 rounded-lg font-semibold"
+                      className="flex items-center justify-center space-x-2 bg-sky-500 dark:bg-accent-blue text-white dark:text-primary-dark px-8 py-4 rounded-lg font-semibold"
                     >
                       {isDownloading ? (
                         'Generating...'
@@ -340,7 +337,7 @@ const Dashboard = () => {
 
               {currentView === 'prediction' && predictionLocation && (
                 <>
-                  <button onClick={handleBackToMainDashboard} className="flex items-center space-x-1 mb-4">
+                  <button onClick={handleBackToMainDashboard} className="flex items-center space-x-1 mb-4 text-gray-600 dark:text-text-muted hover:underline">
                     <ArrowLeft className="h-4 w-4" /><span>Back to Dashboard</span>
                   </button>
                   <PredictionChart location={predictionLocation} onBack={handleBackToMainDashboard} />
@@ -348,7 +345,7 @@ const Dashboard = () => {
               )}
             </>
           ) : (
-            <div className="text-center py-20 text-text-muted">Click "Retrieve Results" to view data.</div>
+            <div className="text-center py-20 text-gray-600 dark:text-text-muted">Click "Retrieve Results" to view data.</div>
           )}
         </main>
         <Footer />
@@ -360,13 +357,12 @@ const TabButton = ({ icon: Icon, label, activeView, targetView, onClick }) => (
   <button
     onClick={onClick}
     className={`flex items-center space-x-2 px-4 py-2 text-sm font-semibold rounded-lg transition-colors ${
-      activeView === targetView ? 'bg-accent-blue text-primary-dark' : 'text-text-muted hover:bg-secondary-dark'
+      activeView === targetView ? 'bg-sky-500 dark:bg-accent-blue text-white dark:text-primary-dark' : 'text-gray-600 dark:text-text-muted hover:bg-gray-100 dark:hover:bg-secondary-dark'
     }`}
   >
     <Icon className="h-4 w-4" />
     <span>{label}</span>
   </button>
 );
-
 
 export default Dashboard;

@@ -15,8 +15,6 @@ export const ComplaintForm = () => {
     }
     
     try {
-      // 泊 Sending feedback requires authentication if we want to associate it with a user.
-      // Assuming the API endpoint will use the JWT token (if present) to log the userId.
       await API.post('/api/feedback', { feedback });
       setMessage('Thank you! Your complaint/feedback has been submitted.');
       setFeedback('');
@@ -33,20 +31,20 @@ export const ComplaintForm = () => {
       <CardHeader>
         <div className="flex items-center space-x-2">
           <Mail className="h-5 w-5 text-warning" />
-          <h3 className="text-lg font-semibold text-text-light">Raise a Confidential Concern</h3>
+          <h3 className="text-lg font-semibold text-gray-800 dark:text-text-light">Raise a Confidential Concern</h3>
         </div>
       </CardHeader>
       <CardContent>
         <form onSubmit={handleSubmit} className="space-y-4">
           <textarea
-            className="w-full h-32 p-3 border border-gray-600 bg-primary-dark text-text-light rounded-lg resize-none focus:outline-none focus:ring-2 focus:ring-accent-blue"
+            className="w-full h-32 p-3 border border-gray-300 dark:border-gray-600 bg-white dark:bg-primary-dark text-gray-800 dark:text-text-light rounded-lg resize-none focus:outline-none focus:ring-2 focus:ring-accent-blue"
             placeholder="Describe the issue, location, or suggestion regarding groundwater quality..."
             value={feedback}
             onChange={(e) => setFeedback(e.target.value)}
           />
           <button
             type="submit"
-            className="w-full px-4 py-2 text-primary-dark bg-accent-blue rounded-lg font-semibold flex items-center justify-center space-x-2 hover:bg-sky-400/80 transition-colors"
+            className="w-full px-4 py-2 text-white dark:text-primary-dark bg-sky-500 dark:bg-accent-blue rounded-lg font-semibold flex items-center justify-center space-x-2 hover:bg-sky-600 dark:hover:bg-sky-400/80 transition-colors"
           >
             <Send className="h-4 w-4" />
             <span>Submit Complaint</span>
@@ -58,7 +56,6 @@ export const ComplaintForm = () => {
   );
 };
 
-// 泊 NEW PROP: userSpecific (boolean) to control which endpoint is called
 export const FeedbackList = ({ userSpecific = false }) => { 
   const [feedbackList, setFeedbackList] = useState([]);
   const [isLoading, setIsLoading] = useState(true);
@@ -67,19 +64,12 @@ export const FeedbackList = ({ userSpecific = false }) => {
     const fetchFeedback = async () => {
       setIsLoading(true);
       try {
-        // 泊 Determine which API endpoint to call based on the prop
-        // The endpoint /api/feedback/user/feedback is protected and fetches user-specific feedback.
         const endpoint = userSpecific ? '/api/feedback/user/feedback' : '/api/feedback';
-        
-        // If userSpecific is true but no token is present (e.g., on a public page), 
-        // the API call will likely fail (401), and we handle it below.
-        
         const res = await API.get(endpoint);
         setFeedbackList(res.data);
       } catch (error) {
-        // Expected error if userSpecific=true but no token is present
         console.error(`Error fetching ${userSpecific ? 'user' : 'public'} feedback:`, error);
-        setFeedbackList([]); // Set to empty array on error
+        setFeedbackList([]);
       } finally {
         setIsLoading(false);
       }
@@ -87,7 +77,6 @@ export const FeedbackList = ({ userSpecific = false }) => {
     fetchFeedback();
   }, [userSpecific]);
 
-  // 泊 CHANGE: Update title to 'My Complaints' when userSpecific is true
   const title = userSpecific ? 'My Complaints' : 'Recent Community Feedback';
   const iconColor = userSpecific ? 'text-accent-blue' : 'text-success';
   const emptyMessage = userSpecific 
@@ -99,34 +88,33 @@ export const FeedbackList = ({ userSpecific = false }) => {
       <CardHeader>
         <div className="flex items-center space-x-2">
           <MessageCircle className={`h-5 w-5 ${iconColor}`} />
-          <h3 className="text-lg font-semibold text-text-light">{title}</h3>
+          <h3 className="text-lg font-semibold text-gray-800 dark:text-text-light">{title}</h3>
         </div>
       </CardHeader>
       <CardContent className="h-full">
         {isLoading ? (
           <div className="flex justify-center items-center py-6">
-            <div className="animate-spin rounded-full h-6 w-6 border-2 border-gray-700 border-t-accent-blue"></div>
+            <div className="animate-spin rounded-full h-6 w-6 border-2 border-gray-300 dark:border-gray-700 border-t-accent-blue"></div>
           </div>
         ) : feedbackList.length > 0 ? (
           <div className="space-y-4 max-h-96 overflow-y-auto pr-2">
             {feedbackList.slice(0, 5).map((item, index) => (
-              <div key={index} className="border-b border-gray-700 last:border-b-0 pb-3">
-                <p className="text-text-light font-medium">{item.message}</p>
-                <p className="text-xs text-text-muted mt-1 italic">
+              <div key={index} className="border-b border-gray-200 dark:border-gray-700 last:border-b-0 pb-3">
+                <p className="text-gray-800 dark:text-text-light font-medium">{item.message}</p>
+                <p className="text-xs text-gray-500 dark:text-text-muted mt-1 italic">
                   Submitted {new Date(item.submitted_at).toLocaleDateString()}
                 </p>
               </div>
             ))}
           </div>
         ) : (
-          <p className="text-text-muted text-center py-6">{emptyMessage}</p>
+          <p className="text-gray-600 dark:text-text-muted text-center py-6">{emptyMessage}</p>
         )}
       </CardContent>
     </Card>
   );
 };
 
-// Default export remains for backward compatibility on mainPage
 const BlogSection = () => (
   <>
     <ComplaintForm />

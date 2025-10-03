@@ -1,4 +1,4 @@
-import React, { useState, useEffect } from 'react';
+import React, { useState, useEffect, useContext } from 'react';
 import { TrendingUp, ArrowLeft } from 'lucide-react';
 import { Card, CardHeader, CardContent } from './card.jsx';
 import API from '../api.js';
@@ -14,6 +14,7 @@ import {
   Tooltip,
   Legend,
 } from 'chart.js';
+import { ThemeContext } from '../context/ThemeContext.jsx';
 
 ChartJS.register(
   CategoryScale,
@@ -25,12 +26,12 @@ ChartJS.register(
   Legend
 );
 
-// Add the 'export' keyword here
 export const PollutionTimeline = ({ city, onBack }) => {
   const [selectedTimeframe, setSelectedTimeframe] = useState('1m');
   const [timelineData, setTimelineData] = useState([]);
   const [isLoading, setIsLoading] = useState(false);
   const [error, setError] = useState(null);
+  const { theme } = useContext(ThemeContext);
 
   useEffect(() => {
     const fetchTimelineData = async () => {
@@ -60,6 +61,11 @@ export const PollutionTimeline = ({ city, onBack }) => {
     return 'No significant change';
   };
 
+  const isDark = theme === 'dark';
+  const textColor = isDark ? '#94a3b8' : '#6b7280';
+  const gridColor = isDark ? '#1e293b' : '#e5e7eb';
+  const titleColor = isDark ? '#f1f5f9' : '#1f2937';
+
   const chartData = {
     labels: timelineData.map(item => new Date(item.date).toLocaleDateString()),
     datasets: [
@@ -82,13 +88,13 @@ export const PollutionTimeline = ({ city, onBack }) => {
     plugins: {
       legend: {
         labels: {
-          color: '#f1f5f9', // text-light
+          color: titleColor,
         }
       },
       title: {
         display: true,
         text: `HPI Trend for ${city}`,
-        color: '#94a3b8', // text-muted
+        color: textColor,
       },
     },
     scales: {
@@ -96,49 +102,49 @@ export const PollutionTimeline = ({ city, onBack }) => {
         title: {
           display: true,
           text: 'Date',
-          color: '#94a3b8',
+          color: textColor,
         },
         ticks: {
-          color: '#94a3b8',
+          color: textColor,
         },
         grid: {
-          color: '#1e293b', // secondary-dark border
+          color: gridColor,
         }
       },
       y: {
         title: {
           display: true,
           text: 'HPI Score',
-          color: '#94a3b8',
+          color: textColor,
         },
         ticks: {
-          color: '#94a3b8',
+          color: textColor,
         },
         grid: {
-          color: '#1e293b',
+          color: gridColor,
         }
       },
     },
   };
 
   return (
-    <Card className="mb-8">
+    <Card>
       <CardHeader className="flex flex-col xs:flex-row justify-between items-start xs:items-center">
         <div className="flex items-center space-x-2">
           {onBack && (
-            <button onClick={onBack} className="p-2 rounded-full hover:bg-primary-dark transition-colors">
-              <ArrowLeft className="h-5 w-5 text-text-muted" />
+            <button onClick={onBack} className="p-2 rounded-full hover:bg-gray-100 dark:hover:bg-primary-dark transition-colors">
+              <ArrowLeft className="h-5 w-5 text-gray-600 dark:text-text-muted" />
             </button>
           )}
-          <h3 className="text-xl font-bold text-text-light">{city} - Timeline</h3>
+          <h3 className="text-xl font-bold text-gray-800 dark:text-text-light">{city} - Timeline</h3>
         </div>
         <div className="mt-4 sm:mt-0 flex items-center space-x-4">
-          <label htmlFor="timeframe" className="text-sm font-medium text-text-muted">Timeframe:</label>
+          <label htmlFor="timeframe" className="text-sm font-medium text-gray-600 dark:text-text-muted">Timeframe:</label>
           <select
             id="timeframe"
             value={selectedTimeframe}
             onChange={(e) => setSelectedTimeframe(e.target.value)}
-            className="rounded-lg border border-gray-600 bg-secondary-dark text-text-light p-2 text-sm focus:outline-none focus:ring-2 focus:ring-accent-blue"
+            className="rounded-lg border border-gray-300 dark:border-gray-600 bg-white dark:bg-secondary-dark text-gray-800 dark:text-text-light p-2 text-sm focus:outline-none focus:ring-2 focus:ring-accent-blue"
           >
             <option value="7d">Last 7 days</option>
             <option value="15d">Last 15 days</option>
@@ -150,29 +156,29 @@ export const PollutionTimeline = ({ city, onBack }) => {
       </CardHeader>
       <CardContent>
         {isLoading ? (
-          <div className="w-full h-64 flex items-center justify-center text-text-muted">
-            <span className="animate-spin h-8 w-8 rounded-full border-4 border-gray-700 border-t-accent-blue"></span>
+          <div className="w-full h-64 flex items-center justify-center text-gray-600 dark:text-text-muted">
+            <span className="animate-spin h-8 w-8 rounded-full border-4 border-gray-300 dark:border-gray-700 border-t-accent-blue"></span>
           </div>
         ) : error ? (
           <div className="w-full h-64 flex items-center justify-center text-danger">
             <p>{error}</p>
           </div>
         ) : timelineData.length === 0 ? (
-           <div className="w-full h-64 flex items-center justify-center text-text-muted">
+           <div className="w-full h-64 flex items-center justify-center text-gray-600 dark:text-text-muted">
             <p>No timeline data available for the selected period.</p>
           </div>
         ) : (
           <>
-            <div className="w-full h-64 bg-primary-dark rounded-lg flex items-center justify-center text-accent-blue font-mono border border-gray-700 p-4">
+            <div className="w-full h-64 bg-gray-50 dark:bg-primary-dark rounded-lg flex items-center justify-center text-accent-blue font-mono border border-gray-200 dark:border-gray-700 p-4">
               <Line data={chartData} options={chartOptions} />
             </div>
             <div className="mt-4 text-center">
-              <p className="text-lg font-semibold text-text-light">Performance: 
-                <span className={getBestPerformance().includes('Improved') ? 'text-success' : getBestPerformance().includes('Worsened') ? 'text-danger' : 'text-text-muted'}>
+              <p className="text-lg font-semibold text-gray-800 dark:text-text-light">Performance: 
+                <span className={getBestPerformance().includes('Improved') ? 'text-success' : getBestPerformance().includes('Worsened') ? 'text-danger' : 'text-gray-600 dark:text-text-muted'}>
                   {` ${getBestPerformance()}`}
                 </span>
               </p>
-              <p className="text-sm text-text-muted">
+              <p className="text-sm text-gray-600 dark:text-text-muted">
                 Based on data from the last {selectedTimeframe.replace('d', ' days').replace('m', ' months')}.
               </p>
             </div>
@@ -186,10 +192,6 @@ export const PollutionTimeline = ({ city, onBack }) => {
 const PollutionLeaderboard = ({ data, title }) => {
   const [showTimeline, setShowTimeline] = useState(false);
   const [selectedCity, setSelectedCity] = useState(null);
-  
-  useEffect(() => {
-    // This logic is now handled in mainPage.jsx
-  }, [data]); 
 
   const handleViewTimeline = (city) => {
     setSelectedCity(city);
@@ -206,30 +208,30 @@ const PollutionLeaderboard = ({ data, title }) => {
   }
 
   return (
-    <Card className="mb-8">
+    <Card>
       <CardHeader>
         <div className="flex items-center space-x-2">
           <TrendingUp className="h-5 w-5 text-accent-blue" />
-          <h3 className="text-lg font-semibold text-text-light">{title || 'Pollution Leaderboard'}</h3>
+          <h3 className="text-lg font-semibold text-gray-800 dark:text-text-light">{title || 'Pollution Leaderboard'}</h3>
         </div>
       </CardHeader>
       <CardContent>
         <div className="overflow-x-auto">
           <table className="w-full text-left">
             <thead>
-              <tr className="border-b border-gray-700 bg-primary-dark">
-                <th className="py-2 px-4 text-text-muted">Rank</th>
-                <th className="py-2 px-4 text-text-muted">City</th>
-                <th className="py-2 px-4 text-text-muted">Pollution Index</th>
-                <th className="py-2 px-4 text-text-muted">Actions</th>
+              <tr className="border-b border-gray-200 dark:border-gray-700 bg-gray-50 dark:bg-primary-dark">
+                <th className="py-2 px-4 text-gray-600 dark:text-text-muted">Rank</th>
+                <th className="py-2 px-4 text-gray-600 dark:text-text-muted">City</th>
+                <th className="py-2 px-4 text-gray-600 dark:text-text-muted">Pollution Index</th>
+                <th className="py-2 px-4 text-gray-600 dark:text-text-muted">Actions</th>
               </tr>
             </thead>
             <tbody>
               {data.map((city, index) => (
-                <tr key={city.city} className="border-b border-gray-700 last:border-b-0 odd:bg-secondary-dark even:bg-primary-dark/70">
-                  <td className="py-2 px-4 text-text-light font-medium">{index + 1}</td>
-                  <td className="py-2 px-4 text-text-light">{city.city}</td>
-                  <td className="py-2 px-4 text-text-light font-mono">{city.pollutionIndex ? city.pollutionIndex.toFixed(1) : 'N/A'}</td>
+                <tr key={city.city} className="border-b border-gray-200 dark:border-gray-700 last:border-b-0 odd:bg-white dark:odd:bg-secondary-dark even:bg-gray-50 dark:even:bg-primary-dark/70">
+                  <td className="py-2 px-4 text-gray-800 dark:text-text-light font-medium">{index + 1}</td>
+                  <td className="py-2 px-4 text-gray-800 dark:text-text-light">{city.city}</td>
+                  <td className="py-2 px-4 text-gray-800 dark:text-text-light font-mono">{city.pollutionIndex ? city.pollutionIndex.toFixed(1) : 'N/A'}</td>
                   <td className="py-2 px-4">
                     <button
                       onClick={() => handleViewTimeline(city.city)}
