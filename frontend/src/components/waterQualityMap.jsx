@@ -51,7 +51,7 @@ const WaterQualityMap = ({ data, selectedLocation }) => {
   return (
     // 🔑 Wrap in Card for consistent dashboard styling
     <Card className="mb-8 p-6"> 
-      <h2 className="text-xl font-bold mb-4 text-text-light">
+      <h2 className="text-xl font-bold mb-4 text-gray-800 dark:text-text-light">
         Groundwater Heavy Metal Pollution Map
       </h2>
       <MapContainer 
@@ -70,8 +70,8 @@ const WaterQualityMap = ({ data, selectedLocation }) => {
             icon={getPinIcon(location.classification)}
           >
             <Popup>
-              {/* Popups are hardcoded to standard colors to ensure readability on a map */}
-              <div className="p-2 text-gray-900">
+              {/* Popups now support light and dark themes */}
+              <div className="p-2 text-gray-900 dark:text-white bg-white dark:bg-secondary-dark rounded-lg">
                 <h1 className="text-lg font-semibold">{location.location}</h1>
                 <p>HPI: {location.hpi.toFixed(2)}</p>
                 {/* 🔑 FIX: Added HEI to the map popup for clarity and consistency with pin color */}

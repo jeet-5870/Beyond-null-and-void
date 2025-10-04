@@ -45,27 +45,27 @@ const AnomaliesPage = ({ role }) => {
 
   return (
     <div>
-      <h2 className="text-3xl font-bold text-text-light mb-6">Anomaly Detection</h2>
+      <h2 className="text-3xl font-bold text-gray-800 dark:text-text-light mb-6">Anomaly Detection</h2>
       
       {anomalies.length > 0 && (
-        <div className="bg-danger/20 text-danger p-4 rounded-md mb-8 flex justify-between items-center">
+        <div className="bg-red-100 dark:bg-danger/20 text-red-800 dark:text-danger p-4 rounded-md mb-8 flex justify-between items-center">
           <div className="flex items-center">
             <AlertTriangle className="h-6 w-6 mr-3" />
             <p className="font-medium">
               {anomalies.length} abnormal spike(s) detected in water contamination levels.
             </p>
           </div>
-          <button className="p-1 rounded-full hover:bg-danger/30"><X className="h-4 w-4" /></button>
+          <button className="p-1 rounded-full hover:bg-red-200 dark:hover:bg-danger/30"><X className="h-4 w-4" /></button>
         </div>
       )}
 
       <Card>
         <CardHeader className="flex justify-between items-center">
-          <h3 className="text-lg font-semibold text-text-light">Anomaly Alerts Log</h3>
+          <h3 className="text-lg font-semibold text-gray-800 dark:text-text-light">Anomaly Alerts Log</h3>
           {isPrivilegedUser && (
             <button
               onClick={handleDownloadReport}
-              className="flex items-center space-x-2 px-3 py-1 text-xs font-semibold rounded-lg text-primary-dark bg-accent-blue hover:bg-sky-400/80 transition"
+              className="flex items-center space-x-2 px-3 py-1 text-xs font-semibold rounded-lg text-white dark:text-primary-dark bg-sky-500 dark:bg-accent-blue hover:bg-sky-600 dark:hover:bg-sky-400/80 transition"
             >
               <Download className="h-3 w-3" />
               <span>Download Report</span>
@@ -73,25 +73,25 @@ const AnomaliesPage = ({ role }) => {
           )}
         </CardHeader>
         <CardContent>
-          <ul className="divide-y divide-gray-700">
+          <ul className="divide-y divide-gray-200 dark:divide-gray-700">
             {isLoading ? (
-              <p className="text-center py-4 text-text-muted">Loading anomalies...</p>
+              <p className="text-center py-4 text-gray-600 dark:text-text-muted">Loading anomalies...</p>
             ) : anomalies.length === 0 ? (
-              <p className="text-center py-4 text-text-muted">No anomalies detected.</p>
+              <p className="text-center py-4 text-gray-600 dark:text-text-muted">No anomalies detected.</p>
             ) : (
               anomalies.map((alert, index) => (
                 <li key={index} className="py-3">
                   <div className="flex items-center space-x-3">
-                    <AlertTriangle className="h-5 w-5 text-danger" />
+                    <AlertTriangle className="h-5 w-5 text-red-500 dark:text-danger" />
                     <div className="flex-1">
-                      <p className="font-semibold text-text-light">
-                        <span className="text-danger">{alert.pollutant}</span> spike in {alert.location}
+                      <p className="font-semibold text-gray-800 dark:text-text-light">
+                        <span className="text-red-600 dark:text-danger">{alert.pollutant}</span> spike in {alert.location}
                       </p>
-                      <p className="text-sm text-text-muted">
+                      <p className="text-sm text-gray-600 dark:text-text-muted">
                         Detected Value: {alert.value} (Threshold: {alert.threshold})
                       </p>
                     </div>
-                    <span className="text-xs text-text-muted">{new Date(alert.timestamp).toLocaleString()}</span>
+                    <span className="text-xs text-gray-500 dark:text-text-muted">{new Date(alert.timestamp).toLocaleString()}</span>
                   </div>
                 </li>
               ))

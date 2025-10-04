@@ -63,30 +63,30 @@ const HistoricalUploadPage = () => {
   const messageColor = message.includes('failed') || message.includes('Please select a date in the past') ? 'text-danger' : 'text-success';
 
   return (
-    <div className="min-h-screen bg-primary-dark flex flex-col items-center justify-center p-4">
+    <div className="min-h-screen bg-gray-50 dark:bg-primary-dark flex flex-col items-center justify-center p-4">
       <Card className="w-full max-w-lg">
         <CardHeader>
           <div className="flex items-center justify-between">
             <div className="flex items-center space-x-2">
               <Upload className="h-5 w-5 text-accent-blue" />
-              <h3 className="text-lg font-semibold text-text-light">Upload Historical Data</h3>
+              <h3 className="text-lg font-semibold text-gray-800 dark:text-text-light">Upload Historical Data</h3>
             </div>
             <button
               onClick={() => navigate('/')}
-              className="p-2 rounded-full hover:bg-primary-dark transition-colors"
+              className="p-2 rounded-full hover:bg-gray-100 dark:hover:bg-primary-dark transition-colors"
               title="Back to Home"
             >
-              <ArrowLeft className="h-5 w-5 text-text-muted" />
+              <ArrowLeft className="h-5 w-5 text-gray-600 dark:text-text-muted" />
             </button>
           </div>
         </CardHeader>
         <CardContent>
-          <p className="text-text-muted mb-6 text-center">
+          <p className="text-gray-600 dark:text-text-muted mb-6 text-center">
             This page is for uploading past water quality data. Please select a CSV file and the date the samples were collected.
           </p>
           <form onSubmit={handleSubmit} className="space-y-6">
             <div>
-              <label htmlFor="date-picker" className="block text-sm font-medium text-text-muted mb-2 flex items-center space-x-2">
+              <label htmlFor="date-picker" className="block text-sm font-medium text-gray-600 dark:text-text-muted mb-2 flex items-center space-x-2">
                 <Calendar className="h-4 w-4" />
                 <span>Sample Collection Date</span>
               </label>
@@ -97,12 +97,12 @@ const HistoricalUploadPage = () => {
                 onChange={(e) => setDate(e.target.value)}
                 required
                 max={today} // This prevents selection of future dates
-                className="block w-full px-3 py-2 border border-gray-600 bg-secondary-dark text-text-light rounded-md focus:ring-accent-blue focus:border-accent-blue"
+                className="block w-full px-3 py-2 border border-gray-300 dark:border-gray-600 bg-white dark:bg-secondary-dark text-gray-800 dark:text-text-light rounded-md focus:ring-accent-blue focus:border-accent-blue"
               />
             </div>
 
             <div>
-              <label htmlFor="file-upload-historical" className="block text-sm font-medium text-text-muted mb-2">
+              <label htmlFor="file-upload-historical" className="block text-sm font-medium text-gray-600 dark:text-text-muted mb-2">
                 CSV File
               </label>
               <input
@@ -112,9 +112,9 @@ const HistoricalUploadPage = () => {
                 ref={fileInputRef}
                 onChange={(e) => setFile(e.target.files[0])}
                 required
-                className="block w-full text-sm text-text-muted file:mr-4 file:py-2 file:px-4 file:rounded-md file:border-0 file:text-sm file:font-semibold file:bg-accent-blue file:text-primary-dark hover:file:bg-sky-400/80"
+                className="block w-full text-sm text-gray-600 dark:text-text-muted file:mr-4 file:py-2 file:px-4 file:rounded-md file:border-0 file:text-sm file:font-semibold file:bg-accent-blue file:text-white dark:file:text-primary-dark hover:file:bg-sky-400/80"
               />
-              <p className="text-xs text-text-muted mt-2 truncate max-w-full">
+              <p className="text-xs text-gray-600 dark:text-text-muted mt-2 truncate max-w-full">
                 {file ? `Selected: ${file.name}` : 'No file selected'}
               </p>
             </div>
@@ -122,11 +122,11 @@ const HistoricalUploadPage = () => {
             <button
               type="submit"
               disabled={isUploading || !file || !date}
-              className="w-full px-4 py-3 text-primary-dark bg-accent-blue rounded-lg font-semibold flex items-center justify-center space-x-2 transition-colors duration-200 hover:scale-105 disabled:bg-gray-600 disabled:cursor-not-allowed disabled:text-text-muted"
+              className="w-full px-4 py-3 text-white dark:text-primary-dark bg-accent-blue rounded-lg font-semibold flex items-center justify-center space-x-2 transition-colors duration-200 hover:scale-105 disabled:bg-gray-400 dark:disabled:bg-gray-600 disabled:cursor-not-allowed disabled:text-gray-200 dark:disabled:text-text-muted"
             >
               {isUploading ? (
                 <>
-                  <div className="animate-spin rounded-full h-4 w-4 border-2 border-primary-dark border-t-transparent"></div>
+                  <div className="animate-spin rounded-full h-4 w-4 border-2 border-white dark:border-primary-dark border-t-transparent"></div>
                   <span>Uploading...</span>
                 </>
               ) : (

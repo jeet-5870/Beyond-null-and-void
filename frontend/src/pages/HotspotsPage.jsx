@@ -35,7 +35,7 @@ const HotspotsPage = () => {
 
   return (
     <div>
-      <h2 className="text-3xl font-bold text-text-light mb-6">Pollution Hotspots (DBSCAN Clusters)</h2>
+      <h2 className="text-3xl font-bold text-gray-800 dark:text-text-light mb-6">Pollution Hotspots (DBSCAN Clusters)</h2>
       <Card className="mb-8">
         <CardContent>
           <MapContainer center={[23.2599, 77.4126]} zoom={5} style={{ height: '500px', width: '100%', borderRadius: '12px' }}>
@@ -48,7 +48,7 @@ const HotspotsPage = () => {
                 pathOptions={{ color: getRiskColor(spot.risk), fillColor: getRiskColor(spot.risk), fillOpacity: 0.5 }}
               >
                 <Popup>
-                  <div className="text-gray-900">
+                  <div className="text-gray-900 dark:text-white bg-white dark:bg-secondary-dark rounded-lg">
                     <h3 className="font-bold text-lg">Hotspot Cluster #{spot.id} ({spot.risk} Risk)</h3>
                     <p><strong>Avg. HPI:</strong> {spot.avgHpi.toFixed(2)}</p>
                     <p><strong>Avg. PLI:</strong> {spot.avgPli.toFixed(2)}</p>
@@ -72,24 +72,24 @@ const HotspotsPage = () => {
 
 const CityRankingTable = ({ title, data }) => (
   <Card>
-    <CardHeader><h3 className="text-lg font-semibold text-text-light">{title}</h3></CardHeader>
+    <CardHeader><h3 className="text-lg font-semibold text-gray-800 dark:text-text-light">{title}</h3></CardHeader>
     <CardContent>
       <table className="w-full text-left">
         <thead>
-          <tr className="border-b border-gray-700">
-            <th className="py-2 px-4 text-text-muted">Rank</th>
-            <th className="py-2 px-4 text-text-muted">Cluster ID</th>
-            <th className="py-2 px-4 text-text-muted">Avg. HPI</th>
-            <th className="py-2 px-4 text-text-muted">Risk Level</th>
+          <tr className="border-b border-gray-200 dark:border-gray-700">
+            <th className="py-2 px-4 text-gray-600 dark:text-text-muted">Rank</th>
+            <th className="py-2 px-4 text-gray-600 dark:text-text-muted">Cluster ID</th>
+            <th className="py-2 px-4 text-gray-600 dark:text-text-muted">Avg. HPI</th>
+            <th className="py-2 px-4 text-gray-600 dark:text-text-muted">Risk Level</th>
           </tr>
         </thead>
         <tbody>
           {data.map((city, index) => (
-            <tr key={city.id} className="border-b border-gray-700 last:border-b-0">
-              <td className="py-2 px-4 text-text-light">{index + 1}</td>
-              <td className="py-2 px-4 text-text-light">#{city.id}</td>
-              <td className="py-2 px-4 font-mono text-text-light">{city.avgHpi.toFixed(2)}</td>
-              <td className={`py-2 px-4 font-semibold ${city.risk === 'High' ? 'text-danger' : city.risk === 'Moderate' ? 'text-warning' : 'text-success'}`}>{city.risk}</td>
+            <tr key={city.id} className="border-b border-gray-200 dark:border-gray-700 last:border-b-0">
+              <td className="py-2 px-4 text-gray-800 dark:text-text-light">{index + 1}</td>
+              <td className="py-2 px-4 text-gray-800 dark:text-text-light">#{city.id}</td>
+              <td className="py-2 px-4 font-mono text-gray-800 dark:text-text-light">{city.avgHpi.toFixed(2)}</td>
+              <td className={`py-2 px-4 font-semibold ${city.risk === 'High' ? 'text-red-500 dark:text-danger' : city.risk === 'Moderate' ? 'text-yellow-500 dark:text-warning' : 'text-green-500 dark:text-success'}`}>{city.risk}</td>
             </tr>
           ))}
         </tbody>
