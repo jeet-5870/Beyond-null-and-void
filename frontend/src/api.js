@@ -1,25 +1,24 @@
 import axios from 'axios';
 
-const API_BASE_URL = process.env.REACT_APP_API_URL || 'http://localhost:5000/api';
+const BASE_URL = 'https://beyond-null-and-void.onrender.com';
 
-const api = axios.create({
-  baseURL: API_BASE_URL,
-  headers: {
-    'Content-Type': 'application/json',
-  },
+const API = axios.create({
+  baseURL: BASE_URL, 
 });
 
-api.interceptors.request.use(
-  (config) => {
-    const token = localStorage.getItem('token');
-    if (token) {
-      config.headers['Authorization'] = `Bearer ${token}`;
-    }
-    return config;
-  },
-  (error) => {
-    return Promise.reject(error);
+// 🔑 API instance that automatically adds the JWT token for protected routes
+API.interceptors.request.use((config) => {
+  const token = localStorage.getItem('token');
+  if (token) {
+    config.headers.Authorization = `Bearer ${token}`;
   }
-);
+  return config;
+});
 
-export default api;
+export const AuthAPI = axios.create({
+  // 🔑 FIX: Corrected baseURL to target the backend auth routes directly,
+  // preventing 404 errors on auth initiation.
+  baseURL: `${BASE_URL}/api/auth`, 
+});
+
+export default API;
