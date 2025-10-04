@@ -71,7 +71,9 @@ export const seedDatabase = async () => {
         ('Cr', 0.05, 0.05),
         ('Cu', 2, 2),
         ('Pb', 0.015, 0.015),
-        ('Zn', 3, 3)
+        ('Zn', 3, 3),
+        ('Hg', 0.001, 0.001)
+        ON CONFLICT (metal_name) DO NOTHING;
       `);
       console.log('✅ Metal standards seeded.');
     } else {
