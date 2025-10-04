@@ -1,7 +1,7 @@
 import fs from 'fs';
 import csv from 'csv-parser';
 import db from '../db/db.js';
-import { calculateHPI, calculateHEI, calculatePLI, calculateMPI, calculateCF } from '../utils/formulaEngine.js';
+import { calculateHMPI, calculateHEI, calculatePLI, calculateMPI, calculateCF } from '../utils/formulaEngine.js';
 import { getHEIClassification } from '../utils/classification.js';
 
 async function sendCriticalAlertsToOfficials(alertData) {
@@ -125,7 +125,7 @@ export default async function handleUpload(req, res, next) {
         );
       }
 
-      const hpi = calculateHPI(concentrations, hpiStandards);
+      const hpi = calculateHMPI(concentrations, hpiStandards);
       const hei = calculateHEI(concentrations, heiStandards);
       const pli = calculatePLI(cfArray);
       const mpi = calculateMPI(concentrations);
