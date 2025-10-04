@@ -1,16 +1,8 @@
 import fs from 'fs';
 import csv from 'csv-parser';
 import db from '../db/db.js';
-import {
-  calculateHMPI,
-  calculateHEI,
-  calculatePLI,
-  calculateMPI,
-  calculateCF
-} from '../utils/formulaEngine.js';
-import {
-  getHEIClassification
-} from '../utils/classification.js';
+import { calculateHPI, calculateHEI, calculatePLI, calculateMPI, calculateCF } from '../utils/formulaEngine.js';
+import { getHEIClassification } from '../utils/classification.js';
 
 async function sendCriticalAlertsToOfficials(alertData) {
   if (alertData.length === 0) return;
@@ -20,45 +12,29 @@ async function sendCriticalAlertsToOfficials(alertData) {
 }
 
 export default async function handleUpload(req, res, next) {
-  const userId = req.user?.userId;
-  const {
-    date: historicalDate
-  } = req.body;
+  const userId = req.user ? req.user.userId : null;
+  const { date: historicalDate } = req.body;
   const filePath = req.file?.path;
 
-  if (!filePath) {
-    return res.status(400).json({
-      error: 'No file uploaded'
-    });
-  }
+  if (!filePath) return res.status(400).json({ error: 'No file uploaded' });
 
-  if (!userId) {
-    return res.status(401).json({
-      error: 'User not authenticated for upload.'
-    });
-  }
-
+  // Server-side validation for historical dates
   if (req.path.includes('/historical')) {
     if (!historicalDate) {
-      return res.status(400).json({
-        error: 'Date is required for historical uploads.'
-      });
+      return res.status(400).json({ error: 'Date is required for historical uploads.' });
     }
     const selectedDate = new Date(historicalDate);
     const today = new Date();
-    today.setHours(0, 0, 0, 0);
+    today.setHours(0, 0, 0, 0); // Normalize today's date to midnight
 
     if (selectedDate >= today) {
-      return res.status(400).json({
-        error: 'Historical data can only be uploaded for past dates.'
-      });
+      return res.status(400).json({ error: 'Historical data can only be uploaded for past dates.' });
     }
   }
 
   const rowsByLocation = {};
   const generatedAlerts = [];
   const requiredHeaders = ['location', 'lat', 'lng', 'metal_name', 'concentration'];
-  const client = await db.connect();
 
   try {
     await new Promise((resolve, reject) => {
@@ -80,40 +56,40 @@ export default async function handleUpload(req, res, next) {
         }
       }).on('end', resolve).on('error', reject);
     });
-
-    const {
-      rows: standardsRows
-    } = await client.query('SELECT metal_name, mac_ppm, standard_ppm FROM metal_standards');
+    
+    const { rows: standardsRows } = await db.query('SELECT metal_name, mac_ppm, standard_ppm FROM metal_standards');
     const metalStandards = {};
     standardsRows.forEach(row => {
-      metalStandards[row.metal_name] = {
-        mac: row.mac_ppm,
-        standard: row.standard_ppm
-      };
+      metalStandards[row.metal_name] = { mac: row.mac_ppm, standard: row.standard_ppm };
     });
-
+    
     if (Object.keys(metalStandards).length === 0) {
       throw new Error("No metal standards found. Please upload standards first.");
     }
-
-    await client.query('BEGIN');
-
+    
+    let finalUserId = userId;
+    if (!finalUserId) {
+      const adminRes = await db.query("SELECT user_id FROM users WHERE email='admin@example.com'");
+      if (adminRes.rows.length === 0) {
+        throw new Error("Default admin user not found for public uploads.");
+      }
+      finalUserId = adminRes.rows[0].user_id;
+    }
+    
+    await db.query('BEGIN');
+    
     let insertedCount = 0;
     for (const [key, metals] of Object.entries(rowsByLocation)) {
-      const {
-        location,
-        lat,
-        lng
-      } = metals[0];
+      const { location, lat, lng } = metals[0];
       const district = metals[0].district || location;
       const state = metals[0].state || 'N/A';
-
-      let locRes = await client.query('SELECT location_id FROM locations WHERE name = $1', [location]);
+      
+      let locRes = await db.query('SELECT location_id FROM locations WHERE name = $1', [location]);
       let location_id;
       if (locRes.rows.length > 0) {
         location_id = locRes.rows[0].location_id;
       } else {
-        const insertLoc = await client.query(
+        const insertLoc = await db.query(
           `INSERT INTO locations (name, latitude, longitude, district, state) VALUES ($1, $2, $3, $4, $5) RETURNING location_id`,
           [location, lat, lng, district, state]
         );
@@ -121,9 +97,10 @@ export default async function handleUpload(req, res, next) {
       }
 
       const sampleDate = historicalDate ? new Date(historicalDate) : new Date();
-      const sampleRes = await client.query(
+
+      const sampleRes = await db.query(
         `INSERT INTO samples (location_id, sample_date, source_type, notes, user_id) VALUES ($1, $2, $3, $4, $5) RETURNING sample_id`,
-        [location_id, sampleDate.toISOString(), 'Groundwater', 'CSV import', userId]
+        [location_id, sampleDate.toISOString(), 'Groundwater', 'CSV import', finalUserId]
       );
       const sample_id = sampleRes.rows[0].sample_id;
 
@@ -131,66 +108,64 @@ export default async function handleUpload(req, res, next) {
       const hpiStandards = [];
       const heiStandards = [];
       const cfArray = [];
-
+      
       for (const m of metals) {
         const standard = metalStandards[m.metal_name];
         if (!standard) throw new Error(`Standard for metal ${m.metal_name} not found.`);
-
+        
         const concentration = parseFloat(m.concentration);
         concentrations.push(concentration);
         hpiStandards.push(standard.standard);
         heiStandards.push(standard.mac);
         cfArray.push(calculateCF(concentration, standard.mac));
-
-        await client.query(
+        
+        await db.query(
           `INSERT INTO metal_concentrations (sample_id, metal_name, concentration_ppm) VALUES ($1, $2, $3)`,
           [sample_id, m.metal_name, concentration]
         );
       }
 
-      const hpi = calculateHMPI(concentrations, hpiStandards);
+      const hpi = calculateHPI(concentrations, hpiStandards);
       const hei = calculateHEI(concentrations, heiStandards);
       const pli = calculatePLI(cfArray);
       const mpi = calculateMPI(concentrations);
+
       const is_anomaly = (hei >= 50);
       const cluster_id = Math.floor(Math.random() * 3) + 1;
+      
       const classification = getHEIClassification(hei);
-
       if (classification === 'Highly Polluted') {
         generatedAlerts.push({
-          location,
-          hpi,
-          hei,
+          location, hpi, hei,
           message: `HEI score of ${hei.toFixed(2)} exceeds critical safety threshold. Immediate intervention required.`,
           timestamp: new Date().toISOString()
         });
       }
 
-      await client.query(
+      await db.query(
         `INSERT INTO pollution_indices (sample_id, hpi, hei, pli, mpi, cf, is_anomaly, cluster_id) VALUES ($1, $2, $3, $4, $5, $6, $7, $8)`,
         [sample_id, hpi, hei, pli, mpi, JSON.stringify(cfArray), is_anomaly, cluster_id]
       );
       insertedCount += metals.length;
     }
-
-    await client.query('COMMIT');
+    
+    await db.query('COMMIT');
     fs.unlinkSync(filePath);
+    
     await sendCriticalAlertsToOfficials(generatedAlerts);
 
-    res.status(200).json({
-      message: 'Upload complete',
+    res.status(200).json({ 
+      message: 'Upload complete', 
       inserted: insertedCount,
       alerts: generatedAlerts,
     });
-
+    
   } catch (err) {
-    await client.query('ROLLBACK');
+    await db.query('ROLLBACK');
     console.error('❌ Upload failed:', err);
     if (filePath && fs.existsSync(filePath)) {
       fs.unlinkSync(filePath);
     }
     next(err);
-  } finally {
-    client.release();
   }
 }

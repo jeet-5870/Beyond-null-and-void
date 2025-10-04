@@ -1,55 +1,63 @@
 import express from 'express';
 import cors from 'cors';
 import dotenv from 'dotenv';
-import authRoutes from './routes/authRoutes.js';
-import uploadRoutes from './routes/uploadRoutes.js';
-import resultRoutes from './routes/resultRoutes.js';
-import mapRoutes from './routes/mapRoutes.js';
-import analysisRoutes from './routes/analysisRoutes.js';
-import predictionRoutes from './routes/predictionRoutes.js';
-import standardRoutes from './routes/standardRoutes.js';
-import reportRoutes from './routes/reportRoutes.js';
-import leaderboardRoutes from './routes/leaderboardRoutes.js';
-import feedbackRoutes from './routes/feedbackRoutes.js';
-import errorHandler from './middleware/errorHandler.js';
+import uploadRoutes from "./routes/uploadRoutes.js";
+import mapRoutes from "./routes/mapRoutes.js";
+import resultRoutes from "./routes/resultRoutes.js";
+import reportRoutes from "./routes/reportRoutes.js";
+import standardRoutes from "./routes/standardRoutes.js";
+import authRoutes from "./routes/authRoutes.js";
+import leaderboardRoutes from "./routes/leaderboardRoutes.js";
+import feedbackRoutes from "./routes/feedbackRoutes.js";
+import predictionRoutes from "./routes/predictionRoutes.js"; 
+import analysisRoutes from "./routes/analysisRoutes.js"; 
+import errorHandler from "./middleware/errorHandler.js";
+import authMiddleware from "./middleware/authMiddleware.js";
 import { initPostgresSchema } from './db/initSchema.js';
 import { seedDatabase } from "./db/seed.js";
 
 dotenv.config();
 
 const app = express();
-const PORT = process.env.PORT || 5000;
-
 app.use(cors());
 app.use(express.json());
 
-// API routes
+// Public routes
 app.use('/api/auth', authRoutes);
-app.use('/api/upload', uploadRoutes);
-app.use('/api/results', resultRoutes);
-app.use('/api/map', mapRoutes);
-app.use('/api/analysis', analysisRoutes);
-app.use('/api/predictions', predictionRoutes);
-app.use('/api/standards', standardRoutes);
-app.use('/api/reports', reportRoutes);
 app.use('/api/leaderboard', leaderboardRoutes);
 app.use('/api/feedback', feedbackRoutes);
 
+// Corrected route for historical uploads to be public
+app.use('/api/upload', uploadRoutes); 
+
+// Protected routes
+app.use('/api/samples', authMiddleware, resultRoutes);
+app.use('/api/map-data', authMiddleware, mapRoutes);
+app.use('/api/report', authMiddleware, reportRoutes);
+app.use('/api/standards', authMiddleware, standardRoutes);
+app.use('/api/prediction', authMiddleware, predictionRoutes);
+app.use('/api/analysis', authMiddleware, analysisRoutes);
+
 app.use(errorHandler);
 
-const startServer = async () => {
+// Health check
+app.get('/', (req, res) => {
+  res.send("👋 Welcome to Beyond Null and Void.\nThis server powers groundwater insights.");
+});
+
+app.get('/health', (req, res) => {
+  res.json({ status: 'ok', timestamp: new Date().toISOString() });
+});
+
+const PORT = process.env.PORT || 3000;
+
+app.listen(PORT, async () => {
+  console.log(`🚀 Server is live on port ${PORT}`);
+
   try {
-    // Correct startup order: Initialize schema first, then seed.
     await initPostgresSchema();
     await seedDatabase();
-
-    app.listen(PORT, () => {
-      console.log(`🚀 Server is running on port ${PORT}`);
-    });
-  } catch (error) {
-    console.error("❌ Failed to start server:", error.message);
-    process.exit(1);
+  } catch (err) {
+    console.error("❌ Failed to set up database on startup: ", err);
   }
-};
-
-startServer();
+});
