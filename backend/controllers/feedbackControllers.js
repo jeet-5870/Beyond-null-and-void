@@ -1,68 +1,56 @@
 import db from '../db/db.js';
 
-// --- Shared Helper ---
-const getUserId = (req) => req.user ? req.user.userId : null;
+// Submits new feedback from an authenticated user
+export const submitFeedback = async (req, res, next) => {
+  const userId = req.user?.userId;
+  const { message } = req.body;
 
-// 1. Handles submission of new feedback/complaints
-const submitFeedback = async (req, res, next) => {
-  const { feedback } = req.body;
-  // Get user ID from middleware, if available (e.g., if called from Dashboard)
-  const userId = getUserId(req); 
-  
-  if (!feedback) {
+  if (!userId) {
+    return res.status(401).json({ error: 'Authentication required.' });
+  }
+  if (!message) {
     return res.status(400).json({ error: 'Feedback message cannot be empty.' });
   }
 
   try {
-    // If userId is present, link the feedback to the user's ID.
-    const query = userId 
-      ? 'INSERT INTO feedback (user_id, message) VALUES ($1, $2) RETURNING *'
-      : 'INSERT INTO feedback (message) VALUES ($1) RETURNING *';
-      
-    const params = userId ? [userId, feedback] : [feedback];
-
-    const result = await db.query(query, params);
-    
-    res.status(201).json({ 
-      message: 'Feedback submitted successfully.', 
-      feedback: result.rows[0] 
-    });
+    const result = await db.query(
+      'INSERT INTO feedback (user_id, message) VALUES ($1, $2) RETURNING *',
+      [userId, message]
+    );
+    res.status(201).json(result.rows[0]);
   } catch (err) {
     next(err);
   }
 };
 
-// 2. Fetches all recent feedback (for public display on the main page)
-const getPublicFeedback = async (req, res, next) => {
+// Gets feedback submitted by the currently logged-in user
+export const getUserFeedback = async (req, res, next) => {
+  const userId = req.user?.userId;
+
+  if (!userId) {
+    return res.status(401).json({ error: 'Authentication required.' });
+  }
+
   try {
-    const result = await db.query(
-      'SELECT message, submitted_at FROM feedback ORDER BY submitted_at DESC LIMIT 5'
-    );
+    const result = await db.query('SELECT * FROM feedback WHERE user_id = $1 ORDER BY submitted_at DESC', [userId]);
     res.status(200).json(result.rows);
   } catch (err) {
     next(err);
   }
 };
 
-// 3. Fetches only the logged-in user's feedback (protected route for dashboard)
-const getUserFeedback = async (req, res, next) => {
-  // Extract userId from the decoded JWT payload attached by authMiddleware
-  const { userId } = req.user; 
-
+// 🔑 FIX: Added the missing getAllFeedback function
+// Gets all feedback from all users, joining with the users table
+export const getAllFeedback = async (req, res, next) => {
   try {
-    const result = await db.query(
-      'SELECT message, submitted_at FROM feedback WHERE user_id = $1 ORDER BY submitted_at DESC',
-      [userId]
-    );
+    const result = await db.query(`
+      SELECT f.feedback_id, f.message, f.submitted_at, u.email, u.fullname
+      FROM feedback f
+      JOIN users u ON f.user_id = u.user_id
+      ORDER BY f.submitted_at DESC
+    `);
     res.status(200).json(result.rows);
   } catch (err) {
     next(err);
   }
-};
-
-// 🔑 FIX: Export as a single default object to fix the SyntaxError in deployment
-export default {
-    submitFeedback,
-    getPublicFeedback,
-    getUserFeedback
 };
