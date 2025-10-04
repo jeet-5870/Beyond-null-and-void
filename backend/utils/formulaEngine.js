@@ -1,5 +1,3 @@
-// utils/formulaEngine.js
-
 /**
  * Contamination Factor (CF) = Measured / Standard
  */
@@ -14,6 +12,7 @@ function calculateCF(concentration, standard) {
  * Pollution Load Index (PLI) = (CF1 * CF2 * ... * CFn)^(1/n)
  */
 function calculatePLI(cfArray) {
+  if (cfArray.length === 0) return 0;
   const product = cfArray.reduce((acc, val) => acc * val, 1);
   return +(Math.pow(product, 1 / cfArray.length).toFixed(3));
 }
@@ -45,9 +44,9 @@ function calculateHEI(concentrations, standards) {
 }
 
 /**
- * Heavy Metal Pollution Index (HPI)
- * HPI = Σ(Wi * Qi) / ΣWi
- * This version of HPI is a weighted index, where Qi is the sub-index.
+ * Heavy Metal Pollution Index (HMPI)
+ * HMPI = Σ(Wi * Qi) / ΣWi
+ * This version of HMPI is a weighted index, where Qi is the sub-index.
  *
  * NOTE: The old formula was producing inflated results due to an incorrect
  * implementation of the weighting. This corrected version should provide more
@@ -84,6 +83,7 @@ function calculateHPI(concentrations, standards) {
  * Metal Pollution Index (MPI) = (M1 * M2 * ... * Mn)^(1/n)
  */
 function calculateMPI(concentrations) {
+    if (concentrations.length === 0) return 0;
   const product = concentrations.reduce((acc, val) => acc * val, 1);
   return +(Math.pow(product, 1 / concentrations.length).toFixed(3));
 }
