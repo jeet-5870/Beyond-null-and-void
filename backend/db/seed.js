@@ -3,7 +3,8 @@ import bcrypt from 'bcrypt';
 
 const SALT_ROUNDS = 10;
 
-async function seed() {
+// The function is now exported
+export async function seedDatabase() {
   console.log('🌱 Starting database seeding...');
   try {
     await db.query('BEGIN');
@@ -33,11 +34,9 @@ async function seed() {
         ('Cu', 2.0, 2.0),
         ('Pb', 0.015, 0.015),
         ('Zn', 3.0, 3.0),
-        ('Hg', 0.001, 0.001) -- This line is added
+        ('Hg', 0.001, 0.001)
       ON CONFLICT (metal_name) DO NOTHING;
     `);
-
-    // Add other seeding operations here if needed
 
     await db.query('COMMIT');
     console.log('✅ Database seeding complete.');
@@ -46,8 +45,10 @@ async function seed() {
     console.error('❌ Error during seeding:', error);
     process.exit(1);
   } finally {
-    await db.end();
+    // The pool should not be ended here if the app continues to run
+    // await db.end();
   }
 }
 
-seed();
+// The direct call has been removed from this file
+// seedDatabase();
