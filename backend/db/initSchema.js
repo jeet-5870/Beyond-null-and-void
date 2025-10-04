@@ -1,11 +1,12 @@
 import db from './db.js';
 
 export const initPostgresSchema = async () => {
+  const client = await db.connect();
   try {
-    // 🔑 FIX: Add DROP TABLE IF EXISTS CASCADE to ensure the schema is always up-to-date,
-    // especially for tables that received new columns like pollution_indices.
-    // CASCADE ensures dependent tables (like metal_concentrations) are dropped first.
-    await db.query(`
+    await client.query('BEGIN');
+
+    // Drop existing tables to ensure a clean slate
+    await client.query(`
       DROP TABLE IF EXISTS feedback CASCADE;
       DROP TABLE IF EXISTS pollution_classifications CASCADE;
       DROP TABLE IF EXISTS login_logs CASCADE;
@@ -17,8 +18,16 @@ export const initPostgresSchema = async () => {
       DROP TABLE IF EXISTS users CASCADE;
     `);
 
+    // Create tables with the corrected schema
+    await client.query(`
+      CREATE TABLE IF NOT EXISTS users (
+        user_id SERIAL PRIMARY KEY,
+        email TEXT UNIQUE NOT NULL,
+        password_hash TEXT NOT NULL,
+        role TEXT CHECK (role IN ('ngo', 'guest', 'researcher')) NOT NULL,
+        created_at TIMESTAMP WITH TIME ZONE DEFAULT CURRENT_TIMESTAMP
+      );
 
-    await db.query(`
       CREATE TABLE IF NOT EXISTS locations (
         location_id SERIAL PRIMARY KEY,
         name TEXT,
@@ -26,21 +35,6 @@ export const initPostgresSchema = async () => {
         longitude REAL,
         district TEXT,
         state TEXT
-      );
-
-      /* ✅ USERS TABLE: supports email, phone, OTP, and role-based access */
-      CREATE TABLE IF NOT EXISTS users (
-        user_id SERIAL PRIMARY KEY,
-        fullname TEXT NOT NULL,
-        email TEXT UNIQUE,
-        phone TEXT UNIQUE,
-        password_hash TEXT,
-        role TEXT CHECK (role IN ('ngo', 'guest', 'researcher')) NOT NULL,
-        reset_token TEXT,
-        reset_token_expires TIMESTAMP,
-        created_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP,
-        updated_at TIMESTAMP,
-        CONSTRAINT chk_email_or_phone CHECK (email IS NOT NULL OR phone IS NOT NULL)
       );
 
       CREATE TABLE IF NOT EXISTS samples (
@@ -84,26 +78,15 @@ export const initPostgresSchema = async () => {
         message TEXT NOT NULL,
         submitted_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP
       );
-
-      CREATE TABLE IF NOT EXISTS pollution_classifications (
-        index_name TEXT,
-        pollution_level TEXT,
-        min_value REAL,
-        max_value REAL,
-        PRIMARY KEY (index_name, pollution_level)
-      );
-
-      CREATE TABLE IF NOT EXISTS login_logs (
-        log_id SERIAL PRIMARY KEY,
-        user_id INTEGER REFERENCES users(user_id),
-        login_time TIMESTAMP DEFAULT CURRENT_TIMESTAMP,
-        ip_address TEXT,
-        user_agent TEXT
-      );
     `);
 
+    await client.query('COMMIT');
     console.log('✅ PostgreSQL schema initialized.');
   } catch (err) {
+    await client.query('ROLLBACK');
     console.error('❌ PostgreSQL schema init failed:', err.message);
+    throw err; // Re-throw the error to be caught by the caller
+  } finally {
+    client.release();
   }
 };
