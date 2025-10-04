@@ -1,72 +1,62 @@
-// frontend/src/App.jsx
-
 import React, { useState, useEffect } from 'react';
-import { BrowserRouter as Router, Routes, Route, Navigate } from 'react-router-dom';
-import MainPage from './pages/mainPage.jsx';
-import LoginPage from './pages/LoginPage.jsx';
-import Dashboard from './pages/Dashboard.jsx';
-import HistoricalUploadPage from './pages/HistoricalUploadPage.jsx'; // Import the new page
-import { AuthAPI } from './api.js';
-import { ThemeProvider } from './context/ThemeContext.jsx';
+import { BrowserRouter as Router, Route, Routes, Navigate } from 'react-router-dom';
+import api from './api';
+import Dashboard from './pages/Dashboard';
+import LoginPage from './pages/LoginPage';
+import HistoricalUploadPage from './pages/HistoricalUploadPage';
+import AnomaliesPage from './pages/AnomaliesPage';
+import HotspotsPage from './pages/HotspotsPage';
+import MainPage from './pages/mainPage';
+import Navbar from './components/Navbar';
+import { ToastContainer } from 'react-toastify';
+import 'react-toastify/dist/ReactToastify.css';
 
 function App() {
-  const [isAuthenticated, setIsAuthenticated] = useState(false);
-  const [isCheckingAuth, setIsCheckingAuth] = useState(true);
+  const [isLoggedIn, setIsLoggedIn] = useState(false);
+  const [loading, setLoading] = useState(true);
 
   useEffect(() => {
-    const checkTokenValidity = async () => {
+    const verifyToken = async () => {
       const token = localStorage.getItem('token');
-      if (!token) {
-        setIsAuthenticated(false);
-        setIsCheckingAuth(false);
-        return;
+      if (token) {
+        try {
+          await api.get('/auth/verify-token');
+          setIsLoggedIn(true);
+        } catch (error) {
+          localStorage.removeItem('token');
+          setIsLoggedIn(false);
+        }
       }
-
-      try {
-        await AuthAPI.get('/verify-token', {
-             headers: { Authorization: `Bearer ${token}` }
-        });
-        setIsAuthenticated(true);
-      } catch (error) {
-        console.error('Token verification failed:', error);
-        localStorage.removeItem('token');
-        localStorage.removeItem('role');
-        setIsAuthenticated(false);
-      } finally {
-        setIsCheckingAuth(false);
-      }
+      setLoading(false);
     };
-    checkTokenValidity();
+    verifyToken();
   }, []);
 
-  const handleLogin = (status) => {
-    setIsAuthenticated(status);
+  const handleLogout = () => {
+    localStorage.removeItem('token');
+    setIsLoggedIn(false);
   };
-  
-  if (isCheckingAuth) {
-    return (
-        <div className="flex items-center justify-center min-h-screen bg-primary-dark">
-            <h1 className="text-xl font-bold text-text-light">Loading...</h1>
-        </div>
-    );
+
+  if (loading) {
+    return <div>Loading...</div>;
   }
 
   return (
-    <ThemeProvider>
-      <Router>
-        <Routes>
-          <Route path="/" element={<MainPage />} />
-          <Route path="/login" element={<LoginPage onLogin={handleLogin} />} />
-          <Route
-            path="/dashboard"
-            element={isAuthenticated ? <Dashboard /> : <Navigate to="/login" />}
-          />
-          {/* Add the new public route */}
-          <Route path="/historical-upload" element={<HistoricalUploadPage />} />
-          <Route path="*" element={<Navigate to="/" />} />
-        </Routes>
-      </Router>
-    </ThemeProvider>
+    <Router>
+      <Navbar isLoggedIn={isLoggedIn} handleLogout={handleLogout} />
+      <ToastContainer position="top-right" autoClose={5000} hideProgressBar={false} />
+      <Routes>
+        <Route path="/" element={!isLoggedIn ? <MainPage /> : <Navigate to="/dashboard" />} />
+        <Route path="/login" element={!isLoggedIn ? <LoginPage setIsLoggedIn={setIsLoggedIn} /> : <Navigate to="/dashboard" />} />
+        
+        <Route path="/dashboard" element={isLoggedIn ? <Dashboard /> : <Navigate to="/login" />} />
+        <Route path="/historical-upload" element={isLoggedIn ? <HistoricalUploadPage /> : <Navigate to="/login" />} />
+        <Route path="/anomalies" element={isLoggedIn ? <AnomaliesPage /> : <Navigate to="/login" />} />
+        <Route path="/hotspots" element={isLoggedIn ? <HotspotsPage /> : <Navigate to="/login" />} />
+
+        <Route path="*" element={<Navigate to="/" />} />
+      </Routes>
+    </Router>
   );
 }
 

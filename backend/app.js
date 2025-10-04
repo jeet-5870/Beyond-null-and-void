@@ -12,7 +12,7 @@ import reportRoutes from './routes/reportRoutes.js';
 import leaderboardRoutes from './routes/leaderboardRoutes.js';
 import feedbackRoutes from './routes/feedbackRoutes.js';
 import errorHandler from './middleware/errorHandler.js';
-import { initPostgresSchema } from './db/initSchema.js'; // Import schema initializer
+import { initPostgresSchema } from './db/initSchema.js';
 import { seedDatabase } from "./db/seed.js";
 
 dotenv.config();
@@ -39,7 +39,7 @@ app.use(errorHandler);
 
 const startServer = async () => {
   try {
-    // Initialize schema and then seed the database
+    // Correct startup order: Initialize schema first, then seed.
     await initPostgresSchema();
     await seedDatabase();
 
@@ -48,6 +48,7 @@ const startServer = async () => {
     });
   } catch (error) {
     console.error("❌ Failed to start server:", error.message);
+    process.exit(1);
   }
 };
 

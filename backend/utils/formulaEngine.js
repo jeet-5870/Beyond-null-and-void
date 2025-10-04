@@ -46,13 +46,8 @@ function calculateHEI(concentrations, standards) {
 /**
  * Heavy Metal Pollution Index (HMPI)
  * HMPI = Σ(Wi * Qi) / ΣWi
- * This version of HMPI is a weighted index, where Qi is the sub-index.
- *
- * NOTE: The old formula was producing inflated results due to an incorrect
- * implementation of the weighting. This corrected version should provide more
- * scientifically accurate results.
  */
-function calculateHPI(concentrations, standards) {
+function calculateHMPI(concentrations, standards) {
   let numerator = 0;
   let denominator = 0;
 
@@ -65,7 +60,7 @@ function calculateHPI(concentrations, standards) {
       continue;
     }
 
-    const Qi = (Mi / Si) * 100; // Simplified sub-index assuming ideal value is 0
+    const Qi = (Mi / Si) * 100;
     const Wi = 1 / Si;
 
     numerator += Qi * Wi;
@@ -91,7 +86,7 @@ function calculateMPI(concentrations) {
 export {
   calculateCF,
   calculatePLI,
-  calculateHPI,
+  calculateHMPI,
   calculateMPI,
   calculateHEI
 };

@@ -5,7 +5,7 @@ export const initPostgresSchema = async () => {
   try {
     await client.query('BEGIN');
 
-    // Drop existing tables to ensure a clean slate
+    // Drop existing tables to ensure a clean slate on every server start
     await client.query(`
       DROP TABLE IF EXISTS feedback CASCADE;
       DROP TABLE IF EXISTS pollution_classifications CASCADE;
@@ -18,14 +18,17 @@ export const initPostgresSchema = async () => {
       DROP TABLE IF EXISTS users CASCADE;
     `);
 
-    // Create tables with the corrected schema
+    // Create tables with the corrected and final schema
     await client.query(`
       CREATE TABLE IF NOT EXISTS users (
         user_id SERIAL PRIMARY KEY,
-        email TEXT UNIQUE NOT NULL,
-        password_hash TEXT NOT NULL,
+        fullname TEXT NOT NULL,
+        email TEXT UNIQUE,
+        phone TEXT UNIQUE,
+        password_hash TEXT,
         role TEXT CHECK (role IN ('ngo', 'guest', 'researcher')) NOT NULL,
-        created_at TIMESTAMP WITH TIME ZONE DEFAULT CURRENT_TIMESTAMP
+        created_at TIMESTAMP WITH TIME ZONE DEFAULT CURRENT_TIMESTAMP,
+        CONSTRAINT chk_email_or_phone CHECK (email IS NOT NULL OR phone IS NOT NULL)
       );
 
       CREATE TABLE IF NOT EXISTS locations (
@@ -85,7 +88,7 @@ export const initPostgresSchema = async () => {
   } catch (err) {
     await client.query('ROLLBACK');
     console.error('❌ PostgreSQL schema init failed:', err.message);
-    throw err; // Re-throw the error to be caught by the caller
+    throw err;
   } finally {
     client.release();
   }

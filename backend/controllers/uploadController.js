@@ -15,17 +15,16 @@ import {
 async function sendCriticalAlertsToOfficials(alertData) {
   if (alertData.length === 0) return;
   console.log(`🚨 Attempting to send ${alertData.length} critical pollution alerts externally...`);
-  // Simulate an external API call
   await new Promise(resolve => setTimeout(resolve, 500));
   console.log('✅ External Alert Service notification simulated and complete.');
 }
 
 export default async function handleUpload(req, res, next) {
-  const userId = req.user ? .userId;
+  const userId = req.user?.userId;
   const {
     date: historicalDate
   } = req.body;
-  const filePath = req.file ? .path;
+  const filePath = req.file?.path;
 
   if (!filePath) {
     return res.status(400).json({
@@ -33,14 +32,12 @@ export default async function handleUpload(req, res, next) {
     });
   }
 
-  // Ensure a user is authenticated for any upload
   if (!userId) {
     return res.status(401).json({
       error: 'User not authenticated for upload.'
     });
   }
 
-  // Server-side validation for historical dates
   if (req.path.includes('/historical')) {
     if (!historicalDate) {
       return res.status(400).json({
@@ -49,7 +46,7 @@ export default async function handleUpload(req, res, next) {
     }
     const selectedDate = new Date(historicalDate);
     const today = new Date();
-    today.setHours(0, 0, 0, 0); // Normalize today's date to midnight
+    today.setHours(0, 0, 0, 0);
 
     if (selectedDate >= today) {
       return res.status(400).json({
@@ -124,7 +121,6 @@ export default async function handleUpload(req, res, next) {
       }
 
       const sampleDate = historicalDate ? new Date(historicalDate) : new Date();
-
       const sampleRes = await client.query(
         `INSERT INTO samples (location_id, sample_date, source_type, notes, user_id) VALUES ($1, $2, $3, $4, $5) RETURNING sample_id`,
         [location_id, sampleDate.toISOString(), 'Groundwater', 'CSV import', userId]
@@ -156,11 +152,10 @@ export default async function handleUpload(req, res, next) {
       const hei = calculateHEI(concentrations, heiStandards);
       const pli = calculatePLI(cfArray);
       const mpi = calculateMPI(concentrations);
-
       const is_anomaly = (hei >= 50);
       const cluster_id = Math.floor(Math.random() * 3) + 1;
-
       const classification = getHEIClassification(hei);
+
       if (classification === 'Highly Polluted') {
         generatedAlerts.push({
           location,
@@ -179,8 +174,7 @@ export default async function handleUpload(req, res, next) {
     }
 
     await client.query('COMMIT');
-    fs.unlinkSync(filePath); // Clean up the uploaded file
-
+    fs.unlinkSync(filePath);
     await sendCriticalAlertsToOfficials(generatedAlerts);
 
     res.status(200).json({
