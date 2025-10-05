@@ -141,8 +141,8 @@ const MainPage = () => {
       try {
         // Fetch both leaderboards in parallel
         const [mostPollutedRes, leastPollutedRes] = await Promise.all([
-          API.get('/leaderboard?page=1&limit=10&sort=desc'),
-          API.get('/leaderboard?page=1&limit=10&sort=asc')
+          API.get('/api/leaderboard?page=1&limit=10&sort=desc'),
+          API.get('/api/leaderboard?page=1&limit=10&sort=asc')
         ]);
 
         const { cities: mostPollutedCities, stats } = mostPollutedRes.data;

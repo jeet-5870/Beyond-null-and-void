@@ -15,7 +15,7 @@ export const ComplaintForm = () => {
     }
     
     try {
-      await API.post('/feedback', { feedback });
+      await API.post('/api/feedback', { feedback });
       setMessage('Thank you! Your complaint/feedback has been submitted.');
       setFeedback('');
     } catch (error) {
@@ -64,7 +64,7 @@ export const FeedbackList = ({ userSpecific = false }) => {
     const fetchFeedback = async () => {
       setIsLoading(true);
       try {
-        const endpoint = userSpecific ? '/feedback/user-feedback' : '/feedback';
+        const endpoint = userSpecific ? '/api/feedback/user-feedback' : '/api/feedback';
         const res = await API.get(endpoint);
         setFeedbackList(res.data);
       } catch (error) {
