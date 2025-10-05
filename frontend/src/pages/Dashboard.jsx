@@ -171,7 +171,8 @@ const Dashboard = () => {
     { title: 'Total Locations', value: results.length, icon: MapPin, color: 'text-accent-blue' },
     { title: 'Safe Sites', value: results.filter(r => r.classification === 'Safe').length, icon: CheckCircle, color: 'text-success' },
     { title: 'Polluted Sites', value: results.filter(r => r.classification === 'Polluted' || r.classification === 'Highly Polluted').length, icon: AlertCircle, color: 'text-danger' },
-    { title: 'Anomalous Samples', value: results.filter(r => r.is_anomaly).length, icon: Slash, color: 'text-danger' },
+    // FIX: Explicitly check for is_anomaly === true for reliable boolean filtering
+    { title: 'Anomalous Samples', value: results.filter(r => r.is_anomaly === true).length, icon: Slash, color: 'text-danger' }, 
   ];
 
   return (
