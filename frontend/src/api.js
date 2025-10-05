@@ -7,7 +7,7 @@ const BASE_URL = process.env.BASE_URL;
 const getToken = () =>
   typeof window !== 'undefined' ? localStorage.getItem('token') : null;
 
-// 🔧 Create base API instance
+// 🔧 Create base API instance (Authenticated API with token interceptor)
 const API = axios.create({
   baseURL: BASE_URL,
 });
@@ -21,4 +21,10 @@ API.interceptors.request.use((config) => {
   return config;
 });
 
-// 🔒 Auth-specific API instance (inherits
+// 🔒 Auth-specific API instance (Unauthenticated API for login/signup/token verification)
+const AuthAPI = axios.create({
+  baseURL: BASE_URL,
+});
+
+export default API;
+export { AuthAPI };
