@@ -1,7 +1,6 @@
 import axios from 'axios';
-import 'dotenv/config';
 
-// ✅ Load base URL from .env
+// ✅ Load base URL from environment (no 'dotenv/config' required on frontend)
 const BASE_URL = process.env.BASE_URL;
 
 // 🔐 Token retrieval helper (safe for SSR)
