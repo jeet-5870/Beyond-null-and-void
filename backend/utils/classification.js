@@ -1,8 +1,8 @@
 // utils/classification.js
 
 export function getHPIClassification(hpi) {
-  if (hpi <= 100) return 'Low pollution';
-  if (hpi <= 200) return 'Medium pollution';
+  if (hpi <= 100) return 'Non pollution';
+  if (hpi <= 200) return 'Low pollution';
   return 'High pollution';
 }
 

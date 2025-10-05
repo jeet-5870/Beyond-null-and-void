@@ -1,6 +1,6 @@
 import db from '../db/db.js';
 import PDFDocument from 'pdfkit';
-import { getHEIClassification } from '../utils/classification.js';
+import { getHEIClassification, getHPIClassification } from '../utils/classification.js';
 
 // =============================================================================
 // --- Helper Functions (Updated) ---
@@ -129,7 +129,7 @@ export default function generateReport(req, res) {
                         pli: (vals.count > 0 ? vals.pli / vals.count : 0).toFixed(2),
                         mpi: (vals.count > 0 ? vals.mpi / vals.count : 0).toFixed(2),
                         count: vals.count,
-                        classification: getHEIClassification(avgHei),
+                        classification: getHPIClassification(avgHei),
                     };
                 });
                 

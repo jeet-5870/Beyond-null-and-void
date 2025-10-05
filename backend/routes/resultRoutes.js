@@ -2,7 +2,7 @@
 
 import express from 'express';
 import db from '../db/db.js';
-import { getHEIClassification } from '../utils/classification.js';
+import { getHPIClassification } from '../utils/classification.js';
 
 const router = express.Router();
 
@@ -70,7 +70,7 @@ const getUserSamples = async (req, res, next) => {
     const result = await db.query(query, params);
     const classifiedResults = result.rows.map(item => ({
       ...item,
-      classification: getHEIClassification(item.hei),
+      classification: getHPIClassification(item.hpi),
     }));
     res.json(classifiedResults);
   } catch (err) {
