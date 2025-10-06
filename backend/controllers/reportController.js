@@ -121,15 +121,18 @@ export default function generateReport(req, res) {
                     acc[row.location].count += 1;
                     return acc;
                 }, {})).map(([location, vals]) => {
+                    // FIX: Calculate avgHpi and use it for getHPIClassification
+                    const avgHpi = vals.count > 0 ? vals.hpi / vals.count : 0;
                     const avgHei = vals.count > 0 ? vals.hei / vals.count : 0;
                     return {
                         location,
-                        hpi: (vals.count > 0 ? vals.hpi / vals.count : 0).toFixed(2),
+                        hpi: avgHpi.toFixed(2),
                         hei: avgHei.toFixed(2),
                         pli: (vals.count > 0 ? vals.pli / vals.count : 0).toFixed(2),
                         mpi: (vals.count > 0 ? vals.mpi / vals.count : 0).toFixed(2),
                         count: vals.count,
-                        classification: getHPIClassification(avgHei),
+                        // 🔑 FIX: Correctly use avgHpi for HPI classification
+                        classification: getHPIClassification(avgHpi),
                     };
                 });
                 

@@ -20,23 +20,11 @@ const upload = multer({
 const router = express.Router();
 
 // Protected route for standard uploads from the dashboard
-router.post('/', authMiddleware, upload.single('file'), async (req, res, next) => {
-  try {
-    console.log(`📁 Received file: ${req.file?.originalname}, size: ${req.file?.size} bytes`);
-    await handleUpload(req, res, next);
-  } catch (err) {
-    next(err);
-  }
-});
+// 🔑 FIX: Simplified route handler chain for robustness to use handleUpload as the final controller.
+router.post('/', authMiddleware, upload.single('file'), handleUpload);
 
 // New public route for historical uploads
-router.post('/historical', upload.single('file'), async (req, res, next) => {
-  try {
-    console.log(`📁 Received historical file: ${req.file?.originalname}, size: ${req.file?.size} bytes`);
-    await handleUpload(req, res, next);
-  } catch (err) {
-    next(err);
-  }
-});
+// 🔑 FIX: Simplified route handler chain for robustness to resolve 404 issue.
+router.post('/historical', upload.single('file'), handleUpload);
 
 export default router;

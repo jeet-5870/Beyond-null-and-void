@@ -225,7 +225,10 @@ const Dashboard = () => {
                               <div className="flex items-start space-x-3">
                                 <AlertTriangle className="h-5 w-5 text-danger mt-1" />
                                 <div className="flex-1">
-                                  <p className="text-sm font-medium text-gray-800 dark:text-text-light">{alert.message}</p>
+                                   <p className="text-sm font-medium text-gray-800 dark:text-text-light">
+                                    <span className="font-bold">{alert.location}: </span>
+                                    {alert.message}
+                                  </p>
                                   <p className="text-xs text-gray-500 dark:text-text-muted mt-1">
                                     {new Date(alert.timestamp).toLocaleString()}
                                   </p>
