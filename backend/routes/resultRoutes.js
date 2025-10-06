@@ -13,7 +13,6 @@ const getUserSamples = async (req, res, next) => {
   let params = [];
   
   // The logic to show global vs. user-specific data is correct.
-  // The main query inside is what needs to be changed.
   if (role === 'ngo' || role === 'researcher' || role === 'guest') {
     query = `
       WITH latest_samples AS (
