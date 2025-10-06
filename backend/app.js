@@ -17,6 +17,7 @@ import { initPostgresSchema } from './db/initSchema.js';
 import { seedDatabase } from "./db/seed.js";
 import multer from 'multer';
 import handleUpload from './controllers/uploadController.js';
+import path from 'path';
 
 dotenv.config();
 
@@ -24,15 +25,19 @@ const app = express();
 app.use(cors());
 app.use(express.json());
 
-const upload = multer({dest: '/uploads'});
+// Configure multer to use the safe uploads path
+const upload = multer({dest: path.join(process.cwd(), 'uploads')});
 
 // Public routes
 app.use('/api/auth', authRoutes);
 app.use('/api/leaderboard', leaderboardRoutes);
 app.use('/api/feedback', feedbackRoutes);
 
-// Corrected route for historical uploads to be public
-app.use('/api/upload/historical', upload.single('file'), uploadRoutes); 
+// 🔑 FIX: Correctly define the public historical upload route.
+// It uses app.post, the multer middleware, and the handleUpload controller.
+app.post('/api/upload/historical', upload.single('file'), handleUpload); 
+
+// This handles the protected standard dashboard upload (POST /api/upload)
 app.use('/api/upload', uploadRoutes);
 
 // Protected routes
@@ -47,22 +52,22 @@ app.use(errorHandler);
 
 // Health check
 app.get('/', (req, res) => {
-  res.send("👋 Welcome to Beyond Null and Void.\nThis server powers groundwater insights.");
+  res.send("👋 Welcome to Beyond Null and Void.\nThis server powers groundwater insights.");
 });
 
 app.get('/health', (req, res) => {
-  res.json({ status: 'ok', timestamp: new Date().toISOString() });
+  res.json({ status: 'ok', timestamp: new Date().toISOString() });
 });
 
 const PORT = process.env.PORT || 3000;
 
 app.listen(PORT, async () => {
-  console.log(`🚀 Server is live on port ${PORT}`);
+  console.log(`🚀 Server is live on port ${PORT}`);
 
-  try {
-    await initPostgresSchema();
-    await seedDatabase();
-  } catch (err) {
-    console.error("❌ Failed to set up database on startup: ", err);
-  }
+  try {
+    await initPostgresSchema();
+    await seedDatabase();
+  } catch (err) {
+    console.error("❌ Failed to set up database on startup: ", err);
+  }
 });
