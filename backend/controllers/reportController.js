@@ -1,6 +1,6 @@
 import db from '../db/db.js';
 import PDFDocument from 'pdfkit';
-import { getHEIClassification } from '../utils/classification.js';
+import { getHEIClassification, getHPIClassification } from '../utils/classification.js';
 
 // =============================================================================
 // --- Helper Functions (Updated) ---
@@ -124,12 +124,13 @@ export default function generateReport(req, res) {
                     const avgHei = vals.count > 0 ? vals.hei / vals.count : 0;
                     return {
                         location,
-                        hpi: (vals.count > 0 ? vals.hpi / vals.count : 0).toFixed(2),
+                        hpi: avgHpi.toFixed(2),
                         hei: avgHei.toFixed(2),
                         pli: (vals.count > 0 ? vals.pli / vals.count : 0).toFixed(2),
                         mpi: (vals.count > 0 ? vals.mpi / vals.count : 0).toFixed(2),
                         count: vals.count,
-                        classification: getHEIClassification(avgHei),
+                        // 🔑 FIX: Correctly use avgHpi for HPI classification
+                        classification: getHPIClassification(avgHpi),
                     };
                 });
                 
