@@ -64,7 +64,7 @@ export const FeedbackList = ({ userSpecific = false }) => {
     const fetchFeedback = async () => {
       setIsLoading(true);
       try {
-        const endpoint = userSpecific ? '/api/feedback/user/feedback' : '/api/feedback';
+        const endpoint = userSpecific ? '/api/feedback/user-feedback' : '/api/feedback';
         const res = await API.get(endpoint);
         setFeedbackList(res.data);
       } catch (error) {

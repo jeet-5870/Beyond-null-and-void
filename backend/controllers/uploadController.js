@@ -2,7 +2,7 @@ import fs from 'fs';
 import csv from 'csv-parser';
 import db from '../db/db.js';
 import { calculateHMPI, calculateHEI, calculatePLI, calculateMPI, calculateCF } from '../utils/formulaEngine.js';
-import { getHEIClassification } from '../utils/classification.js';
+import { getHPIClassification } from '../utils/classification.js';
 
 async function sendCriticalAlertsToOfficials(alertData) {
   if (alertData.length === 0) return;
@@ -133,11 +133,12 @@ export default async function handleUpload(req, res, next) {
       const is_anomaly = (hei >= 50);
       const cluster_id = Math.floor(Math.random() * 3) + 1;
       
-      const classification = getHEIClassification(hei);
-      if (classification === 'Highly Polluted') {
+      const classification = getHPIClassification(hpi);
+      if (hpi > 200) { 
         generatedAlerts.push({
           location, hpi, hei,
-          message: `HEI score of ${hei.toFixed(2)} exceeds critical safety threshold. Immediate intervention required.`,
+          // 🔑 CHANGE: Update alert message to reference HPI and the new threshold (200)
+          message: `HPI score of ${hpi.toFixed(2)} exceeds critical safety threshold (200). Immediate intervention required.`,
           timestamp: new Date().toISOString()
         });
       }

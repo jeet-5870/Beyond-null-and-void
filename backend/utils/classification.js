@@ -1,9 +1,10 @@
-// utils/classification.js
+// backend/utils/classification.js
 
 export function getHPIClassification(hpi) {
-  if (hpi <= 100) return 'Low pollution';
-  if (hpi <= 200) return 'Medium pollution';
-  return 'High pollution';
+  // 🔑 FIX: Changed classification strings to match frontend badge component logic
+  if (hpi <= 100) return 'Safe'; // Changed 'Non pollution' to 'Safe'
+  if (hpi <= 200) return 'Polluted'; // Changed 'Low pollution' to 'Polluted'
+  return 'Highly Polluted'; // Changed 'High pollution' to 'Highly Polluted'
 }
 
 export function getHEIClassification(hei) {
