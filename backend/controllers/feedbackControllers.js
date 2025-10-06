@@ -44,10 +44,9 @@ export const getUserFeedback = async (req, res, next) => {
 export const getAllFeedback = async (req, res, next) => {
   try {
     const result = await db.query(`
-      SELECT f.feedback_id, f.message, f.submitted_at, u.email, u.fullname
-      FROM feedback f
-      JOIN users u ON f.user_id = u.user_id
-      ORDER BY f.submitted_at DESC
+      SELECT feedback_id, message, submitted_at
+      FROM feedback
+      ORDER BY submitted_at DESC
     `);
     res.status(200).json(result.rows);
   } catch (err) {
