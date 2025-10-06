@@ -22,13 +22,16 @@ const app = express();
 app.use(cors());
 app.use(express.json());
 
+const upload = multer({dest: '/uploads'});
+
 // Public routes
 app.use('/api/auth', authRoutes);
 app.use('/api/leaderboard', leaderboardRoutes);
 app.use('/api/feedback', feedbackRoutes);
 
 // Corrected route for historical uploads to be public
-app.use('/api/upload', uploadRoutes); 
+app.use('/api/upload/historical', upload.single('file'), uploadRoutes); 
+app.use('/api/upload', uploadRoutes);
 
 // Protected routes
 app.use('/api/samples', authMiddleware, resultRoutes);

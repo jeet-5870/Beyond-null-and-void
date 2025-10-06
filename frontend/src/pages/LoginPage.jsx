@@ -39,7 +39,7 @@ const LoginPage = ({ onLogin }) => {
     }
 
     try {
-      const res = await AuthAPI.post('/initiate-auth', { identifier, mode });
+      const res = await AuthAPI.post('/api/auth/initiate-auth', { identifier, mode });
       const data = res.data;
 
       if (data.nextStep === 'password') {
@@ -86,7 +86,7 @@ const LoginPage = ({ onLogin }) => {
 
     try {
       const payload = { identifier, password, fullname, role, mode };
-      const res = await AuthAPI.post('/password-auth', payload);
+      const res = await AuthAPI.post('/api/auth/password-auth', payload);
 
       if (res.data?.token) {
         localStorage.setItem('token', res.data.token);
@@ -112,7 +112,7 @@ const LoginPage = ({ onLogin }) => {
     setIsResettingPassword(true);
 
     try {
-      const res = await AuthAPI.post('/request-otp', { identifier });
+      const res = await AuthAPI.post('/api/auth/request-otp', { identifier });
       setStep(2);
       setMessage(res.data.message);
     } catch (err) {
@@ -152,7 +152,7 @@ const LoginPage = ({ onLogin }) => {
         ? { identifier, otp, newPassword } 
         : { identifier, otp };
         
-      const res = await AuthAPI.post('/verify-otp', payload);
+      const res = await AuthAPI.post('/api/auth/verify-otp', payload);
 
       if (res.data?.token) {
         localStorage.setItem('token', res.data.token);
