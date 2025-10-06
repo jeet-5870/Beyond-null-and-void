@@ -21,6 +21,10 @@ export const seedDatabase = async () => {
          VALUES ('Guest User', NULL, '9991234567', $1, 'guest')`,
         [passwordHash]
       );
+      await client.query(
+        `INSERT INTO users (fullname, email, phone, password_hash, role)
+        VALUES ('NGO User', 'ngo@example.com', null, $1, 'ngo')`
+      );
       console.log('✅ Default users seeded.');
     }
 
