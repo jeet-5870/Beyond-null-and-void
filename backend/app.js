@@ -15,6 +15,8 @@ import errorHandler from "./middleware/errorHandler.js";
 import authMiddleware from "./middleware/authMiddleware.js";
 import { initPostgresSchema } from './db/initSchema.js';
 import { seedDatabase } from "./db/seed.js";
+import multer from 'multer';
+import handleUpload from './controllers/uploadController.js';
 
 dotenv.config();
 
