@@ -1,7 +1,7 @@
 import axios from 'axios';
 
 // ✅ Load base URL from environment (no 'dotenv/config' required on frontend)
-const BASE_URL = process.env.BASE_URL;
+const BASE_URL = 'https://beyond-null-and-void.onrender.com';
 
 // 🔐 Token retrieval helper (safe for SSR)
 const getToken = () =>
