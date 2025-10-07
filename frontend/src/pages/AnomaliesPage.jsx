@@ -34,7 +34,7 @@ const AnomaliesPage = ({ role }) => {
     const link = document.createElement("a");
     const url = URL.createObjectURL(blob);
     link.setAttribute("href", url);
-    link.setAttribute("download", "anomaly_report_hpi.csv"); // 🔑 FIX: Update filename
+    link.setAttribute("download", "anomaly_report_hpi.csv"); // FIX: Update filename
     link.style.visibility = 'hidden';
     document.body.appendChild(link);
     link.click();
@@ -61,7 +61,10 @@ const AnomaliesPage = ({ role }) => {
 
       <Card>
         <CardHeader className="flex justify-between items-center">
-          <h3 className="text-lg font-semibold text-gray-800 dark:text-text-light">Anomaly Alerts Log (HPI $\mathbf{> 200}$)</h3>
+          {/* 🔑 FIX: Replaced '>' with the HTML entity '&gt;' to fix the JSX syntax error (Line 66) */}
+          <h3 className="text-lg font-semibold text-gray-800 dark:text-text-light">
+            Anomaly Alerts Log (HPI <span className="font-extrabold">&gt; 200</span>)
+          </h3>
           {isPrivilegedUser && (
             <button
               onClick={handleDownloadReport}
