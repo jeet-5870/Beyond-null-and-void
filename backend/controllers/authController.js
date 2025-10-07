@@ -4,9 +4,9 @@ import bcrypt from 'bcrypt';
 import jwt from 'jsonwebtoken';
 import db from '../db/db.js';
 import axios from 'axios';
-import nodemailer from 'nodemailer'; // 🔑 NEW: Import the nodemailer library
+import nodemailer from 'nodemailer'; 
 
-// 🔑 NEW: Initialize Nodemailer transporter
+// 🔑 Nodemailer transporter remains, but is only used as a fallback for email if SendGrid is missing.
 const transporter = nodemailer.createTransport({
   service: 'gmail',
   auth: {
@@ -27,66 +27,62 @@ const createToken = (user) => {
   );
 };
 
-// 🔑 MODIFIED: Sends OTP via Email or "SMS" through Nodemailer
+// 🔑 MODIFIED: Sends OTP via Email (SendGrid/Nodemailer) or simulates for Phone/missing config.
 const sendOtpAndRespond = async (userId, identifier, isEmail, res) => {
   const otp = generateOtp();
   const expiresAt = new Date(Date.now() + 5 * 60 * 1000); // OTP valid for 5 minutes
 
-  if (isEmail && process.env.SENDGRID_API_KEY) {
-    // --- Email Sending Logic (SendGrid) ---
-    const emailData = {
-      personalizations: [{ to: [{ email: identifier }] }],
-      from: { email: process.env.SENDER_EMAIL },
-      subject: 'Your Groundwater Analyzer Verification Code',
-      content: [
-        {
-          type: 'text/plain',
-          value: `Your verification code is: ${otp}. It is valid for 5 minutes.`,
-        },
-      ],
-    };
+  if (isEmail) {
+    if (process.env.SENDGRID_API_KEY) {
+      // --- Email Sending Logic (SendGrid) ---
+      const emailData = {
+        personalizations: [{ to: [{ email: identifier }] }],
+        from: { email: process.env.SENDER_EMAIL },
+        subject: 'Your Groundwater Analyzer Verification Code',
+        content: [
+          {
+            type: 'text/plain',
+            value: `Your verification code is: ${otp}. It is valid for 5 minutes.`,
+          },
+        ],
+      };
 
-    try {
-      await axios.post('https://api.sendgrid.com/v3/mail/send', emailData, {
-        headers: {
-          Authorization: `Bearer ${process.env.SENDGRID_API_KEY}`,
-          'Content-Type': 'application/json',
-        },
-      });
-      console.log(`[AUTH] Successfully sent OTP email to ${identifier}`);
-    } catch (error) {
-      console.error('[AUTH] Error sending OTP email via SendGrid:', error.response?.data);
-      console.log(`[AUTH] SIMULATED OTP for ${identifier}: ${otp}`);
-    }
-  } else if (!isEmail && process.env.GMAIL_USER) {
-    // --- 🔑 START: "SMS" via Email Logic (Nodemailer) ---
-    
-    // NOTE: This is a limitation. We need to guess the carrier gateway.
-    // For this example, we'll assume a common Indian carrier like Jio.
-    // A production app would need a more robust way to determine this.
-    const smsGatewayAddress = `${identifier}@jio.com`; 
-
-    const mailOptions = {
-        from: process.env.GMAIL_USER,
-        to: smsGatewayAddress,
-        subject: 'Verification Code',
-        text: `Your Groundwater Analyzer verification code is: ${otp}`
-    };
-
-    try {
+      try {
+        await axios.post('https://api.sendgrid.com/v3/mail/send', emailData, {
+          headers: {
+            Authorization: `Bearer ${process.env.SENDGRID_API_KEY}`,
+            'Content-Type': 'application/json',
+          },
+        });
+        console.log(`[AUTH] Successfully sent OTP email to ${identifier} via SendGrid`);
+      } catch (error) {
+        console.error('[AUTH] Error sending OTP email via SendGrid:', error.response?.data);
+        console.log(`[AUTH] SIMULATED OTP for Email ${identifier}: ${otp}`);
+      }
+    } else if (process.env.GMAIL_USER) {
+      // Fallback email using Nodemailer
+      const mailOptions = {
+          from: process.env.GMAIL_USER,
+          to: identifier,
+          subject: 'Verification Code',
+          text: `Your Groundwater Analyzer verification code is: ${otp}`
+      };
+      try {
         await transporter.sendMail(mailOptions);
-        console.log(`[AUTH] Successfully sent OTP "SMS" to ${identifier}`);
-    } catch (error) {
-        console.error('[AUTH] Error sending OTP via Nodemailer:', error);
-        console.log(`[AUTH] SIMULATED OTP for ${identifier}: ${otp}`);
+        console.log(`[AUTH] Successfully sent OTP email to ${identifier} via Nodemailer fallback`);
+      } catch (error) {
+        console.error('[AUTH] Error sending OTP email via Nodemailer fallback:', error);
+        console.log(`[AUTH] SIMULATED OTP for Email ${identifier}: ${otp}`);
+      }
+    } else {
+      console.log(`[AUTH] Email API keys not set. SIMULATED OTP for Email ${identifier}: ${otp}`);
     }
-    // --- 🔑 END: "SMS" via Email Logic ---
-    
   } else {
-    // Fallback to simulation if API keys are missing
-    console.log(`[AUTH] API keys not set. SIMULATED OTP for ${identifier}: ${otp}`);
+    // --- 🔑 FIX: Phone Number Logic ---
+    // Removed the flawed carrier gateway assumption. Requires a dedicated SMS API.
+    console.warn(`[AUTH] CRITICAL WARNING: Dedicated SMS API is required for reliable phone verification. SIMULATED OTP for Phone ${identifier}: ${otp}`);
   }
-
+    
   await db.query(
     'UPDATE users SET reset_token = $1, reset_token_expires = $2 WHERE user_id = $3',
     [otp, expiresAt, userId]

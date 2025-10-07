@@ -1,7 +1,7 @@
 // backend/controllers/mapController.js
 
 import db from '../db/db.js';
-import { getHPIClassification, getHEIClassification } from '../utils/classification.js';
+import { getHPIClassification } from '../utils/classification.js'; // 🔑 FIX: Removed getHEIClassification import
 
 export default async function getMapData(req, res, next) {
   const { userId, role } = req.user;
@@ -61,8 +61,8 @@ export default async function getMapData(req, res, next) {
       lng: row.lng,
       hpi: row.hpi,
       hei: row.hei,
-      hpiClassification: getHPIClassification(row.hpi),
-      heiClassification: getHEIClassification(row.hei)
+      classification: getHPIClassification(row.hpi),
+      // 🔑 FIX: Removed heiClassification
     }));
     res.json(grouped);
   } catch (err) {

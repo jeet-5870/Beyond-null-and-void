@@ -34,7 +34,7 @@ const AnomaliesPage = ({ role }) => {
     const link = document.createElement("a");
     const url = URL.createObjectURL(blob);
     link.setAttribute("href", url);
-    link.setAttribute("download", "anomaly_report.csv");
+    link.setAttribute("download", "anomaly_report_hpi.csv"); // 🔑 FIX: Update filename
     link.style.visibility = 'hidden';
     document.body.appendChild(link);
     link.click();
@@ -45,14 +45,14 @@ const AnomaliesPage = ({ role }) => {
 
   return (
     <div>
-      <h2 className="text-3xl font-bold text-gray-800 dark:text-text-light mb-6">Anomaly Detection</h2>
+      <h2 className="text-3xl font-bold text-gray-800 dark:text-text-light mb-6">Anomaly Detection (HPI-Based)</h2>
       
       {anomalies.length > 0 && (
         <div className="bg-red-100 dark:bg-danger/20 text-red-800 dark:text-danger p-4 rounded-md mb-8 flex justify-between items-center">
           <div className="flex items-center">
             <AlertTriangle className="h-6 w-6 mr-3" />
             <p className="font-medium">
-              {anomalies.length} abnormal spike(s) detected in water contamination levels.
+              {anomalies.length} abnormal spike(s) detected in **HPI** levels.
             </p>
           </div>
           <button className="p-1 rounded-full hover:bg-red-200 dark:hover:bg-danger/30"><X className="h-4 w-4" /></button>
@@ -61,7 +61,7 @@ const AnomaliesPage = ({ role }) => {
 
       <Card>
         <CardHeader className="flex justify-between items-center">
-          <h3 className="text-lg font-semibold text-gray-800 dark:text-text-light">Anomaly Alerts Log</h3>
+          <h3 className="text-lg font-semibold text-gray-800 dark:text-text-light">Anomaly Alerts Log (HPI $\mathbf{> 200}$)</h3>
           {isPrivilegedUser && (
             <button
               onClick={handleDownloadReport}
@@ -77,7 +77,7 @@ const AnomaliesPage = ({ role }) => {
             {isLoading ? (
               <p className="text-center py-4 text-gray-600 dark:text-text-muted">Loading anomalies...</p>
             ) : anomalies.length === 0 ? (
-              <p className="text-center py-4 text-gray-600 dark:text-text-muted">No anomalies detected.</p>
+              <p className="text-center py-4 text-gray-600 dark:text-text-muted">No HPI anomalies detected.</p>
             ) : (
               anomalies.map((alert, index) => (
                 <li key={index} className="py-3">

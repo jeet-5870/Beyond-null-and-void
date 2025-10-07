@@ -6,9 +6,4 @@ export function getHPIClassification(hpi) {
   if (hpi <= 200) return 'Polluted'; // Changed 'Low pollution' to 'Polluted'
   return 'Highly Polluted'; // Changed 'High pollution' to 'Highly Polluted'
 }
-
-export function getHEIClassification(hei) {
-  if (hei >= 20) return 'Highly Polluted';
-  if (hei >= 10) return 'Polluted';
-  return 'Safe';
-}
+// 🔑 REMOVED: getHEIClassification as classification is HPI-only

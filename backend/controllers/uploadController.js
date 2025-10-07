@@ -130,15 +130,16 @@ export default async function handleUpload(req, res, next) {
       const pli = calculatePLI(cfArray);
       const mpi = calculateMPI(concentrations);
 
-      const is_anomaly = (hei >= 50);
+      // 🔑 FIX: Change anomaly detection to be based on HPI > 200 (Highly Polluted)
+      const is_anomaly = (hpi > 200);
       const cluster_id = Math.floor(Math.random() * 3) + 1;
       
       const classification = getHPIClassification(hpi);
       if (hpi > 200) { 
         generatedAlerts.push({
           location, hpi, hei,
-          // 🔑 CHANGE: Update alert message to reference HPI and the new threshold (200)
-          message: `HPI score of ${hpi.toFixed(2)} exceeds critical safety threshold (200). Immediate intervention required.`,
+          // 🔑 FIX: Update alert message to reference HPI as the source of the anomaly
+          message: `CRITICAL HPI score of ${hpi.toFixed(2)} detected. Immediate intervention required.`,
           timestamp: new Date().toISOString()
         });
       }

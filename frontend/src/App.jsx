@@ -1,3 +1,5 @@
+// frontend/src/App.jsx
+
 import React, { useState, useEffect } from 'react';
 import { BrowserRouter as Router, Route, Routes, Navigate } from 'react-router-dom';
 import API, { AuthAPI } from './api.js';
@@ -64,7 +66,11 @@ function App() {
             path="/dashboard"
             element={isAuthenticated ? <Dashboard /> : <Navigate to="/login" />}
           />
-          <Route path="/historical-upload" element={<HistoricalUploadPage />} />
+          <Route 
+            path="/historical-upload" 
+            // 🔑 FIX: Remove authentication check to make it accessible without login
+            element={<HistoricalUploadPage />} 
+          />
           <Route path="/anomalies" element={isAuthenticated ? <AnomaliesPage /> : <Navigate to="/login" />} />
           <Route path="/hotspots" element={isAuthenticated ? <HotspotsPage /> : <Navigate to="/login" />} />
           <Route path="*" element={<Navigate to="/" />} />

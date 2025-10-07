@@ -74,8 +74,7 @@ const WaterQualityMap = ({ data, selectedLocation }) => {
               <div className="p-2 text-gray-900 dark:text-white bg-white dark:bg-secondary-dark rounded-lg">
                 <h1 className="text-lg font-semibold">{location.location}</h1>
                 <p>HPI: {location.hpi.toFixed(2)}</p>
-                {/* 🔑 FIX: Added HEI to the map popup for clarity and consistency with pin color */}
-                <p>HEI: {location.hei.toFixed(2)}</p> 
+                {/* 🔑 REMOVED: HEI removed from map popup */}
                 <p>Classification: {location.classification}</p>
               </div>
             </Popup>

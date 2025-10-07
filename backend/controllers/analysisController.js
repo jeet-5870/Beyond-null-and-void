@@ -1,7 +1,7 @@
 // backend/controllers/analysisController.js
 
 import db from '../db/db.js';
-import { getHEIClassification } from '../utils/classification.js';
+import { getHPIClassification } from '../utils/classification.js'; // 🔑 FIX: Use getHPIClassification
 
 /**
  * In a production environment, this function would execute a Python script
@@ -59,30 +59,43 @@ export const getAnalysisResults = async (req, res, next) => {
       }
     });
 
-    const hotspots = Object.values(clusters).map(c => ({
-      id: c.id,
-      avgHpi: c.totalHpi / c.count,
-      avgPli: c.totalPli / c.count,
-      locationCount: c.count,
-      center: {
-        lat: c.avgLat / c.count,
-        lng: c.avgLng / c.count,
-      },
-      // Simple risk classification based on HPI
-      risk: (c.totalHpi / c.count) > 200 ? 'High' : (c.totalHpi / c.count) > 100 ? 'Moderate' : 'Low',
-      lastUpdate: new Date().toISOString(), // Placeholder
-    }));
+    const hotspots = Object.values(clusters).map(c => {
+      const avgHpi = c.totalHpi / c.count;
+      let risk;
+      // 🔑 FIX: Use HPI classification logic for risk assessment
+      if (avgHpi > 200) {
+        risk = 'High';
+      } else if (avgHpi > 100) {
+        risk = 'Moderate';
+      } else {
+        risk = 'Low';
+      }
+      return {
+        id: c.id,
+        avgHpi: avgHpi,
+        avgPli: c.totalPli / c.count,
+        locationCount: c.count,
+        center: {
+          lat: c.avgLat / c.count,
+          lng: c.avgLng / c.count,
+        },
+        risk: risk, // Risk now based on HPI thresholds
+        lastUpdate: new Date().toISOString(), // Placeholder
+      };
+    });
     
     // --- Process Data for Anomalies ---
     const anomalies = rows
       .filter(row => row.is_anomaly)
       .map(row => ({
         location: row.location,
-        pollutant: 'Heavy Metals (HEI)', // Example
-        value: row.hei.toFixed(2),
-        threshold: '50.00', // Example threshold
+        // 🔑 FIX: Change pollutant name to HPI (as it's HPI-driven now)
+        pollutant: 'Heavy Metals (HPI)', 
+        value: row.hpi.toFixed(2), // 🔑 FIX: Use HPI value
+        threshold: '200.00', // 🔑 FIX: Use HPI threshold
         timestamp: row.sample_date,
-        message: `Abnormal HEI value of ${row.hei.toFixed(2)} detected.`
+        // 🔑 FIX: Update message to reflect HPI anomaly
+        message: `Abnormal HPI value of ${row.hpi.toFixed(2)} detected.`,
       }));
 
     res.json({ hotspots, anomalies });
@@ -90,4 +103,4 @@ export const getAnalysisResults = async (req, res, next) => {
   } catch (err) {
     next(err);
   }
-};  
+};

@@ -1,6 +1,6 @@
 import db from '../db/db.js';
 import PDFDocument from 'pdfkit';
-import { getHEIClassification, getHPIClassification } from '../utils/classification.js';
+import { getHPIClassification } from '../utils/classification.js'; // 🔑 FIX: Removed getHEIClassification import
 
 // =============================================================================
 // --- Helper Functions (Updated) ---
@@ -26,7 +26,7 @@ const addFooter = (doc, COLORS, pageNum) => {
 
 function drawPieChart(doc, data, x, y, radius) {
     doc.fontSize(14).font('Helvetica-Bold').fillColor('#000')
-        .text('Site Classification Overview', x - radius, y - radius - 40, { width: radius * 2, align: 'center' });
+        .text('Site Classification Overview (HPI)', x - radius, y - radius - 40, { width: radius * 2, align: 'center' }); // 🔑 FIX: Updated chart title
     const total = data.reduce((sum, item) => sum + item.count, 0);
     if (total === 0) {
         doc.fontSize(10).font('Helvetica').text('No data available for chart.', x - radius, y, { width: radius * 2, align: 'center' });
@@ -47,8 +47,9 @@ function drawPieChart(doc, data, x, y, radius) {
 }
 
 function drawBarChart(doc, data, x, y, width, height) {
+    // 🔑 FIX: Change title to reflect HPI
     doc.fontSize(14).font('Helvetica-Bold').fillColor('#000')
-        .text('Top 5 Polluted Locations (by HEI)', x, y - 40);
+        .text('Top 5 Polluted Locations (by HPI)', x, y - 40);
     if (data.length === 0) {
         doc.fontSize(10).font('Helvetica').text('No data available for chart.', x, y);
         return;
@@ -162,8 +163,9 @@ export default function generateReport(req, res) {
                     { label: 'Highly Polluted', count: classificationCounts['Highly Polluted'], color: COLORS.DANGER },
                 ], 120, currentY, 60);
 
-                const topPolluted = [...locationsData].sort((a, b) => b.hei - a.hei).slice(0, 5);
-                drawBarChart(doc, topPolluted.map(loc => ({ label: loc.location, value: parseFloat(loc.hei), color: COLORS.DANGER })), 300, currentY, 250, 120);
+                // 🔑 FIX: Sort and use HPI instead of HEI for the bar chart
+                const topPolluted = [...locationsData].sort((a, b) => parseFloat(b.hpi) - parseFloat(a.hpi)).slice(0, 5);
+                drawBarChart(doc, topPolluted.map(loc => ({ label: loc.location, value: parseFloat(loc.hpi), color: COLORS.DANGER })), 300, currentY, 250, 120);
 
                 // --- Detailed Analysis Pages ---
                 if (locationsData.length > 0) {
