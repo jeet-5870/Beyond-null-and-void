@@ -2,7 +2,8 @@ import React, { useState, useRef } from 'react';
 import { useNavigate } from 'react-router-dom';
 import { Card, CardHeader, CardContent } from '../components/card.jsx';
 import { Upload, Calendar, ArrowLeft } from 'lucide-react';
-import API from '../api.js';
+// 🔑 FIX: Import AuthAPI to ensure unauthenticated requests are used for the public route
+import API, { AuthAPI } from '../api.js'; 
 
 const HistoricalUploadPage = () => {
   const [file, setFile] = useState(null);
@@ -42,7 +43,9 @@ const HistoricalUploadPage = () => {
     setIsUploading(true);
 
     try {
-      const res = await API.post('/api/upload/historical', formData, {
+      // 🔑 FIX: Use AuthAPI.post for the public /api/upload/historical endpoint.
+      // This prevents sending potentially stale JWT tokens, resolving the upload failure.
+      const res = await AuthAPI.post('/api/upload/historical', formData, {
         headers: { 'Content-Type': 'multipart/form-data' }
       });
       setMessage(res.data.message || 'Upload successful');
