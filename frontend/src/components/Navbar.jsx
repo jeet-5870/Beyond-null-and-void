@@ -6,12 +6,15 @@ import { ThemeContext } from '../context/ThemeContext.jsx';
 const Navbar = () => {
   const navigate = useNavigate();
   const [isLoggedIn, setIsLoggedIn] = useState(false);
+  const [userRole, setUserRole] = useState(null);
   const [isMenuOpen, setIsMenuOpen] = useState(false);
   const { theme, toggleTheme } = useContext(ThemeContext);
 
   useEffect(() => {
     const token = localStorage.getItem('token');
+    const role = localStorage.getItem('role');
     setIsLoggedIn(!!token);
+    setUserRole(role);
   }, []);
 
   const handleLinkClick = () => {
@@ -25,6 +28,10 @@ const Navbar = () => {
     { href: '#partners', label: 'Partners' },
     { href: '#complaint', label: 'Complaint' },
   ];
+
+  if (userRole === 'admin') {
+    navLinks.push({ href: '#admin-settings', label: 'Admin Settings' });
+  }
 
   return (
     <nav className="fixed top-0 left-0 right-0 z-50 bg-white dark:bg-primary-dark/95 backdrop-blur-md shadow-md border-b border-gray-200 dark:border-gray-700" aria-label="Main Navigation">

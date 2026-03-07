@@ -13,6 +13,8 @@ async function sendCriticalAlertsToOfficials(alertData) {
 
 export default async function handleUpload(req, res, next) {
   const userId = req.user ? req.user.userId : null;
+  const userRole = req.user ? req.user.role : null;
+  const isGeneralUser = userRole === 'general';
   const { date: historicalDate } = req.body;
   const filePath = req.file?.path;
 
@@ -71,7 +73,7 @@ export default async function handleUpload(req, res, next) {
     }
     
     let finalUserId = userId;
-    if (!finalUserId) {
+    if (!finalUserId && !isGeneralUser) {
       const adminRes = await db.query("SELECT user_id FROM users WHERE email='admin@example.com'");
       if (adminRes.rows.length === 0) {
         throw new Error("Default admin user not found for public uploads.");
@@ -79,7 +81,8 @@ export default async function handleUpload(req, res, next) {
       finalUserId = adminRes.rows[0].user_id;
     }
     
-    await db.query('BEGIN');
+    const educationalResults = [];
+    if (!isGeneralUser) await db.query('BEGIN');
     
     let insertedCount = 0;
     for (const [key, metals] of Object.entries(rowsByLocation)) {
@@ -87,25 +90,29 @@ export default async function handleUpload(req, res, next) {
       const district = metals[0].district || location;
       const state = metals[0].state || 'N/A';
       
-      let locRes = await db.query('SELECT location_id FROM locations WHERE name = $1', [location]);
-      let location_id;
-      if (locRes.rows.length > 0) {
-        location_id = locRes.rows[0].location_id;
-      } else {
-        const insertLoc = await db.query(
-          `INSERT INTO locations (name, latitude, longitude, district, state) VALUES ($1, $2, $3, $4, $5) RETURNING location_id`,
-          [location, lat, lng, district, state]
+      let location_id = null;
+      let sample_id = null;
+      
+      if (!isGeneralUser) {
+        let locRes = await db.query('SELECT location_id FROM locations WHERE name = $1', [location]);
+        if (locRes.rows.length > 0) {
+          location_id = locRes.rows[0].location_id;
+        } else {
+          const insertLoc = await db.query(
+            `INSERT INTO locations (name, latitude, longitude, district, state) VALUES ($1, $2, $3, $4, $5) RETURNING location_id`,
+            [location, lat, lng, district, state]
+          );
+          location_id = insertLoc.rows[0].location_id;
+        }
+
+        const sampleDate = historicalDate ? new Date(historicalDate) : new Date();
+
+        const sampleRes = await db.query(
+          `INSERT INTO samples (location_id, sample_date, source_type, notes, user_id) VALUES ($1, $2, $3, $4, $5) RETURNING sample_id`,
+          [location_id, sampleDate.toISOString(), 'Groundwater', 'CSV import', finalUserId]
         );
-        location_id = insertLoc.rows[0].location_id;
+        sample_id = sampleRes.rows[0].sample_id;
       }
-
-      const sampleDate = historicalDate ? new Date(historicalDate) : new Date();
-
-      const sampleRes = await db.query(
-        `INSERT INTO samples (location_id, sample_date, source_type, notes, user_id) VALUES ($1, $2, $3, $4, $5) RETURNING sample_id`,
-        [location_id, sampleDate.toISOString(), 'Groundwater', 'CSV import', finalUserId]
-      );
-      const sample_id = sampleRes.rows[0].sample_id;
 
       const concentrations = [];
       const hpiStandards = [];
@@ -122,10 +129,12 @@ export default async function handleUpload(req, res, next) {
         heiStandards.push(standard.mac);
         cfArray.push(calculateCF(concentration, standard.mac));
         
-        await db.query(
-          `INSERT INTO metal_concentrations (sample_id, metal_name, concentration_ppm) VALUES ($1, $2, $3)`,
-          [sample_id, m.metal_name, concentration]
-        );
+        if (!isGeneralUser) {
+          await db.query(
+            `INSERT INTO metal_concentrations (sample_id, metal_name, concentration_ppm) VALUES ($1, $2, $3)`,
+            [sample_id, m.metal_name, concentration]
+          );
+        }
       }
 
       const hpi = calculateHMPI(concentrations, hpiStandards);
@@ -147,26 +156,40 @@ export default async function handleUpload(req, res, next) {
         });
       }
 
-      await db.query(
-        `INSERT INTO pollution_indices (sample_id, hpi, hei, pli, mpi, cf, is_anomaly, cluster_id) VALUES ($1, $2, $3, $4, $5, $6, $7, $8)`,
-        [sample_id, hpi, hei, pli, mpi, JSON.stringify(cfArray), is_anomaly, cluster_id]
-      );
-      insertedCount += metals.length;
+      if (isGeneralUser) {
+        educationalResults.push({
+          location, hpi, hei, pli, mpi, classification, is_anomaly
+        });
+      } else {
+        await db.query(
+          `INSERT INTO pollution_indices (sample_id, hpi, hei, pli, mpi, cf, is_anomaly, cluster_id) VALUES ($1, $2, $3, $4, $5, $6, $7, $8)`,
+          [sample_id, hpi, hei, pli, mpi, JSON.stringify(cfArray), is_anomaly, cluster_id]
+        );
+        insertedCount += metals.length;
+      }
     }
     
-    await db.query('COMMIT');
+    if (!isGeneralUser) await db.query('COMMIT');
     fs.unlinkSync(filePath);
     
     await sendCriticalAlertsToOfficials(generatedAlerts);
 
-    res.status(200).json({ 
-      message: 'Upload complete', 
-      inserted: insertedCount,
-      alerts: generatedAlerts,
-    });
+    if (isGeneralUser) {
+      res.status(200).json({
+        message: 'Educational Mode: Data processed but not saved.',
+        results: educationalResults,
+        alerts: generatedAlerts
+      });
+    } else {
+      res.status(200).json({ 
+        message: 'Upload complete', 
+        inserted: insertedCount,
+        alerts: generatedAlerts,
+      });
+    }
     
   } catch (err) {
-    await db.query('ROLLBACK');
+    if (!isGeneralUser) await db.query('ROLLBACK');
     console.error('❌ Upload failed:', err);
     if (filePath && fs.existsSync(filePath)) {
       fs.unlinkSync(filePath);

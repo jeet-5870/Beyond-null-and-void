@@ -16,6 +16,7 @@ import { ThemeProvider } from './context/ThemeContext.jsx';
 
 function App() {
   const [isAuthenticated, setIsAuthenticated] = useState(false);
+  const [userRole, setUserRole] = useState(null);
   const [isCheckingAuth, setIsCheckingAuth] = useState(true);
 
   useEffect(() => {
@@ -29,12 +30,15 @@ function App() {
 
       try {
         await AuthAPI.get('/verify-token');
+        const role = localStorage.getItem('role');
         setIsAuthenticated(true);
+        setUserRole(role);
       } catch (error) {
         console.error('Token verification failed:', error);
         localStorage.removeItem('token');
         localStorage.removeItem('role');
         setIsAuthenticated(false);
+        setUserRole(null);
       } finally {
         setIsCheckingAuth(false);
       }
@@ -58,6 +62,11 @@ function App() {
     <ThemeProvider>
       <Router>
         <Navbar />
+        {userRole === 'general' && (
+          <div className="fixed bottom-4 right-4 bg-accent-blue text-white px-4 py-2 rounded-full shadow-lg z-50 text-sm font-semibold flex items-center shadow-accent-blue/50">
+            📚 Educational Mode
+          </div>
+        )}
         <ToastContainer position="top-right" autoClose={5000} hideProgressBar={false} />
         <Routes>
           <Route path="/" element={<MainPage />} />
