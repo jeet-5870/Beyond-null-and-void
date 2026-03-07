@@ -34,7 +34,7 @@ export default async function handleUpload(req, res, next) {
 
   const rowsByLocation = {};
   const generatedAlerts = [];
-  const requiredHeaders = ['location', 'lat', 'lng', 'metal_name', 'concentration'];
+  const requiredHeaders = ['location', 'lat', 'lng', 'Lead_Concentration', 'Mercury_Concentration', 'Arsenic_Concentration'];
 
   try {
     await new Promise((resolve, reject) => {
@@ -52,7 +52,10 @@ export default async function handleUpload(req, res, next) {
         if (headersValid) {
           const key = `${row.location}_${row.lat}_${row.lng}`;
           if (!rowsByLocation[key]) rowsByLocation[key] = [];
-          rowsByLocation[key].push(row);
+          
+          rowsByLocation[key].push({ location: row.location, lat: row.lat, lng: row.lng, district: row.district, state: row.state, metal_name: 'Lead', concentration: row.Lead_Concentration });
+          rowsByLocation[key].push({ location: row.location, lat: row.lat, lng: row.lng, district: row.district, state: row.state, metal_name: 'Mercury', concentration: row.Mercury_Concentration });
+          rowsByLocation[key].push({ location: row.location, lat: row.lat, lng: row.lng, district: row.district, state: row.state, metal_name: 'Arsenic', concentration: row.Arsenic_Concentration });
         }
       }).on('end', resolve).on('error', reject);
     });

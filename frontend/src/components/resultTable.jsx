@@ -36,6 +36,15 @@ function ResultTable({ data, onShowOnMap, onShowPrediction }) {
                   Location
                 </th>
                 <th className="px-6 py-4 text-left text-xs font-semibold text-gray-500 dark:text-text-muted uppercase tracking-wider">
+                  Pb
+                </th>
+                <th className="px-6 py-4 text-left text-xs font-semibold text-gray-500 dark:text-text-muted uppercase tracking-wider">
+                  Hg
+                </th>
+                <th className="px-6 py-4 text-left text-xs font-semibold text-gray-500 dark:text-text-muted uppercase tracking-wider">
+                  As
+                </th>
+                <th className="px-6 py-4 text-left text-xs font-semibold text-gray-500 dark:text-text-muted uppercase tracking-wider">
                   HMPI
                 </th>
                 <th className="px-6 py-4 text-left text-xs font-semibold text-gray-500 dark:text-text-muted uppercase tracking-wider">
@@ -63,6 +72,15 @@ function ResultTable({ data, onShowOnMap, onShowPrediction }) {
                       <MapPin className="h-4 w-4 text-gray-500 dark:text-text-muted mr-2" />
                       <span className="font-medium text-gray-800 dark:text-text-light">{item.location}</span>
                     </div>
+                  </td>
+                  <td className="px-6 py-4 whitespace-nowrap text-sm font-mono text-gray-800 dark:text-text-light">
+                    {item.pb?.toFixed(2) || 'N/A'}
+                  </td>
+                  <td className="px-6 py-4 whitespace-nowrap text-sm font-mono text-gray-800 dark:text-text-light">
+                    {item.hg?.toFixed(2) || 'N/A'}
+                  </td>
+                  <td className="px-6 py-4 whitespace-nowrap text-sm font-mono text-gray-800 dark:text-text-light">
+                    {item.as?.toFixed(2) || 'N/A'}
                   </td>
                   <td className="px-6 py-4 whitespace-nowrap text-sm font-mono text-gray-800 dark:text-text-light">
                     {item.hpi?.toFixed(2)}

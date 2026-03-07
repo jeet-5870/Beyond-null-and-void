@@ -46,6 +46,7 @@ function calculateHEI(concentrations, standards) {
 /**
  * Heavy Metal Pollution Index (HMPI)
  * HMPI = Σ(Wi * Qi) / ΣWi
+ * Wi = 1 / Si (Inverse weighting for HPI calculation)
  */
 function calculateHMPI(concentrations, standards) {
   let numerator = 0;
@@ -61,6 +62,7 @@ function calculateHMPI(concentrations, standards) {
     }
 
     const Qi = (Mi / Si) * 100;
+    // Inverse weighting specifically for HPI formulation
     const Wi = 1 / Si;
 
     numerator += Qi * Wi;

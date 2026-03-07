@@ -94,10 +94,11 @@ export default function generateReport(req, res) {
     };
 
     let baseQuery = `
-        SELECT l.name AS location, pi.hpi, pi.hei, pi.pli, pi.mpi
+        SELECT l.name AS location, s.sample_id, pi.hpi, pi.hei, pi.pli, pi.mpi, mc.metal_name, mc.concentration_ppm
         FROM pollution_indices pi
         JOIN samples s ON pi.sample_id = s.sample_id
-        JOIN locations l ON s.location_id = l.location_id`;
+        JOIN locations l ON s.location_id = l.location_id
+        LEFT JOIN metal_concentrations mc ON s.sample_id = mc.sample_id`;
     const params = [];
 
     if (!['ngo', 'researcher', 'guest'].includes(role)) {
@@ -113,18 +114,27 @@ export default function generateReport(req, res) {
 
                 const locationsData = Object.entries(result.rows.reduce((acc, row) => {
                     if (!acc[row.location]) {
-                        acc[row.location] = { hpi: 0, hei: 0, pli: 0, mpi: 0, count: 0 };
+                        acc[row.location] = { hpi: 0, hei: 0, pli: 0, mpi: 0, count: 0, uniqueSamples: new Set(), metals: { Lead: [], Mercury: [], Arsenic: [] } };
                     }
-                    acc[row.location].hpi += parseFloat(row.hpi) || 0;
-                    acc[row.location].hei += parseFloat(row.hei) || 0;
-                    acc[row.location].pli += parseFloat(row.pli) || 0;
-                    acc[row.location].mpi += parseFloat(row.mpi) || 0;
-                    acc[row.location].count += 1;
+                    if (!acc[row.location].uniqueSamples.has(row.sample_id)) {
+                        acc[row.location].hpi += parseFloat(row.hpi) || 0;
+                        acc[row.location].hei += parseFloat(row.hei) || 0;
+                        acc[row.location].pli += parseFloat(row.pli) || 0;
+                        acc[row.location].mpi += parseFloat(row.mpi) || 0;
+                        acc[row.location].count += 1;
+                        acc[row.location].uniqueSamples.add(row.sample_id);
+                    }
+                    if (row.metal_name && row.concentration_ppm != null) {
+                        if (!acc[row.location].metals[row.metal_name]) {
+                            acc[row.location].metals[row.metal_name] = [];
+                        }
+                        acc[row.location].metals[row.metal_name].push(parseFloat(row.concentration_ppm));
+                    }
                     return acc;
                 }, {})).map(([location, vals]) => {
-                    // FIX: Calculate avgHpi and use it for getHPIClassification
                     const avgHpi = vals.count > 0 ? vals.hpi / vals.count : 0;
                     const avgHei = vals.count > 0 ? vals.hei / vals.count : 0;
+                    const getAvg = (arr) => arr.length > 0 ? (arr.reduce((a, b) => a + b, 0) / arr.length).toFixed(3) : 'N/A';
                     return {
                         location,
                         hpi: avgHpi.toFixed(2),
@@ -132,8 +142,10 @@ export default function generateReport(req, res) {
                         pli: (vals.count > 0 ? vals.pli / vals.count : 0).toFixed(2),
                         mpi: (vals.count > 0 ? vals.mpi / vals.count : 0).toFixed(2),
                         count: vals.count,
-                        // 🔑 FIX: Correctly use avgHpi for HPI classification
                         classification: getHPIClassification(avgHpi),
+                        pb: getAvg(vals.metals['Lead'] || []),
+                        hg: getAvg(vals.metals['Mercury'] || []),
+                        as: getAvg(vals.metals['Arsenic'] || [])
                     };
                 });
                 
@@ -177,7 +189,7 @@ export default function generateReport(req, res) {
                     currentY = 100;
 
                     locationsData.forEach((loc, index) => {
-                        if (currentY + 120 > doc.page.height - 50) {
+                        if (currentY + 150 > doc.page.height - 50) {
                             addFooter(doc, COLORS, pageNumber);
                             doc.addPage();
                             pageNumber++;
@@ -187,7 +199,7 @@ export default function generateReport(req, res) {
 
                         // Draw location card content...
                         const cardColor = getColorByClassification(loc.classification, COLORS);
-                        doc.roundedRect(50, currentY, doc.page.width - 100, 100, 5).fill(COLORS.SECONDARY);
+                        doc.roundedRect(50, currentY, doc.page.width - 100, 130, 5).fill(COLORS.SECONDARY);
                         doc.fontSize(16).font('Helvetica-Bold').fillColor(COLORS.TEXT_DARK).text(loc.location, 65, currentY + 15);
                         doc.fontSize(10).font('Helvetica').fillColor(COLORS.TEXT_MUTED).text(`Samples Analyzed: ${loc.count}`, 65, currentY + 38);
                         doc.fillColor(cardColor).roundedRect(doc.page.width - 225, currentY + 15, 160, 25, 5).fill();
@@ -198,7 +210,18 @@ export default function generateReport(req, res) {
                                 doc.fontSize(10).fillColor(COLORS.TEXT_MUTED).text(idx.label, x, currentY + 60);
                                 doc.fontSize(14).font('Helvetica-Bold').fillColor(COLORS.TEXT_DARK).text(idx.value, x, currentY + 75);
                             });
-                        currentY += 120;
+                            
+                        // --- Detailed Concentration Analysis ---
+                        const metalsY = currentY + 100;
+                        doc.fontSize(10).font('Helvetica-Bold').fillColor(COLORS.TEXT_DARK).text('Detailed Concentration Analysis (Avg ppm):', 70, metalsY);
+                        [{ label: 'Lead (Pb)', value: loc.pb }, { label: 'Mercury (Hg)', value: loc.hg }, { label: 'Arsenic (As)', value: loc.as }]
+                            .forEach((metal, i) => {
+                                const x = 70 + i * 140;
+                                doc.fontSize(10).font('Helvetica').fillColor(COLORS.TEXT_MUTED).text(`${metal.label}: `, x, metalsY + 15, { continued: true })
+                                   .font('Helvetica-Bold').fillColor(COLORS.TEXT_DARK).text(metal.value);
+                            });
+
+                        currentY += 150;
                     });
                      addFooter(doc, COLORS, pageNumber); // Add footer to the final page
                 } else {

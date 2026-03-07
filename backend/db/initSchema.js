@@ -50,6 +50,7 @@ export const initPostgresSchema = async () => {
       );
 
       CREATE TABLE IF NOT EXISTS metal_concentrations (
+        -- Supports Lead (Pb), Mercury (Hg), Arsenic (As), etc.
         concentration_id SERIAL PRIMARY KEY,
         sample_id INTEGER REFERENCES samples(sample_id),
         metal_name TEXT,
