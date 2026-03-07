@@ -101,7 +101,7 @@ const PredictionChart = ({ location, onBack }) => {
       },
       title: {
         display: true,
-        text: `Predicted HPI for ${location} (Next 7 Days)`,
+        text: `Predicted HPI for ${location} (Next 6 Months)`,
         color: textColor,
       },
     },
@@ -143,7 +143,7 @@ const PredictionChart = ({ location, onBack }) => {
             <ArrowLeft className="h-5 w-5 text-gray-600 dark:text-text-muted" />
           </button>
           <Zap className="h-5 w-5 text-accent-blue" />
-          <h3 className="text-xl font-bold text-gray-800 dark:text-text-light">{location} - Future Prediction (7 Days)</h3>
+          <h3 className="text-xl font-bold text-gray-800 dark:text-text-light">{location} - ML Future Prediction (6 Months)</h3>
         </div>
       </CardHeader>
       <CardContent>
@@ -169,8 +169,16 @@ const PredictionChart = ({ location, onBack }) => {
                 <status.icon className={`h-5 w-5 ${status.color}`} />
                 <span className={status.color}>Prediction Status: {status.text}</span>
               </p>
-              <p className="text-sm text-gray-600 dark:text-text-muted mt-1">
-                This is an ML-generated prediction for the next 7 days, accessible only to Researchers and NGOs.
+              
+              {/* ML CONFIDENCE SCORE RENDER */}
+              {predictionData.length > 0 && predictionData[0].confidence_score !== undefined && (
+                <div className="mt-2 text-sm font-semibold p-2 bg-blue-100 dark:bg-blue-900/40 text-blue-800 dark:text-blue-300 rounded inline-block">
+                  🧠 ML Model Confidence: {predictionData[0].confidence_score.toFixed(1)}%
+                </div>
+              )}
+
+              <p className="text-sm text-gray-600 dark:text-text-muted mt-2">
+                This is an ML-generated Simple Linear Regression prediction for the next 6 months.
               </p>
             </div>
           </>

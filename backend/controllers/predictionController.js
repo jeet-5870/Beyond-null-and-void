@@ -1,69 +1,85 @@
 // backend/controllers/predictionController.js
 
 import db from '../db/db.js';
+import SimpleLinearRegression from 'ml-regression-simple-linear';
 
 /**
- * Mocks a machine learning prediction model by fetching the latest HPI
- * and extrapolating a future trend over the next 7 days.
+ * Uses Simple Linear Regression to model the historical HPI trend
+ * and extrapolate a future trend over the next 6 months (approx 180 days).
  */
 const getFuturePrediction = async (req, res, next) => {
   const { location } = req.params;
 
   try {
-    // 1. Fetch the latest HPI for the given location
-    const latestHPIQuery = `
-      SELECT pi.hpi
+    // 1. Fetch all historical HPI data for the given location, ordered chronologically
+    const historyQuery = `
+      SELECT pi.hpi, s.sample_date, pi.computed_on
       FROM pollution_indices pi
       JOIN samples s ON pi.sample_id = s.sample_id
       JOIN locations l ON s.location_id = l.location_id
       WHERE l.name = $1
-      ORDER BY s.sample_date DESC, pi.computed_on DESC
-      LIMIT 1;
+      ORDER BY s.sample_date ASC, pi.computed_on ASC;
     `;
     
-    const { rows } = await db.query(latestHPIQuery, [location]);
+    const { rows } = await db.query(historyQuery, [location]);
     
     if (rows.length === 0) {
       return res.status(404).json({ error: 'No historical data found for this location to make a prediction.' });
     }
     
-    const currentHPI = rows[0].hpi;
-    const predictionDays = 7;
-    const prediction = [];
-    let hpiValue = currentHPI;
+    // 2. Prepare data for ML Regression (X = days since first sample, Y = HPI)
+    const firstDate = new Date(rows[0].sample_date || rows[0].computed_on).getTime();
+    const xValues = [];
+    const yValues = [];
     
-    // 2. Simulate a future trend (simple, non-linear extrapolation)
-    for (let i = 0; i < predictionDays; i++) {
-        const date = new Date();
-        date.setDate(date.getDate() + i + 1); // Start from tomorrow
+    // Include all historical points in the model
+    rows.forEach(row => {
+        const currentDate = new Date(row.sample_date || row.computed_on).getTime();
+        const daysDiff = (currentDate - firstDate) / (1000 * 3600 * 24);
+        xValues.push(daysDiff);
+        yValues.push(parseFloat(row.hpi));
+    });
+
+    // 3. Train the model
+    // If there's only 1 point, regression will fail or be flat. 
+    // We add a slight duplicate variation just to let the math run safely if needed,
+    // though in reality 1 point is just a flat line.
+    if (xValues.length === 1) {
+        xValues.push(xValues[0] + 1);
+        yValues.push(yValues[0]);
+    }
+
+    const regression = new SimpleLinearRegression(xValues, yValues);
+    const score = regression.score(xValues, yValues);
+    const confidenceScore = Math.min(100, Math.max(0, Math.abs(score.r) * 100));
+
+    // 4. Extrapolate (Generate Data Points) 
+    // We predict a 6-month trend. To avoid returning 180 rows, we can return ~7 interval points.
+    // e.g., today, +30 days, +60 days, +90 days, +120 days, +150 days, +180 days
+    const predictionPoints = [];
+    const today = new Date();
+    const todayDaysDiff = (today.getTime() - firstDate) / (1000 * 3600 * 24);
+    
+    const intervals = [1, 30, 60, 90, 120, 150, 180]; // Future days from today
+
+    for (let i = 0; i < intervals.length; i++) {
+        const futureDate = new Date();
+        futureDate.setDate(today.getDate() + intervals[i]);
         
-        // Mock Trend Logic: 
-        // Highly Polluted (HPI > 200) tends to slightly decrease (due to awareness/intervention)
-        // Safe/Polluted (HPI <= 200) tends to slightly increase (due to continuous pollution)
-        let changeFactor = 0;
+        const futureXDiff = todayDaysDiff + intervals[i];
+        let predictedHPI = regression.predict(futureXDiff);
         
-        if (hpiValue > 200) {
-            // Slight decrease (randomly between -5 and -1)
-            changeFactor = -(Math.random() * 4 + 1); 
-        } else if (hpiValue > 100) {
-            // Stable to slight increase (randomly between -1 and +3)
-            changeFactor = (Math.random() * 4) - 1;
-        } else {
-            // Slight increase (randomly between 0 and +2)
-            changeFactor = Math.random() * 2; 
-        }
+        // Ensure HPI doesn't drop below a physical baseline 
+        predictedHPI = Math.max(10, predictedHPI); 
         
-        hpiValue += changeFactor;
-        // Ensure HPI doesn't drop below a minimum safe level (e.g., 50)
-        hpiValue = Math.max(50, hpiValue); 
-        
-        prediction.push({
-            date: date.toISOString().split('T')[0],
-            hpi: +hpiValue.toFixed(2), // Ensure it's a number and formatted
+        predictionPoints.push({
+            date: futureDate.toISOString().split('T')[0],
+            hpi: +predictedHPI.toFixed(2),
+            confidence_score: +confidenceScore.toFixed(2)
         });
     }
 
-    res.json(prediction);
+    res.json(predictionPoints);
 
   } catch (err) {
     console.error('DB error in getFuturePrediction:', err.message);
@@ -71,4 +87,4 @@ const getFuturePrediction = async (req, res, next) => {
   }
 };
 
-export default getFuturePrediction; // 🔑 FIX: Export as default
+export default getFuturePrediction;

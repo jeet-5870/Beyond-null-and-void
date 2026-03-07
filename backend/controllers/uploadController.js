@@ -2,7 +2,16 @@ import fs from 'fs';
 import csv from 'csv-parser';
 import db from '../db/db.js';
 import { calculateHMPI, calculateHEI, calculatePLI, calculateMPI, calculateCF } from '../utils/formulaEngine.js';
-import { getHPIClassification } from '../utils/classification.js';
+import { kmeans } from 'ml-kmeans';
+
+/** Helper function to calculate mean and standard deviation */
+function getMeanAndStdDev(values) {
+  if (!values || values.length === 0) return { mean: 0, stdDev: 0 };
+  const n = values.length;
+  const mean = values.reduce((a, b) => a + b, 0) / n;
+  const variance = values.reduce((a, b) => a + Math.pow(b - mean, 2), 0) / n;
+  return { mean, stdDev: Math.sqrt(variance) };
+}
 
 async function sendCriticalAlertsToOfficials(alertData) {
   if (alertData.length === 0) return;
@@ -142,16 +151,74 @@ export default async function handleUpload(req, res, next) {
       const pli = calculatePLI(cfArray);
       const mpi = calculateMPI(concentrations);
 
-      // 🔑 FIX: Change anomaly detection to be based on HPI > 200 (Highly Polluted)
-      const is_anomaly = (hpi > 200);
-      const cluster_id = Math.floor(Math.random() * 3) + 1;
+      // === ML ANOMALY DETECTION (Z-Score Approach) ===
+      // Fetch historical concentrations for this location to find mean & stddev
+      const histRes = await db.query(`
+        SELECT mc.metal_name, mc.concentration_ppm 
+        FROM metal_concentrations mc
+        JOIN samples s ON mc.sample_id = s.sample_id
+        WHERE s.location_id = $1
+      `, [location_id]);
+
+      let is_anomaly = false;
+      const historyByMetal = { Lead: [], Mercury: [], Arsenic: [] };
+      histRes.rows.forEach(r => {
+        if (historyByMetal[r.metal_name]) {
+          historyByMetal[r.metal_name].push(r.concentration_ppm);
+        }
+      });
+
+      for (const m of metals) {
+         const historicalVals = historyByMetal[m.metal_name] || [];
+         if (historicalVals.length >= 3) {
+            const { mean, stdDev } = getMeanAndStdDev(historicalVals);
+            if (stdDev > 0) {
+              const currentVal = parseFloat(m.concentration);
+              const zScore = Math.abs((currentVal - mean) / stdDev);
+              if (zScore > 2.5) { // Threshold for anomaly
+                is_anomaly = true;
+              }
+            }
+         }
+      }
+
+      // Fallback or secondary check
+      if (hpi > 200) {
+        is_anomaly = true;
+      }
+
+      // === ML CLUSTERING (K-Means) ===
+      // Fetch recent indices to cluster
+      const recentIndices = await db.query(`
+        SELECT hpi, hei, pli FROM pollution_indices
+        WHERE hpi IS NOT NULL AND hei IS NOT NULL AND pli IS NOT NULL
+        ORDER BY computed_on DESC LIMIT 50
+      `);
+      
+      let cluster_id = 1;
+      if (recentIndices.rows.length >= 5) {
+        const dataForClustering = recentIndices.rows.map(r => [r.hpi, r.hei, r.pli]);
+        // Add the current point to be clustered
+        dataForClustering.push([hpi, hei, pli]);
+        
+        try {
+          const numClusters = Math.min(3, dataForClustering.length);
+          const result = kmeans(dataForClustering, numClusters, { initialization: 'kmeans++' });
+          // The last element's cluster is our assigned cluster
+          cluster_id = result.clusters[dataForClustering.length - 1] + 1; 
+        } catch (clusterErr) {
+          console.error("Clustering error:", clusterErr);
+        }
+      } else {
+        cluster_id = Math.floor(Math.random() * 3) + 1; // Fallback
+      }
       
       const classification = getHPIClassification(hpi);
-      if (hpi > 200) { 
+      if (is_anomaly) { 
         generatedAlerts.push({
           location, hpi, hei,
-          // 🔑 FIX: Update alert message to reference HPI as the source of the anomaly
-          message: `CRITICAL HPI score of ${hpi.toFixed(2)} detected. Immediate intervention required.`,
+          // 🔑 FIX: Update alert message to reference ML Anomaly
+          message: `CRITICAL Anomaly detected at ${location}. HPI: ${hpi.toFixed(2)}. This deviates significantly from historical trends.`,
           timestamp: new Date().toISOString()
         });
       }
