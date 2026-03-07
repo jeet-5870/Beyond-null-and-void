@@ -151,14 +151,17 @@ export default async function handleUpload(req, res, next) {
       const pli = calculatePLI(cfArray);
       const mpi = calculateMPI(concentrations);
 
-      // === ML ANOMALY DETECTION (Z-Score Approach) ===
-      // Fetch historical concentrations for this location to find mean & stddev
+      // === ML ANOMALY DETECTION (Seasonal Z-Score Approach) ===
+      // Fetch historical concentrations for this location for the SAME MONTH across previous years
+      const currentMonth = new Date(historicalDate || new Date()).getMonth() + 1;
+      
       const histRes = await db.query(`
         SELECT mc.metal_name, mc.concentration_ppm 
         FROM metal_concentrations mc
         JOIN samples s ON mc.sample_id = s.sample_id
         WHERE s.location_id = $1
-      `, [location_id]);
+        AND EXTRACT(MONTH FROM s.sample_date) = $2
+      `, [location_id, currentMonth]);
 
       let is_anomaly = false;
       const historyByMetal = { Lead: [], Mercury: [], Arsenic: [] };
@@ -215,12 +218,19 @@ export default async function handleUpload(req, res, next) {
       
       const classification = getHPIClassification(hpi);
       if (is_anomaly) { 
-        generatedAlerts.push({
+        const alertPayload = {
           location, hpi, hei,
-          // 🔑 FIX: Update alert message to reference ML Anomaly
-          message: `CRITICAL Anomaly detected at ${location}. HPI: ${hpi.toFixed(2)}. This deviates significantly from historical trends.`,
+          message: `CRITICAL Seasonal Anomaly detected at ${location} (Month: ${currentMonth}). HPI: ${hpi.toFixed(2)}. This deviates significantly from historical trends for this specific season.`,
           timestamp: new Date().toISOString()
-        });
+        };
+        
+        generatedAlerts.push(alertPayload);
+        
+        // 🔑 FIX: Emit websocket event to all connected clients
+        if (req.io) {
+            console.log("📡 Emitting Real-Time WebSocket Anomaly Alert...");
+            req.io.emit('new-anomaly', alertPayload);
+        }
       }
 
       if (isGeneralUser) {

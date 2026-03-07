@@ -76,6 +76,19 @@ function getColorByClassification(classification, COLORS) {
     return colorMap[classification] || COLORS.DANGER;
 }
 
+function getHealthAdvice(classification) {
+    switch (classification) {
+        case 'Safe':
+            return "Health Advice: Safe for generic ingestion & agricultural irrigation.";
+        case 'Polluted':
+            return "Health Advice: Boil and filter before use. Unsafe for direct ingestion.";
+        case 'Highly Polluted':
+            return "Health Advice: Hazardous! Do not touch or ingest. Requires critical intervention.";
+        default:
+            return "Health Advice: Status unknown. Proceed with caution.";
+    }
+}
+
 // =============================================================================
 // --- Main Route Handler (Updated Logic) ---
 // =============================================================================
@@ -221,7 +234,11 @@ export default function generateReport(req, res) {
                                    .font('Helvetica-Bold').fillColor(COLORS.TEXT_DARK).text(metal.value);
                             });
 
-                        currentY += 150;
+                        const adviceY = metalsY + 40;
+                        doc.fontSize(10).font('Helvetica-Bold').fillColor(getColorByClassification(loc.classification, COLORS))
+                           .text(getHealthAdvice(loc.classification), 70, adviceY);
+
+                        currentY += 165;
                     });
                      addFooter(doc, COLORS, pageNumber); // Add footer to the final page
                 } else {

@@ -3,6 +3,10 @@ import React, { useState, useEffect } from 'react';
 import { AlertTriangle, Download, X } from 'lucide-react';
 import { Card, CardHeader, CardContent } from '../components/card.jsx';
 import API from '../api.js';
+import { io } from 'socket.io-client';
+import { toast } from 'react-toastify';
+
+const socket = io('http://localhost:3000'); // Adjust URL correctly for production
 
 const AnomaliesPage = ({ role }) => {
   const [anomalies, setAnomalies] = useState([]);
@@ -21,6 +25,25 @@ const AnomaliesPage = ({ role }) => {
       }
     };
     fetchAnalysis();
+
+    // 📡 Socket logic to listen for real-time anomalies
+    socket.on('new-anomaly', (data) => {
+      // Create a payload that aligns with the previous REST endpoint structures
+      const liveAnomaly = {
+        location: data.location,
+        pollutant: 'HPI/Metals',
+        value: Number(data.hpi).toFixed(2),
+        threshold: '> Seasonal Mean',
+        timestamp: data.timestamp
+      };
+
+      setAnomalies(prev => [liveAnomaly, ...prev]);
+      toast.error(`🚨 New Anomaly at ${data.location}! HPI: ${data.hpi.toFixed(2)}`);
+    });
+
+    return () => {
+      socket.off('new-anomaly');
+    };
   }, []);
 
   const handleDownloadReport = () => {
@@ -45,10 +68,10 @@ const AnomaliesPage = ({ role }) => {
 
   return (
     <div>
-      <h2 className="text-3xl font-bold text-gray-800 dark:text-text-light mb-6">Anomaly Detection (HPI-Based)</h2>
+      <h2 className="text-3xl font-bold text-gray-800 dark:text-text-light mb-6">Real-Time Anomaly Dashboard</h2>
       
       {anomalies.length > 0 && (
-        <div className="bg-red-100 dark:bg-danger/20 text-red-800 dark:text-danger p-4 rounded-md mb-8 flex justify-between items-center">
+        <div className="bg-red-100 dark:bg-danger/20 text-red-800 dark:text-danger p-4 rounded-md mb-8 flex justify-between items-center shadow-lg shadow-red-500/10">
           <div className="flex items-center">
             <AlertTriangle className="h-6 w-6 mr-3" />
             <p className="font-medium">
@@ -62,8 +85,9 @@ const AnomaliesPage = ({ role }) => {
       <Card>
         <CardHeader className="flex justify-between items-center">
           {/* 🔑 FIX: Replaced '>' with the HTML entity '&gt;' to fix the JSX syntax error (Line 66) */}
-          <h3 className="text-lg font-semibold text-gray-800 dark:text-text-light">
-            Anomaly Alerts Log (HPI <span className="font-extrabold">&gt; 200</span>)
+          <h3 className="text-lg font-semibold text-gray-800 dark:text-text-light flex items-center gap-2">
+            <span className="animate-pulse h-3 w-3 bg-red-500 rounded-full inline-block"></span>
+            Live Anomaly Feed
           </h3>
           {isPrivilegedUser && (
             <button

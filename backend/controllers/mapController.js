@@ -11,43 +11,35 @@ export default async function getMapData(req, res, next) {
   
   if (role === 'ngo' || role === 'researcher' || role === 'guest') {
     query = `
-      WITH latest_samples AS (
-        SELECT DISTINCT ON (location_id) 
-          * FROM samples 
-        ORDER BY location_id, sample_date DESC
-      )
       SELECT
         s.sample_id AS id,
         l.name AS location,
         l.latitude AS lat,
         l.longitude AS lng,
         pi.hpi,
-        pi.hei
-      FROM latest_samples s
+        pi.hei,
+        s.sample_date
+      FROM samples s
       JOIN locations l ON s.location_id = l.location_id
       JOIN pollution_indices pi ON s.sample_id = pi.sample_id
-      ORDER BY s.sample_id;
+      ORDER BY s.sample_date ASC;
     `;
     params = []; 
   } else {
     query = `
-      WITH latest_samples AS (
-        SELECT DISTINCT ON (location_id) 
-          * FROM samples 
-        WHERE user_id = $1
-        ORDER BY location_id, sample_date DESC
-      )
       SELECT
         s.sample_id AS id,
         l.name AS location,
         l.latitude AS lat,
         l.longitude AS lng,
         pi.hpi,
-        pi.hei
-      FROM latest_samples s
+        pi.hei,
+        s.sample_date
+      FROM samples s
       JOIN locations l ON s.location_id = l.location_id
       JOIN pollution_indices pi ON s.sample_id = pi.sample_id
-      ORDER BY s.sample_id;
+      WHERE s.user_id = $1
+      ORDER BY s.sample_date ASC;
     `;
     params = [userId];
   }
@@ -61,6 +53,7 @@ export default async function getMapData(req, res, next) {
       lng: row.lng,
       hpi: row.hpi,
       hei: row.hei,
+      sample_date: row.sample_date,
       classification: getHPIClassification(row.hpi),
       // FIX: Removed heiClassification
     }));

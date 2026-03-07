@@ -1,3 +1,5 @@
+import http from 'http';
+import { Server } from 'socket.io';
 import express from 'express';
 import cors from 'cors';
 import dotenv from 'dotenv';
@@ -22,8 +24,30 @@ import path from 'path';
 dotenv.config();
 
 const app = express();
+const httpServer = http.createServer(app);
+const io = new Server(httpServer, {
+  cors: {
+    origin: '*', // Customize this later to match frontend origin
+    methods: ['GET', 'POST']
+  }
+});
+
 app.use(cors());
 app.use(express.json());
+
+// Attach io to requests so controllers can emit
+app.use((req, res, next) => {
+  req.io = io;
+  next();
+});
+
+// Setup websocket listeners
+io.on('connection', (socket) => {
+  console.log('⚡ A user connected via WebSocket:', socket.id);
+  socket.on('disconnect', () => {
+    console.log('User disconnected from WebSocket:', socket.id);
+  });
+});
 
 // Configure multer to use the safe uploads path
 const upload = multer({dest: path.join(process.cwd(), 'uploads')});
@@ -61,7 +85,7 @@ app.get('/health', (req, res) => {
 
 const PORT = process.env.PORT || 3000;
 
-app.listen(PORT, async () => {
+httpServer.listen(PORT, async () => {
   console.log(`🚀 Server is live on port ${PORT}`);
 
   try {
