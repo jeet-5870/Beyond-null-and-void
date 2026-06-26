@@ -3,23 +3,18 @@ import jwt from 'jsonwebtoken';
 export default function authMiddleware(req, res, next) {
   const authHeader = req.headers.authorization;
 
-  if (!authHeader) {
-    return res.status(401).json({ error: 'No token provided' });
+  if (!authHeader || !authHeader.startsWith('Bearer ')) {
+    return res.status(401).json({ error: 'Access Denied: No Token Provided.' });
   }
 
-  const token = authHeader.split(' ')[1]; // Extract the token from the "Bearer <token>" header
-
-  if (!token) {
-    return res.status(401).json({ error: 'Malformed token' });
-  }
+  const token = authHeader.split(' ')[1];
 
   try {
-    // 🔑 Verify the token
-    const decoded = jwt.verify(token, process.env.JWT_SECRET);
-    req.user = decoded; // Attach the decoded user payload to the request
+    const verified = jwt.verify(token, process.env.JWT_SECRET);
+    req.user = verified; // Injects payload attributes safely into req.user
     next();
   } catch (err) {
-    return res.status(401).json({ error: 'Invalid token' });
+    res.status(403).json({ error: 'Invalid or Expired Authentication Token.' });
   }
 }
 

@@ -8,6 +8,8 @@ import path from 'path'; // 🔑 NEW IMPORT
 
 // 🔑 REMOVED: Manual directory creation logic removed
 
+const router = express.Router();
+
 const upload = multer({
   // 🔑 FIX: Use path.join(process.cwd(), 'uploads') to create a directory inside the project root
   dest: path.join(process.cwd(), 'uploads'),
@@ -18,9 +20,10 @@ const upload = multer({
   }
 });
 
-const router = express.Router();
+// Endpoint 1: Public Educational Dry-Run historical report ingest
+router.post('/historical', upload.single('file'), handleUpload);
 
-// Protected route for standard uploads from the dashboard
+// Endpoint 2: Protected route for standard uploads from the dashboard
 router.post('/', authMiddleware, upload.single('file'), handleUpload);
 
 export default router;
