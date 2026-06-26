@@ -9,15 +9,6 @@ function calculateCF(concentration, standard) {
 }
 
 /**
- * Pollution Load Index (PLI) = (CF1 * CF2 * ... * CFn)^(1/n)
- */
-function calculatePLI(cfArray) {
-  if (cfArray.length === 0) return 0;
-  const product = cfArray.reduce((acc, val) => acc * val, 1);
-  return +(Math.pow(product, 1 / cfArray.length).toFixed(3));
-}
-
-/**
  * Heavy Metal Evaluation Index (HEI)
  * HEI = Σ(Hci / Maci)
  */
@@ -48,7 +39,7 @@ function calculateHEI(concentrations, standards) {
  * HMPI = Σ(Wi * Qi) / ΣWi
  * Wi = 1 / Si (Inverse weighting for HPI calculation)
  */
-function calculateHMPI(concentrations, standards) {
+function calculateHPI(concentrations, standards) {
   let numerator = 0;
   let denominator = 0;
 
@@ -76,19 +67,28 @@ function calculateHMPI(concentrations, standards) {
   return +(numerator / denominator).toFixed(3);
 }
 
-/**
- * Metal Pollution Index (MPI) = (M1 * M2 * ... * Mn)^(1/n)
- */
-function calculateMPI(concentrations) {
-    if (concentrations.length === 0) return 0;
-  const product = concentrations.reduce((acc, val) => acc * val, 1);
-  return +(Math.pow(product, 1 / concentrations.length).toFixed(3));
+
+// Private reusable mathematical helper
+const calculateGeometricMean = (arr) => {
+  if (!arr || arr.length === 0) return 0;
+  const product = arr.reduce((acc, val) => acc * val, 1);
+  return +(Math.pow(product, 1 / arr.length).toFixed(3));
+};
+
+function calculatePLI(concentrations, standards) {
+  const cfArray = concentrations.map((c, i) => calculateCF(c, standards[i]));
+  return calculateGeometricMean(cfArray);
 }
+
+function calculateMPI(concentrations) {
+  return calculateGeometricMean(concentrations);
+}
+
 
 export {
   calculateCF,
   calculatePLI,
-  calculateHMPI,
+  calculateHPI,
   calculateMPI,
   calculateHEI
 };
