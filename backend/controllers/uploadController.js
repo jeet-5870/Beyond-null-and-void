@@ -1,7 +1,7 @@
 import fs from 'fs';
 import csv from 'csv-parser';
 import db from '../db/db.js';
-import { calculateHMPI, calculateHEI, calculatePLI, calculateMPI, calculateCF } from '../utils/formulaEngine.js';
+import { calculateHPI, calculateHEI, calculatePLI, calculateMPI, calculateCF } from '../utils/formulaEngine.js';
 import { kmeans } from 'ml-kmeans';
 
 /** Helper function to calculate mean and standard deviation */
