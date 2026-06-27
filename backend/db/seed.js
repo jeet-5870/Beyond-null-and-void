@@ -18,7 +18,7 @@ export const seedDatabase = async () => {
       );
       await client.query(
         `INSERT INTO users (fullname, email, phone, password_hash, role)
-         VALUES ('Researcher', 'admin@example.com', NULL, $1, 'researcher')`,
+         VALUES ('Researcher', 'researcher@example.com', NULL, $1, 'researcher')`,
         [passwordHash]
       );
       await client.query(
