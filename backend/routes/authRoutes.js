@@ -6,9 +6,9 @@ import {
   passwordAuth, 
   verifyOtp,
   requestOtp,
-  verifyToken // 🔑 NEW IMPORT
+  verifyToken
 } from '../controllers/authController.js';
-import authMiddleware from '../middleware/authMiddleware.js'; // 🔑 NEEDED for protected route
+import authMiddleware from '../middleware/authMiddleware.js';
 
 const router = express.Router();
 
@@ -24,9 +24,7 @@ router.post('/verify-otp', verifyOtp);
 // Explicit OTP request route (e.g., if user forgets password/wants passwordless entry)
 router.post('/request-otp', requestOtp);
 
-// 🔑 NEW: Protected route to verify JWT validity on page load
+// NEW: Protected route to verify JWT validity on page load
 router.get('/verify-token', authMiddleware, verifyToken); 
-
-// 🔑 REMOVED: Deprecated placeholder routes (login, signup, forgot-password) have been removed.
 
 export default router;

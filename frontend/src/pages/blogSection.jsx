@@ -17,14 +17,11 @@ export const ComplaintForm = () => {
     }
     
     try {
-      // 🔑 FIX: Send the message content under the 'message' key
       await API.post('/api/feedback', { message: feedback }); 
       setMessage('Thank you! Your complaint/feedback has been submitted.');
       setFeedback('');
     } catch (error) {
       console.error('Complaint submission error:', error);
-      // NOTE: If the user is authenticated, this public endpoint will fail as it expects no user_id.
-      // The frontend should ideally call the protected endpoint, but for now, we only fix the key.
       setMessage('Failed to submit complaint. Please try again.');
     }
   };
@@ -107,7 +104,6 @@ export const FeedbackList = ({ userSpecific = false }) => {
               <div key={index} className="border-b border-gray-200 dark:border-gray-700 last:border-b-0 pb-3">
                 <p className="text-gray-800 dark:text-text-light font-medium">{item.message}</p>
                 <p className="text-xs text-gray-500 dark:text-text-muted mt-1 italic">
-                  {/* 🔑 FIX: Display submitter name retrieved from the backend */}
                   Submitted by <span className="font-medium">{userSpecific ? 'You' : item.submitter_name || 'Anonymous'}</span> on {new Date(item.submitted_at).toLocaleDateString()}
                 </p>
               </div>

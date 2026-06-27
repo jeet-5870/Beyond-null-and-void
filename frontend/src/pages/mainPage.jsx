@@ -8,7 +8,6 @@ import API from '../api.js';
 import Footer from '../components/footer.jsx';
 import { ThemeContext } from '../context/ThemeContext.jsx';
 
-// Navbar component remains the same...
 const Navbar = () => {
   const navigate = useNavigate();
   const [isLoggedIn, setIsLoggedIn] = useState(false);
@@ -125,7 +124,7 @@ const Navbar = () => {
 
 const MainPage = () => {
   const [mostPollutedData, setMostPollutedData] = useState([]);
-  const [leastPollutedData, setLeastPollutedData] = useState([]); // New state for least polluted
+  const [leastPollutedData, setLeastPollutedData] = useState([]);
   const [summaryMetrics, setSummaryMetrics] = useState([]);
   const [isLoading, setIsLoading] = useState(true);
   const [error, setError] = useState(null);
@@ -203,7 +202,6 @@ const MainPage = () => {
     <div className="min-h-screen bg-gray-50 dark:bg-primary-dark">
       <Navbar />
       <main className="mx-auto px-4 sm:px-6 lg:px-8 py-20 pt-32">
-        {/* Home Section is unchanged */}
         <section id="home" className="bg-white dark:bg-secondary-dark py-16 rounded-xl shadow-lg border border-gray-200 dark:border-gray-700">
           <div className="text-center">
             <Droplets className="h-12 w-12 text-accent-blue mx-auto mb-4" />
@@ -278,7 +276,7 @@ const MainPage = () => {
           )}
         </section>
 
-        {/* Features, Partners, and Complaint sections remain the same */}
+        {/* Features, Partners, and Complaint sections*/}
         <section id="features" className="py-24 border-t border-gray-200 dark:border-gray-700">
           <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8">
             <h2 className="text-4xl font-extrabold text-gray-800 dark:text-text-light text-center mb-6">Actionable Insights & Platform Tools</h2>

@@ -77,7 +77,6 @@ function App() {
           />
           <Route 
             path="/historical-upload" 
-            // 🔑 FIX: Remove authentication check to make it accessible without login
             element={<HistoricalUploadPage />} 
           />
           <Route path="/anomalies" element={isAuthenticated ? <AnomaliesPage /> : <Navigate to="/login" />} />

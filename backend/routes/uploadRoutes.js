@@ -4,14 +4,13 @@ import multer from 'multer';
 import fs from 'fs';
 import handleUpload from '../controllers/uploadController.js';
 import authMiddleware from '../middleware/authMiddleware.js';
-import path from 'path'; // 🔑 NEW IMPORT
+import path from 'path'; 
 
-// 🔑 REMOVED: Manual directory creation logic removed
 
 const router = express.Router();
 
 const upload = multer({
-  // 🔑 FIX: Use path.join(process.cwd(), 'uploads') to create a directory inside the project root
+  // FIX: Use path.join(process.cwd(), 'uploads') to create a directory inside the project root
   dest: path.join(process.cwd(), 'uploads'),
   limits: { fileSize: 5 * 1024 * 1024 }, // 5MB limit
   fileFilter: (req, file, cb) => {

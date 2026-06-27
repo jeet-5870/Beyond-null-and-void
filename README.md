@@ -70,10 +70,10 @@ beyond-null-and-void/
 │   │   ├── getleaderboarddataController.js
 │   │   ├── gettimelinedataController.js
 │   │   ├── indexCalculator.js
+│   │   ├── leaderBoradController.js
 │   │   ├── mapController.js
 │   │   ├── predictionController.js
 │   │   ├── reportController.js
-│   │   ├── submitfeedbackController.js
 │   │   └── uploadController.js
 │   ├── db/
 │   │   ├── db.js

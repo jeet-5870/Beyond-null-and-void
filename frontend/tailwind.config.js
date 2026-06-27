@@ -9,7 +9,6 @@ export const theme = {
       'xs': '375px',
     },
     colors: {
-      // Replaced old colors with a new dark theme palette
       'primary-dark': '#0f172a', // Slate 900
       'secondary-dark': '#1e293b', // Slate 800
       'accent-blue': '#38bdf8', // Sky 400

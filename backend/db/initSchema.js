@@ -18,7 +18,7 @@ export const initPostgresSchema = async () => {
       DROP TABLE IF EXISTS users CASCADE;
     `);
 
-    // Create tables with the corrected and final schema
+    // Create tables with the final schema
     await client.query(`
       CREATE TABLE IF NOT EXISTS users (
         user_id SERIAL PRIMARY KEY,

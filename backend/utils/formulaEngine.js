@@ -53,7 +53,6 @@ function calculateHPI(concentrations, standards) {
     }
 
     const Qi = (Mi / Si) * 100;
-    // Inverse weighting specifically for HPI formulation
     const Wi = 1 / Si;
 
     numerator += Qi * Wi;

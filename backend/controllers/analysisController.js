@@ -1,7 +1,7 @@
 // backend/controllers/analysisController.js
 
 import db from '../db/db.js';
-import { getHPIClassification } from '../utils/classification.js'; // 🔑 FIX: Use getHPIClassification
+import { getHPIClassification } from '../utils/classification.js'; 
 
 /**
  * In a production environment, this function would execute a Python script
@@ -62,7 +62,6 @@ export const getAnalysisResults = async (req, res, next) => {
     const hotspots = Object.values(clusters).map(c => {
       const avgHpi = c.totalHpi / c.count;
       let risk;
-      // 🔑 FIX: Use HPI classification logic for risk assessment
       if (avgHpi > 200) {
         risk = 'High';
       } else if (avgHpi > 100) {
@@ -79,7 +78,7 @@ export const getAnalysisResults = async (req, res, next) => {
           lat: c.avgLat / c.count,
           lng: c.avgLng / c.count,
         },
-        risk: risk, // Risk now based on HPI thresholds
+        risk: risk, // Risk based on HPI thresholds
         lastUpdate: new Date().toISOString(), // Placeholder
       };
     });
@@ -89,12 +88,10 @@ export const getAnalysisResults = async (req, res, next) => {
       .filter(row => row.is_anomaly)
       .map(row => ({
         location: row.location,
-        // 🔑 FIX: Change pollutant name to HPI (as it's HPI-driven now)
         pollutant: 'Heavy Metals (HPI)', 
-        value: row.hpi.toFixed(2), // 🔑 FIX: Use HPI value
-        threshold: '200.00', // 🔑 FIX: Use HPI threshold
+        value: row.hpi.toFixed(2),
+        threshold: '200.00',
         timestamp: row.sample_date,
-        // 🔑 FIX: Update message to reflect HPI anomaly
         message: `Abnormal HPI value of ${row.hpi.toFixed(2)} detected.`,
       }));
 

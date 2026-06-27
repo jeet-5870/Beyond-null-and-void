@@ -6,7 +6,6 @@ import db from '../db/db.js';
 import axios from 'axios';
 import nodemailer from 'nodemailer'; 
 
-// 🔑 Nodemailer transporter remains, but is only used as a fallback for email if SendGrid is missing.
 const transporter = nodemailer.createTransport({
   service: 'gmail',
   auth: {
@@ -27,7 +26,7 @@ const createToken = (user) => {
   );
 };
 
-// 🔑 MODIFIED: Sends OTP via Email (SendGrid/Nodemailer) or simulates for Phone/missing config.
+// MODIFIED: Sends OTP via Email (SendGrid/Nodemailer) or simulates for Phone/missing config.
 const sendOtpAndRespond = async (userId, identifier, isEmail, res) => {
   const otp = generateOtp();
   const expiresAt = new Date(Date.now() + 5 * 60 * 1000); // OTP valid for 5 minutes
@@ -78,7 +77,7 @@ const sendOtpAndRespond = async (userId, identifier, isEmail, res) => {
       console.log(`[AUTH] Email API keys not set. SIMULATED OTP for Email ${identifier}: ${otp}`);
     }
   } else {
-    // --- 🔑 FIX: Phone Number Logic ---
+    // --- FIX: Phone Number Logic ---
     // Removed the flawed carrier gateway assumption. Requires a dedicated SMS API.
     console.warn(`[AUTH] CRITICAL WARNING: Dedicated SMS API is required for reliable phone verification. SIMULATED OTP for Phone ${identifier}: ${otp}`);
   }
@@ -150,7 +149,7 @@ export const passwordAuth = async (req, res, next) => {
     let user;
 
     if (mode === 'signup') {
-      // 泊 SIGNUP LOGIC: Create user, then enforce OTP verification.
+      // SIGNUP LOGIC: Create user, then enforce OTP verification.
       const existingUser = await db.query(`SELECT * FROM users WHERE ${identifierField} = $1`, [identifier]);
       if (existingUser.rows.length > 0) {
         return res.status(409).json({ error: `${identifierField} already registered.` });
@@ -171,7 +170,7 @@ export const passwordAuth = async (req, res, next) => {
       return sendOtpAndRespond(user.user_id, identifier, isEmail, res);
 
     } else { // Login mode
-      // 泊 LOGIN LOGIC: Only password required.
+      // LOGIN LOGIC: Only password required.
       const userRes = await db.query(`SELECT * FROM users WHERE ${identifierField} = $1`, [identifier]);
       user = userRes.rows[0];
 
@@ -201,12 +200,12 @@ export const passwordAuth = async (req, res, next) => {
 
 // 3. Handles OTP verification (Step 2)
 export const verifyOtp = async (req, res, next) => {
-  const { identifier, otp, newPassword } = req.body; // 泊 UPDATED: Accept newPassword
+  const { identifier, otp, newPassword } = req.body; // UPDATED: Accept newPassword
   if (!identifier || !otp) {
     return res.status(400).json({ error: 'Identifier and OTP are required.' });
   }
   
-  // 泊 NEW: Validate new password length if provided (for reset flow)
+  // NEW: Validate new password length if provided (for reset flow)
   if (newPassword && newPassword.length < 6) { 
       return res.status(400).json({ error: 'New password must be at least 6 characters long.' });
   }
@@ -231,7 +230,7 @@ export const verifyOtp = async (req, res, next) => {
     let paramIndex = 1;
 
     if (newPassword) {
-        // 泊 NEW: If newPassword is provided (forgot password flow), update the password hash
+        // NEW: If newPassword is provided (forgot password flow), update the password hash
         const password_hash = await bcrypt.hash(newPassword, 10);
         updateQuery += `, password_hash = $${paramIndex++}`;
         updateParams.push(password_hash);

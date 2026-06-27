@@ -226,7 +226,7 @@ export default async function handleUpload(req, res, next) {
         
         generatedAlerts.push(alertPayload);
         
-        // 🔑 FIX: Emit websocket event to all connected clients
+        // Emit websocket event to all connected clients
         if (req.io) {
             console.log("📡 Emitting Real-Time WebSocket Anomaly Alert...");
             req.io.emit('new-anomaly', alertPayload);

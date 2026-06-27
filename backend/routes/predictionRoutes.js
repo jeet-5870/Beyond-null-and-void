@@ -1,5 +1,5 @@
 import express from 'express';
-import getFuturePrediction from '../controllers/predictionController.js'; // 🔑 FIX: Changed to default import
+import getFuturePrediction from '../controllers/predictionController.js'; 
 
 const router = express.Router();
 

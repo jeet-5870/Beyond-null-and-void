@@ -4,7 +4,6 @@ import { Card, CardHeader, CardContent } from './card.jsx';
 
 function SafetyBadge({ data }) {
   const getStatusColor = (classification) => {
-    // 🔑 Using light and dark theme color variables
     switch (classification) {
       case 'Safe':
         return 'bg-green-100 text-green-800 border-green-200 dark:bg-success/20 dark:text-success dark:border-success/50';

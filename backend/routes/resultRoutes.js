@@ -12,7 +12,7 @@ const getUserSamples = async (req, res, next) => {
   let query;
   let params = [];
   
-  // The logic to show global vs. user-specific data is correct.
+  // The logic to show global vs. user-specific data.
   if (role === 'ngo' || role === 'researcher' || role === 'guest') {
     query = `
       WITH latest_samples AS (
@@ -38,7 +38,7 @@ const getUserSamples = async (req, res, next) => {
     `;
     params = [];
   } else {
-    // This block handles other potential roles and is now also fixed
+    // This block handles other potential roles 
     query = `
       WITH latest_samples AS (
         SELECT DISTINCT ON (location_id) 

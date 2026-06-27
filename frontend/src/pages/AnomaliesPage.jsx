@@ -6,7 +6,7 @@ import API from '../api.js';
 import { io } from 'socket.io-client';
 import { toast } from 'react-toastify';
 
-const socket = io('http://localhost:3000'); // Adjust URL correctly for production
+const socket = io('http://localhost:3000');
 
 const AnomaliesPage = ({ role }) => {
   const [anomalies, setAnomalies] = useState([]);
@@ -28,7 +28,6 @@ const AnomaliesPage = ({ role }) => {
 
     // 📡 Socket logic to listen for real-time anomalies
     socket.on('new-anomaly', (data) => {
-      // Create a payload that aligns with the previous REST endpoint structures
       const liveAnomaly = {
         location: data.location,
         pollutant: 'HPI/Metals',
@@ -57,7 +56,7 @@ const AnomaliesPage = ({ role }) => {
     const link = document.createElement("a");
     const url = URL.createObjectURL(blob);
     link.setAttribute("href", url);
-    link.setAttribute("download", "anomaly_report_hpi.csv"); // FIX: Update filename
+    link.setAttribute("download", "anomaly_report_hpi.csv");
     link.style.visibility = 'hidden';
     document.body.appendChild(link);
     link.click();
@@ -84,7 +83,6 @@ const AnomaliesPage = ({ role }) => {
 
       <Card>
         <CardHeader className="flex justify-between items-center">
-          {/* 🔑 FIX: Replaced '>' with the HTML entity '&gt;' to fix the JSX syntax error (Line 66) */}
           <h3 className="text-lg font-semibold text-gray-800 dark:text-text-light flex items-center gap-2">
             <span className="animate-pulse h-3 w-3 bg-red-500 rounded-full inline-block"></span>
             Live Anomaly Feed
@@ -126,11 +124,6 @@ const AnomaliesPage = ({ role }) => {
           </ul>
         </CardContent>
       </Card>
-      
-      {/* For trend graphs, you would map through locations with anomalies and render 
-        a modified version of your existing 'PollutionChart' component for each one, 
-        passing the anomaly points as special data to be highlighted.
-      */}
     </div>
   );
 };

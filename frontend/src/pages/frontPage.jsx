@@ -2,7 +2,6 @@ import React from 'react';
 import { useNavigate } from 'react-router-dom';
 import { Droplets, LogIn } from 'lucide-react';
 
-// Reusable Navbar Component
 const Navbar = () => {
   const navigate = useNavigate();
   const handleLoginClick = () => {
@@ -10,7 +9,7 @@ const Navbar = () => {
   };
 
   return (
-    // 🔑 UPDATED Navbar to support light/dark theme
+    // UPDATED Navbar to support light/dark theme
     <nav className="fixed top-0 left-0 right-0 z-50 bg-white/95 dark:bg-primary-dark/95 backdrop-blur-md shadow-md border-b border-gray-200 dark:border-gray-700">
       <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8">
         <div className="flex justify-between items-center h-16">
@@ -42,7 +41,7 @@ const FrontPage = () => {
   };
 
   return (
-    // 🔑 UPDATED background to support light/dark theme
+    // UPDATED background to support light/dark theme
     <div className="min-h-screen bg-gray-50 dark:bg-primary-dark text-gray-800 dark:text-text-light">
       <Navbar />
       <main className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 py-20 flex flex-col items-center justify-center text-center">
@@ -64,7 +63,7 @@ const FrontPage = () => {
 
         {/* Feature Highlights Section */}
         <div className="grid grid-cols-1 md:grid-cols-3 gap-8 mt-20 w-full">
-          {/* 🔑 UPDATED feature card styles */}
+          {/* UPDATED feature card styles */}
           <div className="bg-white dark:bg-secondary-dark rounded-lg p-6 shadow-md transition-all hover:shadow-xl border border-gray-200 dark:border-gray-700">
             <h3 className="text-xl font-bold text-accent-blue mb-2">Real-time HPI</h3>
             <p className="text-gray-600 dark:text-text-muted">Instantly calculate the Heavy Metal Pollution Index upon data submission.</p>

@@ -3,9 +3,8 @@ import React, { useEffect, useState, useRef } from "react";
 import { MapContainer, TileLayer, Marker, Popup, useMap } from 'react-leaflet';
 import 'leaflet/dist/leaflet.css';
 import L from 'leaflet';
-import { Card } from './card.jsx'; // 🔑 Import Card component
+import { Card } from './card.jsx'; 
 
-// Create a custom icon function
 const getPinIcon = (classification) => {
   let iconUrl;
   switch (classification) {
@@ -68,7 +67,6 @@ const WaterQualityMap = ({ data, selectedLocation }) => {
   }, {}));
 
   return (
-    // 🔑 Wrap in Card for consistent dashboard styling
     <Card className="mb-8 p-6"> 
       <div className="flex flex-col md:flex-row justify-between items-start md:items-center mb-4">
         <h2 className="text-xl font-bold text-gray-800 dark:text-text-light">
@@ -108,11 +106,9 @@ const WaterQualityMap = ({ data, selectedLocation }) => {
             icon={getPinIcon(location.classification)}
           >
             <Popup>
-              {/* Popups now support light and dark themes */}
               <div className="p-2 text-gray-900 dark:text-white bg-white dark:bg-secondary-dark rounded-lg">
                 <h1 className="text-lg font-semibold">{location.location}</h1>
                 <p>HPI: {location.hpi.toFixed(2)}</p>
-                {/* 🔑 REMOVED: HEI removed from map popup */}
                 <p>Classification: {location.classification}</p>
                 <p className="text-xs text-gray-500 mt-2">Recorded: {new Date(location.sample_date).toLocaleDateString()}</p>
               </div>

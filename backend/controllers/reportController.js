@@ -1,6 +1,6 @@
 import db from '../db/db.js';
 import PDFDocument from 'pdfkit';
-import { getHPIClassification } from '../utils/classification.js'; // 🔑 FIX: Removed getHEIClassification import
+import { getHPIClassification } from '../utils/classification.js';
 
 // =============================================================================
 // --- Helper Functions (Updated) ---
@@ -22,11 +22,11 @@ const addFooter = (doc, COLORS, pageNum) => {
         });
 };
 
-// Functions for drawPieChart and drawBarChart remain the same as the previous version...
+// Functions for drawPieChart and drawBarChart 
 
 function drawPieChart(doc, data, x, y, radius) {
     doc.fontSize(14).font('Helvetica-Bold').fillColor('#000')
-        .text('Site Classification Overview (HPI)', x - radius, y - radius - 40, { width: radius * 2, align: 'center' }); // 🔑 FIX: Updated chart title
+        .text('Site Classification Overview (HPI)', x - radius, y - radius - 40, { width: radius * 2, align: 'center' });
     const total = data.reduce((sum, item) => sum + item.count, 0);
     if (total === 0) {
         doc.fontSize(10).font('Helvetica').text('No data available for chart.', x - radius, y, { width: radius * 2, align: 'center' });
@@ -47,7 +47,7 @@ function drawPieChart(doc, data, x, y, radius) {
 }
 
 function drawBarChart(doc, data, x, y, width, height) {
-    // 🔑 FIX: Change title to reflect HPI
+    
     doc.fontSize(14).font('Helvetica-Bold').fillColor('#000')
         .text('Top 5 Polluted Locations (by HPI)', x, y - 40);
     if (data.length === 0) {
@@ -90,7 +90,7 @@ function getHealthAdvice(classification) {
 }
 
 // =============================================================================
-// --- Main Route Handler (Updated Logic) ---
+// --- Main Route Handler ---
 // =============================================================================
 
 export default function generateReport(req, res) {
@@ -174,7 +174,7 @@ export default function generateReport(req, res) {
                 currentY += 30;
                 doc.fontSize(12).font('Helvetica').text(`Total Unique Locations Analyzed: ${locationsData.length}`, 50, currentY);
                 
-                // *** FIX: Increased spacing to prevent text overlap ***
+                // Increased spacing to prevent text overlap ***
                 currentY += 95;
 
                 const classificationCounts = {
@@ -188,7 +188,7 @@ export default function generateReport(req, res) {
                     { label: 'Highly Polluted', count: classificationCounts['Highly Polluted'], color: COLORS.DANGER },
                 ], 120, currentY, 60);
 
-                // 🔑 FIX: Sort and use HPI instead of HEI for the bar chart
+                //  FIX: Sort and use HPI instead of HEI for the bar chart
                 const topPolluted = [...locationsData].sort((a, b) => parseFloat(b.hpi) - parseFloat(a.hpi)).slice(0, 5);
                 drawBarChart(doc, topPolluted.map(loc => ({ label: loc.location, value: parseFloat(loc.hpi), color: COLORS.DANGER })), 300, currentY, 250, 120);
 
