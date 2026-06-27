@@ -7,7 +7,7 @@ if (process.env.DATABASE_URL) {
   const { Pool } = pg;
   
   // 1. Define whether the app is running in production (on Render/Neon) or locally
-  const isProduction = process.env.NODE_ENV === 'production' || process.env.DATABASE_URL.includes('neon.tech');
+  const isProduction = process.env.NODE_ENV === 'production' || process.env.DATABASE_URL.includes('aivencloud.com');
 
   const pool = new Pool({
     connectionString: process.env.DATABASE_URL,
