@@ -6,15 +6,28 @@ let db;
 if (process.env.DATABASE_URL) {
   const { Pool } = pg;
   
-  // 1. Define whether the app is running in production (on Render/Neon) or locally
-  const isProduction = process.env.NODE_ENV === 'production' || process.env.DATABASE_URL.includes('aivencloud.com');
+  let connectionString = process.env.DATABASE_URL;
+  const isProduction = 
+    process.env.NODE_ENV === 'production' || 
+    connectionString.includes('aivencloud.com') || 
+    connectionString.includes('neon.tech');
+
+  try {
+    const urlObj = new URL(connectionString);
+    if (urlObj.searchParams.has('sslmode') || urlObj.searchParams.has('ssl')) {
+      urlObj.searchParams.delete('sslmode');
+      urlObj.searchParams.delete('ssl');
+      connectionString = urlObj.toString();
+    }
+  } catch (urlError) {
+    console.error('⚠️ Failed to clean database URL string, attempting connection anyway...');
+  }
 
   const pool = new Pool({
-    connectionString: process.env.DATABASE_URL,
-    // 2. Safely apply the SSL rules based on the check above
+    connectionString: connectionString,
     ssl: isProduction 
       ? {
-          rejectUnauthorized: false, 
+          rejectUnauthorized: false,
         }
       : false,
   });
