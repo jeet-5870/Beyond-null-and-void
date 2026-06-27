@@ -26,7 +26,7 @@ export const initPostgresSchema = async () => {
         email TEXT UNIQUE,
         phone TEXT UNIQUE,
         password_hash TEXT,
-        role TEXT CHECK (role IN ('admin', 'organization', 'general')) NOT NULL,
+        role TEXT CHECK (role IN ('admin', 'organization', 'general', 'researcher')) NOT NULL,
         created_at TIMESTAMP WITH TIME ZONE DEFAULT CURRENT_TIMESTAMP,
         CONSTRAINT chk_email_or_phone CHECK (email IS NOT NULL OR phone IS NOT NULL)
       );

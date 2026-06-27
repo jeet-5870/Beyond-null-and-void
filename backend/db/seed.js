@@ -13,17 +13,22 @@ export const seedDatabase = async () => {
       console.log('Seeding default users...');
       await client.query(
         `INSERT INTO users (fullname, email, phone, password_hash, role)
-         VALUES ('Researcher Admin', 'admin@example.com', NULL, $1, 'researcher')`,
+         VALUES ('Admin', 'admin@example.com', NULL, $1, 'admin')`,
         [passwordHash]
       );
       await client.query(
         `INSERT INTO users (fullname, email, phone, password_hash, role)
-         VALUES ('Guest User', NULL, '9991234567', $1, 'guest')`,
+         VALUES ('Researcher', 'admin@example.com', NULL, $1, 'researcher')`,
         [passwordHash]
       );
       await client.query(
         `INSERT INTO users (fullname, email, phone, password_hash, role)
-        VALUES ('NGO User', 'ngo@example.com', null, $1, 'ngo')`,
+         VALUES ('Guest User', NULL, '9991234567', $1, 'general')`,
+        [passwordHash]
+      );
+      await client.query(
+        `INSERT INTO users (fullname, email, phone, password_hash, role)
+        VALUES ('NGO User', 'ngo@example.com', null, $1, 'organization')`,
         [passwordHash]
       );
       console.log('✅ Default users seeded.');
