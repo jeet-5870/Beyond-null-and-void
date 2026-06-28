@@ -1,7 +1,16 @@
 // backend/controllers/predictionController.js
 
 import db from '../db/db.js';
-import SimpleLinearRegression from 'ml-regression-simple-linear';
+import { SimpleLinearRegression } from 'ml-regression';
+
+function computeR2(actual, predicted) {
+  const n = actual.length;
+  if (n === 0 || n !== predicted.length) return 0;
+  const meanActual = actual.reduce((sum, val) => sum + val, 0) / n;
+  const ssRes = actual.reduce((sum, val, idx) => sum + Math.pow(val - predicted[idx], 2), 0);
+  const ssTot = actual.reduce((sum, val) => sum + Math.pow(val - meanActual, 2), 0);
+  return ssTot === 0 ? 1 : 1 - ssRes / ssTot;
+}
 
 /**
  * Uses Simple Linear Regression to model the historical HPI trend

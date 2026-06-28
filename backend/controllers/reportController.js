@@ -2,27 +2,15 @@ import db from '../db/db.js';
 import PDFDocument from 'pdfkit';
 import { getHPIClassification } from '../utils/classification.js';
 
-// =============================================================================
-// --- Helper Functions (Updated) ---
-// =============================================================================
-
 const toRadians = (angle) => (angle * Math.PI) / 180;
 
-/**
- * Adds a standard footer with a manually provided page number.
- * @param {PDFDocument} doc - The PDF document instance.
- * @param {object} COLORS - The application's color palette.
- * @param {number} pageNum - The current page number to display.
- */
 const addFooter = (doc, COLORS, pageNum) => {
     doc.fontSize(8).fillColor(COLORS.TEXT_MUTED)
         .text(`Page ${pageNum}`, 50, doc.page.height - 40, {
             align: 'right',
-            width: doc.page.width - 100
+            width: doc.page.width - 100,
         });
 };
-
-// Functions for drawPieChart and drawBarChart 
 
 function drawPieChart(doc, data, x, y, radius) {
     doc.fontSize(14).font('Helvetica-Bold').fillColor('#000')
@@ -32,6 +20,7 @@ function drawPieChart(doc, data, x, y, radius) {
         doc.fontSize(10).font('Helvetica').text('No data available for chart.', x - radius, y, { width: radius * 2, align: 'center' });
         return;
     }
+
     let startAngle = 0;
     const legendX = x + radius + 60;
     let legendY = y - radius + 10;
@@ -47,18 +36,19 @@ function drawPieChart(doc, data, x, y, radius) {
 }
 
 function drawBarChart(doc, data, x, y, width, height) {
-    
     doc.fontSize(14).font('Helvetica-Bold').fillColor('#000')
         .text('Top 5 Polluted Locations (by HPI)', x, y - 40);
     if (data.length === 0) {
         doc.fontSize(10).font('Helvetica').text('No data available for chart.', x, y);
         return;
     }
+
     const barSpacing = 20;
     const barWidth = (width - (barSpacing * (data.length - 1))) / data.length;
     const maxVal = Math.max(...data.map(item => item.value), 0);
     const scale = maxVal > 0 ? height / maxVal : 0;
     doc.fontSize(8).fillColor('#555');
+
     data.forEach((item, i) => {
         const barHeight = item.value * scale;
         const barX = x + i * (barWidth + barSpacing);
@@ -71,7 +61,9 @@ function drawBarChart(doc, data, x, y, width, height) {
 
 function getColorByClassification(classification, COLORS) {
     const colorMap = {
-        'Safe': COLORS.SUCCESS, 'Polluted': COLORS.WARNING, 'Highly Polluted': COLORS.DANGER,
+        Safe: COLORS.SUCCESS,
+        Polluted: COLORS.WARNING,
+        'Highly Polluted': COLORS.DANGER,
     };
     return colorMap[classification] || COLORS.DANGER;
 }
@@ -79,31 +71,39 @@ function getColorByClassification(classification, COLORS) {
 function getHealthAdvice(classification) {
     switch (classification) {
         case 'Safe':
-            return "Health Advice: Safe for generic ingestion & agricultural irrigation.";
+            return 'Health Advice: Safe for generic ingestion & agricultural irrigation.';
         case 'Polluted':
-            return "Health Advice: Boil and filter before use. Unsafe for direct ingestion.";
+            return 'Health Advice: Boil and filter before use. Unsafe for direct ingestion.';
         case 'Highly Polluted':
-            return "Health Advice: Hazardous! Do not touch or ingest. Requires critical intervention.";
+            return 'Health Advice: Hazardous! Do not touch or ingest. Requires critical intervention.';
         default:
-            return "Health Advice: Status unknown. Proceed with caution.";
+            return 'Health Advice: Status unknown. Proceed with caution.';
     }
 }
 
-// =============================================================================
-// --- Main Route Handler ---
-// =============================================================================
+const METAL_LABEL_MAP = {
+    Pb: 'Lead',
+    Hg: 'Mercury',
+    As: 'Arsenic',
+};
 
 export default function generateReport(req, res) {
     const { userId, role } = req.user;
     const doc = new PDFDocument({ size: 'A4', margin: 50 });
 
     res.setHeader('Content-Type', 'application/pdf');
-    res.setHeader('Content-Disposition', `attachment; filename="groundwater_report_${new Date().toISOString()}.pdf"`);
+    res.setHeader('Content-Disposition', `attachment; filename="groundwater_report_${new Date().toISOString().replace(/:/g, '-')}.pdf"`);
     doc.pipe(res);
 
     const COLORS = {
-        PRIMARY: '#FFFFFF', SECONDARY: '#F3F4F6', ACCENT: '#38BDF8', TEXT_DARK: '#1F2937',
-        TEXT_MUTED: '#6B7280', SUCCESS: '#10B981', WARNING: '#F59E0B', DANGER: '#EF4444',
+        PRIMARY: '#FFFFFF',
+        SECONDARY: '#F3F4F6',
+        ACCENT: '#38BDF8',
+        TEXT_DARK: '#1F2937',
+        TEXT_MUTED: '#6B7280',
+        SUCCESS: '#10B981',
+        WARNING: '#F59E0B',
+        DANGER: '#EF4444',
     };
 
     let baseQuery = `
@@ -122,13 +122,21 @@ export default function generateReport(req, res) {
     db.query(baseQuery, params)
         .then(result => {
             try {
-                // --- Manual Page Counter ---
                 let pageNumber = 0;
 
                 const locationsData = Object.entries(result.rows.reduce((acc, row) => {
                     if (!acc[row.location]) {
-                        acc[row.location] = { hpi: 0, hei: 0, pli: 0, mpi: 0, count: 0, uniqueSamples: new Set(), metals: { Lead: [], Mercury: [], Arsenic: [] } };
+                        acc[row.location] = {
+                            hpi: 0,
+                            hei: 0,
+                            pli: 0,
+                            mpi: 0,
+                            count: 0,
+                            uniqueSamples: new Set(),
+                            metals: { Lead: [], Mercury: [], Arsenic: [] },
+                        };
                     }
+
                     if (!acc[row.location].uniqueSamples.has(row.sample_id)) {
                         acc[row.location].hpi += parseFloat(row.hpi) || 0;
                         acc[row.location].hei += parseFloat(row.hei) || 0;
@@ -137,12 +145,15 @@ export default function generateReport(req, res) {
                         acc[row.location].count += 1;
                         acc[row.location].uniqueSamples.add(row.sample_id);
                     }
+
                     if (row.metal_name && row.concentration_ppm != null) {
-                        if (!acc[row.location].metals[row.metal_name]) {
-                            acc[row.location].metals[row.metal_name] = [];
+                        const metalKey = METAL_LABEL_MAP[row.metal_name] || row.metal_name;
+                        if (!acc[row.location].metals[metalKey]) {
+                            acc[row.location].metals[metalKey] = [];
                         }
-                        acc[row.location].metals[row.metal_name].push(parseFloat(row.concentration_ppm));
+                        acc[row.location].metals[metalKey].push(parseFloat(row.concentration_ppm));
                     }
+
                     return acc;
                 }, {})).map(([location, vals]) => {
                     const avgHpi = vals.count > 0 ? vals.hpi / vals.count : 0;
@@ -158,11 +169,10 @@ export default function generateReport(req, res) {
                         classification: getHPIClassification(avgHpi),
                         pb: getAvg(vals.metals['Lead'] || []),
                         hg: getAvg(vals.metals['Mercury'] || []),
-                        as: getAvg(vals.metals['Arsenic'] || [])
+                        as: getAvg(vals.metals['Arsenic'] || []),
                     };
                 });
-                
-                // --- Page 1: Header & Summary ---
+
                 pageNumber++;
                 doc.rect(0, 0, doc.page.width, 100).fill(COLORS.SECONDARY);
                 doc.fillColor(COLORS.ACCENT).fontSize(28).font('Helvetica-Bold').text('Groundwater Insights Report', 50, 40);
@@ -173,8 +183,7 @@ export default function generateReport(req, res) {
                 doc.fontSize(18).font('Helvetica-Bold').fillColor(COLORS.TEXT_DARK).text('Report Summary', 50, currentY);
                 currentY += 30;
                 doc.fontSize(12).font('Helvetica').text(`Total Unique Locations Analyzed: ${locationsData.length}`, 50, currentY);
-                
-                // Increased spacing to prevent text overlap ***
+
                 currentY += 95;
 
                 const classificationCounts = {
@@ -188,20 +197,18 @@ export default function generateReport(req, res) {
                     { label: 'Highly Polluted', count: classificationCounts['Highly Polluted'], color: COLORS.DANGER },
                 ], 120, currentY, 60);
 
-                //  FIX: Sort and use HPI instead of HEI for the bar chart
                 const topPolluted = [...locationsData].sort((a, b) => parseFloat(b.hpi) - parseFloat(a.hpi)).slice(0, 5);
                 drawBarChart(doc, topPolluted.map(loc => ({ label: loc.location, value: parseFloat(loc.hpi), color: COLORS.DANGER })), 300, currentY, 250, 120);
 
-                // --- Detailed Analysis Pages ---
                 if (locationsData.length > 0) {
-                    addFooter(doc, COLORS, pageNumber); // Add footer to summary page
+                    addFooter(doc, COLORS, pageNumber);
                     doc.addPage();
                     pageNumber++;
 
                     doc.fontSize(18).font('Helvetica-Bold').fillColor(COLORS.TEXT_DARK).text('Detailed Location Analysis', 50, 50);
                     currentY = 100;
 
-                    locationsData.forEach((loc, index) => {
+                    locationsData.forEach(loc => {
                         if (currentY + 150 > doc.page.height - 50) {
                             addFooter(doc, COLORS, pageNumber);
                             doc.addPage();
@@ -210,7 +217,6 @@ export default function generateReport(req, res) {
                             currentY = 100;
                         }
 
-                        // Draw location card content...
                         const cardColor = getColorByClassification(loc.classification, COLORS);
                         doc.roundedRect(50, currentY, doc.page.width - 100, 130, 5).fill(COLORS.SECONDARY);
                         doc.fontSize(16).font('Helvetica-Bold').fillColor(COLORS.TEXT_DARK).text(loc.location, 65, currentY + 15);
@@ -223,8 +229,7 @@ export default function generateReport(req, res) {
                                 doc.fontSize(10).fillColor(COLORS.TEXT_MUTED).text(idx.label, x, currentY + 60);
                                 doc.fontSize(14).font('Helvetica-Bold').fillColor(COLORS.TEXT_DARK).text(idx.value, x, currentY + 75);
                             });
-                            
-                        // --- Detailed Concentration Analysis ---
+
                         const metalsY = currentY + 100;
                         doc.fontSize(10).font('Helvetica-Bold').fillColor(COLORS.TEXT_DARK).text('Detailed Concentration Analysis (Avg ppm):', 70, metalsY);
                         [{ label: 'Lead (Pb)', value: loc.pb }, { label: 'Mercury (Hg)', value: loc.hg }, { label: 'Arsenic (As)', value: loc.as }]
@@ -240,13 +245,12 @@ export default function generateReport(req, res) {
 
                         currentY += 165;
                     });
-                     addFooter(doc, COLORS, pageNumber); // Add footer to the final page
+                    addFooter(doc, COLORS, pageNumber);
                 } else {
-                    addFooter(doc, COLORS, pageNumber); // Add footer if there's only a summary page
+                    addFooter(doc, COLORS, pageNumber);
                 }
-                
-                doc.end();
 
+                doc.end();
             } catch (err) {
                 console.error('❌ PDF generation failed:', err);
                 doc.end();
