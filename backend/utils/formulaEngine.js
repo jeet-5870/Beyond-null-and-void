@@ -35,8 +35,8 @@ function calculateHEI(concentrations, standards) {
 }
 
 /**
- * Heavy Metal Pollution Index (HMPI)
- * HMPI = Σ(Wi * Qi) / ΣWi
+ * Heavy Metal Pollution Index (HPI)
+ * HPI = Σ(Wi * Qi) / ΣWi
  * Wi = 1 / Si (Inverse weighting for HPI calculation)
  */
 function calculateHPI(concentrations, standards) {

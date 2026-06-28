@@ -146,7 +146,7 @@ export default async function handleUpload(req, res, next) {
         }
       }
 
-      const hpi = calculateHMPI(concentrations, hpiStandards);
+      const hpi = calculateHPI(concentrations, hpiStandards);
       const hei = calculateHEI(concentrations, heiStandards);
       const pli = calculatePLI(cfArray);
       const mpi = calculateMPI(concentrations);
