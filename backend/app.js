@@ -80,25 +80,3 @@ httpServer.listen(PORT, async () => {
     console.error('❌ Failed to set up database on startup: ', err);
   }
 });
-
-// Health check
-app.get('/', (req, res) => {
-  res.send("👋 Welcome to Beyond Null and Void.\nThis server powers groundwater insights.");
-});
-
-app.get('/health', (req, res) => {
-  res.json({ status: 'ok', timestamp: new Date().toISOString() });
-});
-
-const PORT = process.env.PORT || 3000;
-
-httpServer.listen(PORT, async () => {
-  console.log(`Server is live on port ${PORT}`);
-
-  try {
-    await initPostgresSchema();
-    await seedDatabase();
-  } catch (err) {
-    console.error("❌ Failed to set up database on startup: ", err);
-  }
-});

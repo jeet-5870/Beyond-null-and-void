@@ -30,7 +30,7 @@ async function sendCriticalAlertsToOfficials(alertData) {
 export default async function handleUpload(req, res, next) {
   const userId = req.user?.userId ?? null;
   const userRole = req.user?.role ?? null;
-  const isGeneralUser = userRole === 'general';
+  const isGeneralUser = userRole === 'general' || userRole === 'guest';
   const { date: historicalDate } = req.body;
   const filePath = req.file?.path;
   const isHistoricalRoute = req.path.includes('/historical');
@@ -38,19 +38,30 @@ export default async function handleUpload(req, res, next) {
 
   if (!filePath) return res.status(400).json({ error: 'No file uploaded' });
 
+  const returnValidationError = (status, errorMsg) => {
+    if (filePath && fs.existsSync(filePath)) {
+      try {
+        fs.unlinkSync(filePath);
+      } catch (err) {
+        console.error('Failed to delete temp file on validation error:', err);
+      }
+    }
+    return res.status(status).json({ error: errorMsg });
+  };
+
   if (isHistoricalRoute) {
     if (!historicalDate) {
-      return res.status(400).json({ error: 'Date is required for historical uploads.' });
+      return returnValidationError(400, 'Date is required for historical uploads.');
     }
     const selectedDate = new Date(historicalDate);
     if (Number.isNaN(selectedDate.getTime())) {
-      return res.status(400).json({ error: 'Invalid historical date.' });
+      return returnValidationError(400, 'Invalid historical date.');
     }
     const today = new Date();
     today.setHours(0, 0, 0, 0);
 
     if (selectedDate >= today) {
-      return res.status(400).json({ error: 'Historical data can only be uploaded for past dates.' });
+      return returnValidationError(400, 'Historical data can only be uploaded for past dates.');
     }
   }
 

@@ -1,10 +1,21 @@
-// backend/controllers/authController.js
-
 import bcrypt from 'bcrypt';
 import jwt from 'jsonwebtoken';
 import db from '../db/db.js';
 import axios from 'axios';
 import nodemailer from 'nodemailer'; 
+
+// Local helper functions to map between client-facing roles and DB constraint roles
+function mapClientToDbRole(role) {
+  if (role === 'ngo') return 'organization';
+  if (role === 'guest') return 'general';
+  return role;
+}
+
+function mapDbToClientRole(role) {
+  if (role === 'organization') return 'ngo';
+  if (role === 'general') return 'guest';
+  return role;
+}
 
 const transporter = nodemailer.createTransport({
   service: 'gmail',
@@ -19,8 +30,9 @@ const generateOtp = () => Math.floor(100000 + Math.random() * 900000).toString()
 
 // Helper function to generate JWT token
 const createToken = (user) => {
+  const clientRole = mapDbToClientRole(user.role);
   return jwt.sign(
-    { userId: user.user_id, fullname: user.fullname, role: user.role },
+    { userId: user.user_id, fullname: user.fullname, role: clientRole },
     process.env.JWT_SECRET,
     { expiresIn: '1h' }
   );
@@ -159,10 +171,11 @@ export const passwordAuth = async (req, res, next) => {
       const emailValue = isEmail ? identifier : null;
       const phoneValue = isEmail ? null : identifier;
       
+      const dbRole = mapClientToDbRole(role);
       const result = await db.query(
         `INSERT INTO users (fullname, email, phone, password_hash, role) 
          VALUES ($1, $2, $3, $4, $5) RETURNING user_id, fullname, role`,
-        [fullname, emailValue, phoneValue, password_hash, role]
+        [fullname, emailValue, phoneValue, password_hash, dbRole]
       );
       user = result.rows[0];
       
@@ -190,7 +203,7 @@ export const passwordAuth = async (req, res, next) => {
       
       // Standard login success: Generate and return token (NO OTP required for login)
       const token = createToken(user);
-      res.json({ token, userId: user.user_id, role: user.role });
+      res.json({ token, userId: user.user_id, role: mapDbToClientRole(user.role) });
     }
     
   } catch (err) {
@@ -243,7 +256,7 @@ export const verifyOtp = async (req, res, next) => {
     await db.query(updateQuery, updateParams);
 
     const token = createToken(user);
-    res.json({ token, userId: user.user_id, role: user.role });
+    res.json({ token, userId: user.user_id, role: mapDbToClientRole(user.role) });
 
   } catch (err) {
     next(err);

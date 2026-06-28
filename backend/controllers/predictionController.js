@@ -29,24 +29,24 @@ const getFuturePrediction = async (req, res, next) => {
       WHERE l.name = $1
       ORDER BY s.sample_date ASC, pi.computed_on ASC;
     `;
-    
+
     const { rows } = await db.query(historyQuery, [location]);
-    
+
     if (rows.length === 0) {
       return res.status(404).json({ error: 'No historical data found for this location to make a prediction.' });
     }
-    
+
     // 2. Prepare data for ML Regression (X = days since first sample, Y = HPI)
     const firstDate = new Date(rows[0].sample_date || rows[0].computed_on).getTime();
     const xValues = [];
     const yValues = [];
-    
+
     // Include all historical points in the model
     rows.forEach(row => {
-        const currentDate = new Date(row.sample_date || row.computed_on).getTime();
-        const daysDiff = (currentDate - firstDate) / (1000 * 3600 * 24);
-        xValues.push(daysDiff);
-        yValues.push(parseFloat(row.hpi));
+      const currentDate = new Date(row.sample_date || row.computed_on).getTime();
+      const daysDiff = (currentDate - firstDate) / (1000 * 3600 * 24);
+      xValues.push(daysDiff);
+      yValues.push(parseFloat(row.hpi));
     });
 
     // 3. Train the model
@@ -54,13 +54,14 @@ const getFuturePrediction = async (req, res, next) => {
     // We add a slight duplicate variation just to let the math run safely if needed,
     // though in reality 1 point is just a flat line.
     if (xValues.length === 1) {
-        xValues.push(xValues[0] + 1);
-        yValues.push(yValues[0]);
+      xValues.push(xValues[0] + 1);
+      yValues.push(yValues[0]);
     }
 
     const regression = new SimpleLinearRegression(xValues, yValues);
     const score = regression.score(xValues, yValues);
-    const confidenceScore = Math.min(100, Math.max(0, Math.abs(score.r) * 100));
+    const correlationCoefficient = Number.isNaN(score.r) ? 1.0 : score.r; // Fallback to 1.0 for constant inputs (zero variance)
+    const confidenceScore = Math.min(100, Math.max(0, Math.abs(correlationCoefficient) * 100));
 
     // 4. Extrapolate (Generate Data Points) 
     // We predict a 6-month trend. To avoid returning 180 rows, we can return ~7 interval points.
@@ -68,24 +69,24 @@ const getFuturePrediction = async (req, res, next) => {
     const predictionPoints = [];
     const today = new Date();
     const todayDaysDiff = (today.getTime() - firstDate) / (1000 * 3600 * 24);
-    
+
     const intervals = [1, 30, 60, 90, 120, 150, 180]; // Future days from today
 
     for (let i = 0; i < intervals.length; i++) {
-        const futureDate = new Date();
-        futureDate.setDate(today.getDate() + intervals[i]);
-        
-        const futureXDiff = todayDaysDiff + intervals[i];
-        let predictedHPI = regression.predict(futureXDiff);
-        
-        // Ensure HPI doesn't drop below a physical baseline 
-        predictedHPI = Math.max(10, predictedHPI); 
-        
-        predictionPoints.push({
-            date: futureDate.toISOString().split('T')[0],
-            hpi: +predictedHPI.toFixed(2),
-            confidence_score: +confidenceScore.toFixed(2)
-        });
+      const futureDate = new Date();
+      futureDate.setDate(today.getDate() + intervals[i]);
+
+      const futureXDiff = todayDaysDiff + intervals[i];
+      let predictedHPI = regression.predict(futureXDiff);
+
+      // Ensure HPI doesn't drop below a physical baseline 
+      predictedHPI = Math.max(10, predictedHPI);
+
+      predictionPoints.push({
+        date: futureDate.toISOString().split('T')[0],
+        hpi: +predictedHPI.toFixed(2),
+        confidence_score: +confidenceScore.toFixed(2)
+      });
     }
 
     res.json(predictionPoints);
