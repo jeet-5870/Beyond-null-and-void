@@ -16,7 +16,14 @@ const uploadWorker = new Worker(
 
     try {
       // 1. Core Heavy Processing (CSV Parsing, Z-Score math, K-Means clustering)
-      const result = await processUploadData(filePath, historicalDate, userId);
+      const result = await processUploadData({ 
+        filePath, 
+        historicalDate, 
+        userId,
+        shouldPersist: job.data.shouldPersist,
+        isGeneralUser: job.data.isGeneralUser,
+        socketId
+      });
 
       // 2. Broadcast push notifications to the user if they are online
       if (socketId) {

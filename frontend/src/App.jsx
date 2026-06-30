@@ -58,7 +58,7 @@ function App() {
   return (
     <ThemeProvider>
       <Router>
-        <Navbar />
+        <Navbar isLoggedIn={isAuthenticated} userRole={userRole}/>
         {userRole === 'guest' && (
           <div className="fixed bottom-4 right-4 bg-accent-blue text-white px-4 py-2 rounded-full shadow-lg z-50 text-sm font-semibold flex items-center shadow-accent-blue/50">
             📚 Educational Mode

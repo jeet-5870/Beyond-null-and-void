@@ -3,19 +3,10 @@ import { useNavigate } from 'react-router-dom';
 import { Droplets, LogIn, ArrowRight, Menu, X, Sun, Moon } from 'lucide-react';
 import { ThemeContext } from '../context/ThemeContext.jsx';
 
-const Navbar = () => {
+const Navbar = ({ isLoggedIn, userRole }) => {
   const navigate = useNavigate();
-  const [isLoggedIn, setIsLoggedIn] = useState(false);
-  const [userRole, setUserRole] = useState(null);
   const [isMenuOpen, setIsMenuOpen] = useState(false);
   const { theme, toggleTheme } = useContext(ThemeContext);
-
-  useEffect(() => {
-    const token = localStorage.getItem('token');
-    const role = localStorage.getItem('role');
-    setIsLoggedIn(!!token);
-    setUserRole(role);
-  }, []);
 
   const handleLinkClick = () => {
     setIsMenuOpen(false);

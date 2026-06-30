@@ -6,7 +6,7 @@ import API from '../api.js';
 import { io } from 'socket.io-client';
 import { toast } from 'react-toastify';
 
-const socket = io('http://localhost:3000');
+const socket = io(import.meta.env.VITE_API_URL);
 
 const AnomaliesPage = ({ role }) => {
   const [anomalies, setAnomalies] = useState([]);

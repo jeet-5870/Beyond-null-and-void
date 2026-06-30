@@ -8,16 +8,11 @@ import API from '../api.js';
 import Footer from '../components/footer.jsx';
 import { ThemeContext } from '../context/ThemeContext.jsx';
 
-const Navbar = () => {
+const Navbar = ({ isLoggedIn, userRole }) => {
   const navigate = useNavigate();
-  const [isLoggedIn, setIsLoggedIn] = useState(false);
   const [isMenuOpen, setIsMenuOpen] = useState(false);
   const { theme, toggleTheme } = useContext(ThemeContext);
 
-  useEffect(() => {
-    const token = localStorage.getItem('token');
-    setIsLoggedIn(!!token);
-  }, []);
 
   const handleLinkClick = () => {
     setIsMenuOpen(false);
