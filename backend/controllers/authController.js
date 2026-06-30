@@ -1,8 +1,9 @@
 import bcrypt from 'bcrypt';
 import jwt from 'jsonwebtoken';
-import db from '../db/db.js';
+import prisma from '../db/prismaClient.js'; // 🔄 Replaced raw DB with Prisma Client
 import axios from 'axios';
 import nodemailer from 'nodemailer'; 
+import { logger } from '../config/logger.js'; // Added structured logger
 
 // Local helper functions to map between client-facing roles and DB constraint roles
 function mapClientToDbRole(role) {
@@ -38,14 +39,23 @@ const createToken = (user) => {
   );
 };
 
-// MODIFIED: Sends OTP via Email (SendGrid/Nodemailer) or simulates for Phone/missing config.
+// Helper function to dynamically attach the JWT token inside a secure cookie
+const setAuthCookie = (res, token) => {
+  res.cookie('jwt', token, {
+    httpOnly: true,                               // 🔒 Blocks JS access (XSS mitigation)
+    secure: process.env.NODE_ENV === 'production', // 🔒 Enforces HTTPS transmission in production
+    sameSite: 'strict',                           // 🔒 CSRF Protection
+    maxAge: 3600000,                              // 1 Hour in milliseconds
+  });
+};
+
+// Sends OTP via Email (SendGrid/Nodemailer) or simulates for Phone/missing config.
 const sendOtpAndRespond = async (userId, identifier, isEmail, res) => {
   const otp = generateOtp();
   const expiresAt = new Date(Date.now() + 5 * 60 * 1000); // OTP valid for 5 minutes
 
   if (isEmail) {
     if (process.env.SENDGRID_API_KEY) {
-      // --- Email Sending Logic (SendGrid) ---
       const emailData = {
         personalizations: [{ to: [{ email: identifier }] }],
         from: { email: process.env.SENDER_EMAIL },
@@ -65,13 +75,12 @@ const sendOtpAndRespond = async (userId, identifier, isEmail, res) => {
             'Content-Type': 'application/json',
           },
         });
-        console.log(`[AUTH] Successfully sent OTP email to ${identifier} via SendGrid`);
+        logger.info(`[AUTH] Successfully sent OTP email to ${identifier} via SendGrid`);
       } catch (error) {
-        console.error('[AUTH] Error sending OTP email via SendGrid:', error.response?.data);
-        console.log(`[AUTH] SIMULATED OTP for Email ${identifier}: ${otp}`);
+        logger.error('[AUTH] Error sending OTP email via SendGrid:', error.response?.data);
+        logger.info(`[AUTH] SIMULATED OTP for Email ${identifier}: ${otp}`);
       }
     } else if (process.env.GMAIL_USER) {
-      // Fallback email using Nodemailer
       const mailOptions = {
           from: process.env.GMAIL_USER,
           to: identifier,
@@ -80,24 +89,26 @@ const sendOtpAndRespond = async (userId, identifier, isEmail, res) => {
       };
       try {
         await transporter.sendMail(mailOptions);
-        console.log(`[AUTH] Successfully sent OTP email to ${identifier} via Nodemailer fallback`);
+        logger.info(`[AUTH] Successfully sent OTP email to ${identifier} via Nodemailer fallback`);
       } catch (error) {
-        console.error('[AUTH] Error sending OTP email via Nodemailer fallback:', error);
-        console.log(`[AUTH] SIMULATED OTP for Email ${identifier}: ${otp}`);
+        logger.error('[AUTH] Error sending OTP email via Nodemailer fallback:', error);
+        logger.info(`[AUTH] SIMULATED OTP for Email ${identifier}: ${otp}`);
       }
     } else {
-      console.log(`[AUTH] Email API keys not set. SIMULATED OTP for Email ${identifier}: ${otp}`);
+      logger.info(`[AUTH] Email API keys not set. SIMULATED OTP for Email ${identifier}: ${otp}`);
     }
   } else {
-    // --- FIX: Phone Number Logic ---
-    // Removed the flawed carrier gateway assumption. Requires a dedicated SMS API.
-    console.warn(`[AUTH] CRITICAL WARNING: Dedicated SMS API is required for reliable phone verification. SIMULATED OTP for Phone ${identifier}: ${otp}`);
+    logger.warn(`[AUTH] CRITICAL WARNING: Dedicated SMS API is required for reliable phone verification. SIMULATED OTP for Phone ${identifier}: ${otp}`);
   }
     
-  await db.query(
-    'UPDATE users SET reset_token = $1, reset_token_expires = $2 WHERE user_id = $3',
-    [otp, expiresAt, userId]
-  );
+  // 🔄 Prisma Refactor: Replaced raw UPDATE string query
+  await prisma.user.update({
+    where: { user_id: userId },
+    data: {
+      reset_token: otp,
+      reset_token_expires: expiresAt
+    }
+  });
   
   const identifierType = isEmail ? 'Email' : 'Phone Number';
   
@@ -116,33 +127,31 @@ export const initiateAuth = async (req, res, next) => {
   }
 
   const isEmail = identifier.includes('@');
-  const identifierField = isEmail ? 'email' : 'phone';
 
   try {
-    const userRes = await db.query(`SELECT * FROM users WHERE ${identifierField} = $1`, [identifier]);
-    const userExists = userRes.rows.length > 0;
-    const user = userRes.rows[0];
+    // 🔄 Prisma Refactor: Clean dynamic property search criteria
+    const user = await prisma.user.findUnique({
+      where: isEmail ? { email: identifier } : { phone: identifier }
+    });
+    
+    const userExists = !!user;
 
     if (mode === 'signup') {
       if (userExists) {
-        return res.status(409).json({ error: `${identifierField} already registered. Please login.` });
+        return res.status(409).json({ error: `${isEmail ? 'Email' : 'Phone'} already registered. Please login.` });
       }
-      // For new users, proceed to password setup (Step 1)
       return res.json({ success: true, nextStep: 'password' }); 
     } 
     
     // Login Mode
     if (!userExists) {
-        // If user doesn't exist in login mode, redirect to password registration/signup
         return res.json({ success: true, nextStep: 'password', error: `Account not found for ${identifier}. Please sign up.` });
     }
 
     // User exists. Determine if password is set.
     if (user.password_hash) {
-      // User has a password, prompt for password (Step 1)
       return res.json({ success: true, nextStep: 'password' }); 
     } else {
-      // Passwordless user, enforce OTP for security (Step 2)
       return sendOtpAndRespond(user.user_id, identifier, isEmail, res); 
     }
 
@@ -155,43 +164,48 @@ export const initiateAuth = async (req, res, next) => {
 export const passwordAuth = async (req, res, next) => {
   const { identifier, password, fullname, role, mode } = req.body;
   const isEmail = identifier.includes('@');
-  const identifierField = isEmail ? 'email' : 'phone';
 
   try {
     let user;
 
     if (mode === 'signup') {
-      // SIGNUP LOGIC: Create user, then enforce OTP verification.
-      const existingUser = await db.query(`SELECT * FROM users WHERE ${identifierField} = $1`, [identifier]);
-      if (existingUser.rows.length > 0) {
-        return res.status(409).json({ error: `${identifierField} already registered.` });
+      // 🔄 Prisma Refactor: Find unique record
+      const existingUser = await prisma.user.findUnique({
+        where: isEmail ? { email: identifier } : { phone: identifier }
+      });
+      
+      if (existingUser) {
+        return res.status(409).json({ error: `${isEmail ? 'Email' : 'Phone'} already registered.` });
       }
 
       const password_hash = await bcrypt.hash(password, 10);
       const emailValue = isEmail ? identifier : null;
       const phoneValue = isEmail ? null : identifier;
-      
       const dbRole = mapClientToDbRole(role);
-      const result = await db.query(
-        `INSERT INTO users (fullname, email, phone, password_hash, role) 
-         VALUES ($1, $2, $3, $4, $5) RETURNING user_id, fullname, role`,
-        [fullname, emailValue, phoneValue, password_hash, dbRole]
-      );
-      user = result.rows[0];
       
-      // Enforce OTP after signup (Step 2)
+      // 🔄 Prisma Refactor: Handled structural INSERT object creation mapping
+      user = await prisma.user.create({
+        data: {
+          fullname,
+          email: emailValue,
+          phone: phoneValue,
+          password_hash,
+          role: dbRole
+        }
+      });
+      
       return sendOtpAndRespond(user.user_id, identifier, isEmail, res);
 
-    } else { // Login mode
+    } else { 
       // LOGIN LOGIC: Only password required.
-      const userRes = await db.query(`SELECT * FROM users WHERE ${identifierField} = $1`, [identifier]);
-      user = userRes.rows[0];
+      user = await prisma.user.findUnique({
+        where: isEmail ? { email: identifier } : { phone: identifier }
+      });
 
       if (!user) {
         return res.status(401).json({ error: 'Invalid credentials or user not found.' });
       }
       
-      // Enforce password check for standard login path
       if (!user.password_hash) {
           return res.status(401).json({ error: 'Account requires OTP verification. Please request OTP.' });
       }
@@ -201,9 +215,11 @@ export const passwordAuth = async (req, res, next) => {
         return res.status(401).json({ error: 'Invalid password.' });
       }
       
-      // Standard login success: Generate and return token (NO OTP required for login)
+      // 🔒 Cookie Hardening: Generate token and inject it into a cookie instead of explicit JSON text fields
       const token = createToken(user);
-      res.json({ token, userId: user.user_id, role: mapDbToClientRole(user.role) });
+      setAuthCookie(res, token);
+      
+      res.json({ success: true, userId: user.user_id, role: mapDbToClientRole(user.role) });
     }
     
   } catch (err) {
@@ -213,50 +229,53 @@ export const passwordAuth = async (req, res, next) => {
 
 // 3. Handles OTP verification (Step 2)
 export const verifyOtp = async (req, res, next) => {
-  const { identifier, otp, newPassword } = req.body; // UPDATED: Accept newPassword
+  const { identifier, otp, newPassword } = req.body; 
   if (!identifier || !otp) {
     return res.status(400).json({ error: 'Identifier and OTP are required.' });
   }
   
-  // NEW: Validate new password length if provided (for reset flow)
   if (newPassword && newPassword.length < 6) { 
       return res.status(400).json({ error: 'New password must be at least 6 characters long.' });
   }
 
   const isEmail = identifier.includes('@');
-  const identifierField = isEmail ? 'email' : 'phone';
 
   try {
-    const userRes = await db.query(`SELECT * FROM users WHERE ${identifierField} = $1`, [identifier]);
-    const user = userRes.rows[0];
+    const user = await prisma.user.findUnique({
+      where: isEmail ? { email: identifier } : { phone: identifier }
+    });
 
     if (!user || user.reset_token !== otp || new Date() > new Date(user.reset_token_expires)) {
-      // Clear token/expiry to prevent brute force/reuse
       if (user) {
-        await db.query('UPDATE users SET reset_token = NULL, reset_token_expires = NULL WHERE user_id = $1', [user.user_id]);
+        // 🔄 Prisma Refactor: Standardized clear updates
+        await prisma.user.update({
+          where: { user_id: user.user_id },
+          data: { reset_token: null, reset_token_expires: null }
+        });
       }
       return res.status(401).json({ error: 'Invalid or expired OTP.' });
     }
 
-    let updateQuery = 'UPDATE users SET reset_token = NULL, reset_token_expires = NULL';
-    let updateParams = [];
-    let paramIndex = 1;
+    const updateData = {
+      reset_token: null,
+      reset_token_expires: null
+    };
 
     if (newPassword) {
-        // NEW: If newPassword is provided (forgot password flow), update the password hash
-        const password_hash = await bcrypt.hash(newPassword, 10);
-        updateQuery += `, password_hash = $${paramIndex++}`;
-        updateParams.push(password_hash);
+        updateData.password_hash = await bcrypt.hash(newPassword, 10);
     }
     
-    updateQuery += ` WHERE user_id = $${paramIndex}`;
-    updateParams.push(user.user_id);
+    // 🔄 Prisma Refactor: Conditional execution wrapped within clear parameters object mapping
+    const updatedUser = await prisma.user.update({
+      where: { user_id: user.user_id },
+      data: updateData
+    });
 
-    // Success: Clear OTP fields and log the user in (and reset password if applicable)
-    await db.query(updateQuery, updateParams);
+    // 🔒 Cookie Hardening: Issue session to local secure cookie domain bounds
+    const token = createToken(updatedUser);
+    setAuthCookie(res, token);
 
-    const token = createToken(user);
-    res.json({ token, userId: user.user_id, role: mapDbToClientRole(user.role) });
+    res.json({ success: true, userId: user.user_id, role: mapDbToClientRole(user.role) });
 
   } catch (err) {
     next(err);
@@ -271,11 +290,12 @@ export const requestOtp = async (req, res, next) => {
     }
     
     const isEmail = identifier.includes('@');
-    const identifierField = isEmail ? 'email' : 'phone';
     
     try {
-        const userRes = await db.query(`SELECT user_id FROM users WHERE ${identifierField} = $1`, [identifier]);
-        const user = userRes.rows[0];
+        const user = await prisma.user.findUnique({
+          where: isEmail ? { email: identifier } : { phone: identifier },
+          select: { user_id: true }
+        });
 
         if (!user) {
             return res.status(404).json({ error: 'User not found.' });
@@ -290,7 +310,16 @@ export const requestOtp = async (req, res, next) => {
 
 // 5. Endpoint to verify token validity (used by frontend on page load)
 export const verifyToken = (req, res) => {
-    // If authMiddleware successfully verified the token and added req.user, 
-    // the token is valid. We don't need to do anything else here.
     res.json({ success: true, message: 'Token is valid' });
+};
+
+
+// Add this to the bottom of authController.js
+export const logout = (req, res) => {
+  res.clearCookie('jwt', {
+    httpOnly: true,
+    secure: process.env.NODE_ENV === 'production',
+    sameSite: 'strict',
+  });
+  res.json({ success: true, message: 'Successfully logged out.' });
 };
