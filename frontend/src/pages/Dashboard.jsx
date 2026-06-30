@@ -3,7 +3,7 @@ import { useNavigate } from 'react-router-dom';
 import {
   Download, Droplets, MapPin, TrendingUp, BarChart2,
   FileText, CheckCircle, AlertCircle, Eye, EyeOff,
-  Menu, X, Home, LogOut, UploadCloud, Bell, Slash, ArrowLeft, AlertTriangle
+  Menu, X, Home, LogOut, UploadCloud, Bell, Ban, ArrowLeft, AlertTriangle
 } from 'lucide-react';
 import API from '../api.js';
 import UploadForm from '../components/uploadForm.jsx';
@@ -171,7 +171,7 @@ const Dashboard = () => {
     { title: 'Total Locations', value: results.length, icon: MapPin, color: 'text-accent-blue' },
     { title: 'Safe Sites', value: results.filter(r => r.classification === 'Safe').length, icon: CheckCircle, color: 'text-success' },
     { title: 'Polluted Sites', value: results.filter(r => r.classification === 'Polluted' || r.classification === 'Highly Polluted').length, icon: AlertCircle, color: 'text-danger' },
-    { title: 'Anomalous Samples', value: results.filter(r => r.is_anomaly === true).length, icon: Slash, color: 'text-danger' }, 
+    { title: 'Anomalous Samples', value: results.filter(r => r.is_anomaly === true).length, icon: Ban, color: 'text-danger' }, 
   ];
 
   return (
