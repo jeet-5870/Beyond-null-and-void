@@ -17,11 +17,11 @@ function UploadForm({ onUploadComplete, uploadType }) {
       fileInputRef.current.value = null;
       setFile(null);
     }
-  }, []);
+  }, [uploadType]);
 
   useEffect(() => {
     if (message) {
-      const timer = setTimeout(() => setMessage(''), 5000);
+      const timer = setTimeout(() => setMessage(''), 7000); // Extended timeout slightly for async task messaging
       return () => clearTimeout(timer);
     }
   }, [message]);
@@ -43,12 +43,18 @@ function UploadForm({ onUploadComplete, uploadType }) {
     const endpoint = uploadType === 'standards' ? '/api/standards' : '/api/upload';
 
     try {
+      // 🔒 Dispatches requests securely; cookies and real-time identifiers pass automatically
       const res = await API.post(endpoint, formData, {
-        headers: { 'Content-Type': 'multipart/form-data' }
+        headers: { 
+          'Content-Type': 'multipart/form-data',
+          'x-socket-id': window.socketConnectionId || '' // Captures WebSocket connection references if present globally
+        }
       });
-      setMessage(res.data.message || 'Upload successful');
+      
+      setMessage(res.data.message || 'Upload successful. Ingestion processing running in background.');
       setFile(null);
-      fileInputRef.current.value = null;
+      if (fileInputRef.current) fileInputRef.current.value = null;
+      
       if (onUploadComplete) onUploadComplete(res.data);
     } catch (err) {
       const errorMsg = err.response?.data?.error || 'Upload failed';
@@ -59,7 +65,7 @@ function UploadForm({ onUploadComplete, uploadType }) {
     }
   };
   
-  const messageColor = (message.includes('failed') || message.includes('No metal standards found')) ? 'text-danger' : 'text-success';
+  const messageColor = (message.includes('failed') || message.includes('No metal standards found') || message.includes('Error')) ? 'text-danger' : 'text-success';
 
   return (
     <div className="flex flex-col items-center justify-center p-6 bg-white dark:bg-secondary-dark rounded-xl shadow-lg border border-gray-200 dark:border-gray-700 mb-8">
@@ -100,7 +106,7 @@ function UploadForm({ onUploadComplete, uploadType }) {
         </button>
       </form>
       {message && (
-        <p className={`mt-4 text-sm font-medium ${messageColor}`}>
+        <p className={`mt-4 text-sm font-medium ${messageColor} text-center max-w-sm`}>
           {message}
         </p>
       )}

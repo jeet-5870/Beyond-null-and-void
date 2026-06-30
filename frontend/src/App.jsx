@@ -1,5 +1,3 @@
-// frontend/src/App.jsx
-
 import React, { useState, useEffect } from 'react';
 import { BrowserRouter as Router, Route, Routes, Navigate } from 'react-router-dom';
 import API, { AuthAPI } from './api.js';
@@ -21,21 +19,16 @@ function App() {
 
   useEffect(() => {
     const checkTokenValidity = async () => {
-      const token = localStorage.getItem('token');
-      if (!token) {
-        setIsAuthenticated(false);
-        setIsCheckingAuth(false);
-        return;
-      }
-
       try {
-        await AuthAPI.get('/verify-token');
-        const role = localStorage.getItem('role');
+        // 🔒 Intercepts cookie verification automatically via global credential bindings
+        const res = await AuthAPI.get('/api/auth/verify-token');
+        
+        // Recover user permissions details directly from the validation response data payload
+        const role = localStorage.getItem('role') || res.data?.role || 'guest';
         setIsAuthenticated(true);
         setUserRole(role);
       } catch (error) {
-        console.error('Token verification failed:', error);
-        localStorage.removeItem('token');
+        console.error('Session authentication failed:', error);
         localStorage.removeItem('role');
         setIsAuthenticated(false);
         setUserRole(null);
@@ -46,14 +39,18 @@ function App() {
     checkTokenValidity();
   }, []);
 
-  const handleLogin = (status) => {
+  const handleLogin = (status, role) => {
     setIsAuthenticated(status);
+    if (role) {
+      setUserRole(role);
+      localStorage.setItem('role', role);
+    }
   };
   
   if (isCheckingAuth) {
     return (
         <div className="flex items-center justify-center min-h-screen bg-primary-dark">
-            <h1 className="text-xl font-bold text-text-light">Loading...</h1>
+            <h1 className="text-xl font-bold text-text-light">Loading session profile...</h1>
         </div>
     );
   }
@@ -62,7 +59,7 @@ function App() {
     <ThemeProvider>
       <Router>
         <Navbar />
-        {userRole === 'general' && (
+        {userRole === 'guest' && (
           <div className="fixed bottom-4 right-4 bg-accent-blue text-white px-4 py-2 rounded-full shadow-lg z-50 text-sm font-semibold flex items-center shadow-accent-blue/50">
             📚 Educational Mode
           </div>

@@ -88,10 +88,9 @@ const LoginPage = ({ onLogin }) => {
       const payload = { identifier, password, fullname, role, mode };
       const res = await AuthAPI.post('/api/auth/password-auth', payload);
 
-      if (res.data?.token) {
-        localStorage.setItem('token', res.data.token);
-        localStorage.setItem('role', res.data.role);
-        if (onLogin) onLogin(true);
+      // 🔒 Removed localStorage token handling; backend automatically sets cookies instead
+      if (res.data?.success) {
+        if (onLogin) onLogin(true, res.data.role);
         navigate('/dashboard');
       } else if (res.data?.nextStep === 'otp') {
         setStep(2);
@@ -154,10 +153,9 @@ const LoginPage = ({ onLogin }) => {
         
       const res = await AuthAPI.post('/api/auth/verify-otp', payload);
 
-      if (res.data?.token) {
-        localStorage.setItem('token', res.data.token);
-        localStorage.setItem('role', res.data.role);
-        if (onLogin) onLogin(true);
+      // 🔒 Complete authentication tracking relying exclusively on safe cookie status validations
+      if (res.data?.success) {
+        if (onLogin) onLogin(true, res.data.role);
         navigate('/dashboard');
       }
     } catch (err) {
