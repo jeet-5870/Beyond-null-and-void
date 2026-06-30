@@ -1,0 +1,95 @@
+generator client {
+  provider = "prisma-client-js"
+}
+
+datasource db {
+  provider = "postgresql"
+  url      = env("DATABASE_URL")
+}
+
+model User {
+  user_id       Int        @id @default(autoincrement())
+  fullname      String
+  email         String?    @unique
+  phone         String?    @unique
+  password_hash String?
+  role          String
+  created_at    DateTime   @default(now())
+  samples       Sample[]
+  feedbacks     Feedback[]
+  reset_token        String?
+  reset_token_expires DateTime?
+
+  @@map("users")
+}
+
+model Location {
+  location_id Int      @id @default(autoincrement())
+  name        String   @unique
+  latitude    Float?
+  longitude   Float?
+  district    String?
+  state       String?
+  samples     Sample[]
+
+  @@map("locations")
+}
+
+model Sample {
+  sample_id           Int                  @id @default(autoincrement())
+  location_id         Int
+  user_id             Int?
+  sample_date         DateTime             @db.Date
+  source_type         String               @default("Groundwater")
+  notes               String?
+  location            Location             @relation(fields: [location_id], references: [location_id], onDelete: Cascade)
+  user                User?                @relation(fields: [user_id], references: [user_id], onDelete: SetNull)
+  metalConcentrations MetalConcentration[]
+  pollutionIndices    PollutionIndex[]
+
+  @@map("samples")
+}
+
+model MetalConcentration {
+  concentration_id Int    @id @default(autoincrement())
+  sample_id        Int
+  metal_name       String
+  concentration_ppm Float
+  sample           Sample @relation(fields: [sample_id], references: [sample_id], onDelete: Cascade)
+
+  @@map("metal_concentrations")
+}
+
+model PollutionIndex {
+  index_id    Int      @id @default(autoincrement())
+  sample_id   Int
+  hpi         Float
+  hei         Float
+  pli         Float
+  mpi         Float
+  cf          Json
+  is_anomaly  Boolean  @default(false)
+  cluster_id  Int?
+  computed_on DateTime @default(now())
+  sample      Sample   @relation(fields: [sample_id], references: [sample_id], onDelete: Cascade)
+
+  @@map("pollution_indices")
+}
+
+model MetalStandard {
+  metal_name   String @id
+  mac_ppm      Float
+  standard_ppm Float
+
+  @@map("metal_standards")
+}
+
+model Feedback {
+  feedback_id  Int      @id @default(autoincrement())
+  user_id      Int?
+  message      String
+  submitted_at DateTime @default(now())
+  user         User?    @relation(fields: [user_id], references: [user_id], onDelete: SetNull)
+
+  @@map("feedback")
+}

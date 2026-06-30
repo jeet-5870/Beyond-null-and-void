@@ -1,56 +1,64 @@
 import http from 'http';
-import { Server } from 'socket.io';
 import express from 'express';
 import cors from 'cors';
 import dotenv from 'dotenv';
+import cookieParser from 'cookie-parser';
+import { Server } from 'socket.io';
 
-import analysisRoutes from './routes/analysisRoutes.js';
+// Route Imports
 import authRoutes from './routes/authRoutes.js';
-import feedbackRoutes from './routes/feedbackRoutes.js';
 import leaderboardRoutes from './routes/leaderboardRoutes.js';
-import mapRoutes from './routes/mapRoutes.js';
-import predictionRoutes from './routes/predictionRoutes.js';
-import reportRoutes from './routes/reportRoutes.js';
-import resultRoutes from './routes/resultRoutes.js';
-import standardRoutes from './routes/standardRoutes.js';
+import feedbackRoutes from './routes/feedbackRoutes.js';
 import uploadRoutes from './routes/uploadRoutes.js';
+import resultRoutes from './routes/resultRoutes.js';
+import mapRoutes from './routes/mapRoutes.js';
+import reportRoutes from './routes/reportRoutes.js';
+import standardRoutes from './routes/standardRoutes.js';
+import predictionRoutes from './routes/predictionRoutes.js';
+import analysisRoutes from './routes/analysisRoutes.js';
 
+// Middleware & Utilities
 import authMiddleware from './middleware/authMiddleware.js';
 import errorHandler from './middleware/errorHandler.js';
-import { initPostgresSchema } from './db/initSchema.js';
-import { seedDatabase } from './db/seed.js';
+import uploadWorker from './workers/uploadWorker.js'; 
+import { logger } from './config/logger.js';
 
 dotenv.config();
 
 const app = express();
 const httpServer = http.createServer(app);
-const io = new Server(httpServer, {
+
+// 1. Initialize real-time stateful streaming server
+export const io = new Server(httpServer, {
   cors: {
-    origin: '*',
+    origin: process.env.CLIENT_URL || 'http://localhost:5173',
     methods: ['GET', 'POST'],
+    credentials: true
   },
 });
 
-app.use(cors());
-app.use(express.json());
+// 2. Global Core Middlewares 
+app.use(cors({
+  origin: process.env.CLIENT_URL || 'http://localhost:5173',
+  credentials: true // 🔒 Required to accept secure HttpOnly cookies from the frontend
+}));
 
+app.use(express.json());
+app.use(cookieParser()); // 🔒 Parses incoming cookies into req.cookies cleanly
+
+// 3. Attach io instance to the request lifecycle
 app.use((req, res, next) => {
   req.io = io;
   next();
 });
 
-io.on('connection', (socket) => {
-  console.log('A user connected via WebSocket:', socket.id);
-  socket.on('disconnect', () => {
-    console.log('User disconnected from WebSocket:', socket.id);
-  });
-});
-
+// 4. Public API Router Declarations
 app.use('/api/auth', authRoutes);
 app.use('/api/leaderboard', leaderboardRoutes);
 app.use('/api/feedback', feedbackRoutes);
 app.use('/api/upload', uploadRoutes);
 
+// 5. Protected API Router Declarations (Guarded by Cookie Verification)
 app.use('/api/samples', authMiddleware, resultRoutes);
 app.use('/api/map-data', authMiddleware, mapRoutes);
 app.use('/api/report', authMiddleware, reportRoutes);
@@ -58,25 +66,14 @@ app.use('/api/standards', authMiddleware, standardRoutes);
 app.use('/api/prediction', authMiddleware, predictionRoutes);
 app.use('/api/analysis', authMiddleware, analysisRoutes);
 
+// 6. Centralized Error Interceptor
 app.use(errorHandler);
 
-app.get('/', (req, res) => {
-  res.send('👋 Welcome to Beyond Null and Void.\nThis server powers groundwater insights.');
-});
-
-app.get('/health', (req, res) => {
-  res.json({ status: 'ok', timestamp: new Date().toISOString() });
-});
-
+// 7. Establish Cluster Listener
 const PORT = process.env.PORT || 3000;
-
-httpServer.listen(PORT, async () => {
-  console.log(`Server is live on port ${PORT}`);
-
-  try {
-    await initPostgresSchema();
-    await seedDatabase();
-  } catch (err) {
-    console.error('❌ Failed to set up database on startup: ', err);
-  }
+httpServer.listen(PORT, () => {
+  logger.info(`Enterprise cluster executing on port ${PORT}`);
+  
+  // Initialize BullMQ background asynchronous worker thread immediately on boot
+  uploadWorker.run();
 });
